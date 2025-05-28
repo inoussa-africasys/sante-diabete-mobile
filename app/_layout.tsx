@@ -1,29 +1,37 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { Stack } from "expo-router";
+import { useEffect, useState } from "react";
+import { StatusBar } from "expo-status-bar";
+import { View } from "react-native";
+import FullScreenSplash from "../src/Components/FullScreenSplash";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  const [isAppReady, setAppReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+  // Fonction appelée quand l'animation du splash est terminée
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
+
+  useEffect(() => {
+    async function prepare() {
+      // Simuler un chargement, ex: chargement de polices, données, etc.
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setAppReady(true);
+    }
+
+    prepare();
+  }, []);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <View style={{ flex: 1 }}>
+      <StatusBar style="light" />
+      {showSplash && <FullScreenSplash onAnimationComplete={handleSplashComplete} />}
+      {isAppReady &&
+          <Stack screenOptions={{
+            headerShown : false
+          }} />
+      }
+    </View>
   );
 }
