@@ -1,7 +1,8 @@
 import { Stack } from "expo-router";
-import { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
+import "../assets/css/global.css";
 import FullScreenSplash from "../src/Components/FullScreenSplash";
 
 export default function RootLayout() {
