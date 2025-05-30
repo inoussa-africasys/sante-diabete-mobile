@@ -1,8 +1,8 @@
 import React from 'react';
 import { router } from 'expo-router';
-import PatientListPage from '../src/Components/PatientListPage';
+import PatientListPage from '../src/Components/Patients/PatientListPage';
 
-export default function DT2Page() {
+function DT2Page() {
   // Fonction pour gérer le clic sur un patient
   const handlePatientPress = (patientId: string) => {
     // Navigation vers la page de détails du patient
@@ -31,3 +31,5 @@ export default function DT2Page() {
     />
   );
 }
+
+export default DT2Page;
