@@ -19,10 +19,19 @@ export default function ListeFichesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const dtType = (typeof params.dt === 'string' && (params.dt === 'DT1' || params.dt === 'DT2')) ? params.dt : 'DT1';
-  const mode = (typeof params.mode === 'string' && (params.mode === 'editer' || params.mode === 'remplir')) ? params.mode : 'remplir';
+  const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge'].includes(params.mode)) ? params.mode : 'remplir';
 
   const getHeaderTitle = () => {
-    return `${mode === 'editer' ? 'Éditer' : 'Remplir'} une fiche - ${dtType}`;
+    switch (mode) {
+      case 'editer':
+        return `Éditer une fiche - ${dtType}`;
+      case 'remplir':
+        return `Remplir une fiche - ${dtType}`;
+      case 'vierge':
+        return `Téléchargement de fiche - ${dtType}`;
+      default:
+        return `Liste des fiches - ${dtType}`;
+    }
   };
 
   const fichesForType = fiches[dtType as keyof typeof fiches];
@@ -32,7 +41,19 @@ export default function ListeFichesScreen() {
       style={styles.item}
       onPress={() => {
         // Ici on naviguerait vers le formulaire avec la fiche sélectionnée
-        console.log(`${mode === 'editer' ? 'Édition' : 'Remplissage'} de la fiche:`, item.name);
+        let action = '';
+        switch (mode) {
+          case 'editer':
+            action = 'Édition';
+            break;
+          case 'remplir':
+            action = 'Remplissage';
+            break;
+          case 'vierge':
+            action = 'Téléchargement';
+            break;
+        }
+        console.log(`${action} de la fiche:`, item.name);
         // TODO: Ajouter la navigation vers le formulaire
       }}
     >
@@ -40,7 +61,11 @@ export default function ListeFichesScreen() {
         <MaterialIcons name="description" size={24} color="#2196F3" />
         <Text style={styles.itemText}>{item.name}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={24} color="#666" />
+      {mode === 'vierge' ? (
+        <MaterialIcons name="file-download" size={24} color="#4CAF50" />
+      ) : (
+        <Ionicons name="chevron-forward" size={24} color="#666" />
+      )}
     </TouchableOpacity>
   );
 

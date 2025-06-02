@@ -109,7 +109,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
 
           <TouchableOpacity 
             style={styles.smallButton}
-            onPress={() => onOptionPress('fiche-vierge')}
+            onPress={() => router.push(`/liste-fiches?dt=${dtType}&mode=vierge`)}
           >
             <Entypo 
               name="new-message" 
