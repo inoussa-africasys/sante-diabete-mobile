@@ -1,7 +1,7 @@
 import { Entypo, Feather, FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
 
 interface AccueilPageProps {
   onOptionPress: (option: string) => void;
@@ -85,7 +85,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
  */}
           <TouchableOpacity 
             style={styles.smallButton}
-            onPress={() => onOptionPress('remplir-fiche')}
+            onPress={() => router.push(`/liste-fiches?dt=${dtType}`)}
           >
             <Feather 
               name="edit" 
