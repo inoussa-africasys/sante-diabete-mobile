@@ -1,6 +1,6 @@
-import React from 'react';
 import { router } from 'expo-router';
-import PatientListPage from '../src/Components/Patients/PatientListPage';
+import React from 'react';
+import AccueilPage from '../src/Components/AccueilPage';
 
 function DT1Page() {
   // Fonction pour gérer le clic sur un patient
@@ -10,24 +10,22 @@ function DT1Page() {
     // router.push(`/patient/${patientId}`);
   };
 
-  // Fonction pour revenir à la page précédente
+  const handleOptionPress = (option: string) => {
+    if (option === 'patients') {
+      router.push('/liste-patient?dt=DT1');
+    }
+    // Ajoute ici d'autres options si besoin
+  };
+
   const handleBackPress = () => {
     router.back();
   };
 
-  // Fonction pour ajouter un nouveau patient
-  const handleAddPress = () => {
-    // Navigation vers la page d'ajout de patient
-    console.log('Ajouter un nouveau patient DT1');
-    // router.push('/add-patient/dt1');
-  };
-
   return (
-    <PatientListPage 
-      diabetesType="DT1"
-      onPatientPress={handlePatientPress}
+    <AccueilPage
+      dtType="DT1"
+      onOptionPress={handleOptionPress}
       onBackPress={handleBackPress}
-      onAddPress={handleAddPress}
     />
   );
 }

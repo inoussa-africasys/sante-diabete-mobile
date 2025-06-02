@@ -3,11 +3,11 @@ import React from 'react';
 import ConsultationsPage from '../src/Components/ConsultationsPage';
 
 export default function Consultations() {
-  // Fonction pour gérer le clic sur les options DT1 ou DT2
+  // Fonction pour gérer le clic sur les options DT1, DT2
   const handleOptionPress = (option: string) => {
     console.log(`Option sélectionnée: ${option}`);
     
-    // Navigation vers les pages spécifiques pour DT1 ou DT2
+    // Navigation vers les pages spécifiques pour DT1, DT2
     if (option === 'dt1') {
       router.push('/dt1');
     } else if (option === 'dt2') {

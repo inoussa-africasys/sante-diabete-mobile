@@ -1,6 +1,6 @@
 import React from 'react';
 import { router } from 'expo-router';
-import PatientListPage from '../src/Components/Patients/PatientListPage';
+import AccueilPage from '../src/Components/AccueilPage';
 
 function DT2Page() {
   // Fonction pour gérer le clic sur un patient
@@ -23,12 +23,7 @@ function DT2Page() {
   };
 
   return (
-    <PatientListPage 
-      diabetesType="DT2"
-      onPatientPress={handlePatientPress}
-      onBackPress={handleBackPress}
-      onAddPress={handleAddPress}
-    />
+    <AccueilPage dtType="DT2" onOptionPress={() => {}} onBackPress={handleBackPress} />
   );
 }
 
