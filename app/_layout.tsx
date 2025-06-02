@@ -1,9 +1,12 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import "../assets/css/global.css";
 import FullScreenSplash from "../src/Components/FullScreenSplash";
+
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [isAppReady, setAppReady] = useState(false);
@@ -29,9 +32,11 @@ export default function RootLayout() {
       <StatusBar style="light" />
       {showSplash && <FullScreenSplash onAnimationComplete={handleSplashComplete} />}
       {isAppReady &&
-          <Stack screenOptions={{
-            headerShown : false
-          }} />
+          <QueryClientProvider client={queryClient}>
+            <Stack screenOptions={{
+              headerShown : false
+            }} />
+          </QueryClientProvider>
       }
     </View>
   );
