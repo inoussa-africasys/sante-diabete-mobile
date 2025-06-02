@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 import "../assets/css/global.css";
 import FullScreenSplash from "../src/Components/FullScreenSplash";
+import { DiabetesProvider } from '../src/context/DiabetesContext';
 
 const queryClient = new QueryClient();
 
@@ -33,9 +34,11 @@ export default function RootLayout() {
       {showSplash && <FullScreenSplash onAnimationComplete={handleSplashComplete} />}
       {isAppReady &&
           <QueryClientProvider client={queryClient}>
-            <Stack screenOptions={{
-              headerShown : false
-            }} />
+            <DiabetesProvider>
+              <Stack screenOptions={{
+                headerShown : false
+              }} />
+            </DiabetesProvider>
           </QueryClientProvider>
       }
     </View>

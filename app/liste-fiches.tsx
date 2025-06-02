@@ -1,6 +1,7 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
+import { useDiabetes } from '../src/context/DiabetesContext';
 import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // Liste temporaire des fiches (à remplacer par les vraies données)
@@ -18,23 +19,23 @@ const fiches = {
 export default function ListeFichesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const dtType = (typeof params.dt === 'string' && (params.dt === 'DT1' || params.dt === 'DT2')) ? params.dt : 'DT1';
+  const { diabetesType } = useDiabetes();
   const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge'].includes(params.mode)) ? params.mode : 'remplir';
 
   const getHeaderTitle = () => {
     switch (mode) {
       case 'editer':
-        return `Éditer une fiche - ${dtType}`;
+        return `Éditer une fiche - ${diabetesType}`;
       case 'remplir':
-        return `Remplir une fiche - ${dtType}`;
+        return `${mode === 'editer' ? 'Éditer' : 'Remplir'} une fiche - ${diabetesType}`;
       case 'vierge':
-        return `Téléchargement de fiche - ${dtType}`;
+        return `Téléchargement de fiche - ${diabetesType}`;
       default:
-        return `Liste des fiches - ${dtType}`;
+        return `Liste des fiches - ${diabetesType}`;
     }
   };
 
-  const fichesForType = fiches[dtType as keyof typeof fiches];
+  const fichesForType = fiches[diabetesType];
 
   const renderItem = ({ item }: { item: { id: string; name: string } }) => (
     <TouchableOpacity 

@@ -1,20 +1,20 @@
 import { Entypo, Feather, FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useDiabetes } from '../context/DiabetesContext';
 import React from 'react';
 import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface AccueilPageProps {
-  onOptionPress: (option: string) => void;
-  dtType: string;
   onBackPress?: () => void;
 }
 
 
-const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBackPress }) => {
+const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const router = useRouter();
+  const { diabetesType } = useDiabetes();
 
   const handlePatientPress = () => {
-    router.push(`/liste-patient?dt=${dtType}`);
+    router.push(`/liste-patient?dt=${diabetesType}`);
   };
 
   const handleScannerPress = () => {
@@ -50,7 +50,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
           
           {/* <TouchableOpacity 
             style={styles.bigButton}
-            onPress={() => onOptionPress('stock')}
+            onPress={() => console.log('Stock - à implémenter')}
           >
             <View style={styles.buttonContent}>
               <MaterialCommunityIcons name="warehouse" size={40} color="#2196F3" />
@@ -62,7 +62,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
         <View style={styles.gridContainer}>
           {/* <TouchableOpacity 
             style={styles.mediumButton}
-            onPress={() => onOptionPress('recherche')}
+            onPress={() => console.log('Recherche - à implémenter')}
           >
             <Ionicons 
               name="search" 
@@ -73,7 +73,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.mediumButton}
-            onPress={() => onOptionPress('stock-medicaments')}
+            onPress={() => console.log('Stock - à implémenter')}
           >
             <MaterialIcons 
               name="medical-services" 
@@ -85,7 +85,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
  */}
           <TouchableOpacity 
             style={styles.smallButton}
-            onPress={() => router.push(`/liste-fiches?dt=${dtType}&mode=remplir`)}
+            onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
           >
             <Feather 
               name="edit" 
@@ -97,7 +97,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
 
           <TouchableOpacity 
             style={styles.smallButton}
-            onPress={() => router.push(`/liste-fiches?dt=${dtType}&mode=editer`)}
+            onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=editer`)}
           >
             <MaterialIcons 
               name="edit" 
@@ -109,7 +109,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
 
           <TouchableOpacity 
             style={styles.smallButton}
-            onPress={() => router.push(`/liste-fiches?dt=${dtType}&mode=vierge`)}
+            onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=vierge`)}
           >
             <Entypo 
               name="new-message" 
@@ -121,7 +121,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
 
           <TouchableOpacity 
             style={[styles.mediumButton, styles.deleteButton]}
-            onPress={() => onOptionPress('supprimer-fiche')}
+            onPress={() => console.log('Stock consommables - à implémenter')}
           >
             <MaterialIcons 
               name="delete" 
@@ -133,7 +133,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
 
           <TouchableOpacity 
             style={styles.mediumButton}
-            onPress={() => onOptionPress('synchroniser')}
+            onPress={() => console.log('Synchronisation - à implémenter')}
           >
             <Ionicons 
               name="sync" 
