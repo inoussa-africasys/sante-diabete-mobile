@@ -19,6 +19,11 @@ export default function ListeFichesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const dtType = (typeof params.dt === 'string' && (params.dt === 'DT1' || params.dt === 'DT2')) ? params.dt : 'DT1';
+  const mode = (typeof params.mode === 'string' && (params.mode === 'editer' || params.mode === 'remplir')) ? params.mode : 'remplir';
+
+  const getHeaderTitle = () => {
+    return `${mode === 'editer' ? 'Éditer' : 'Remplir'} une fiche - ${dtType}`;
+  };
 
   const fichesForType = fiches[dtType as keyof typeof fiches];
 
@@ -27,7 +32,8 @@ export default function ListeFichesScreen() {
       style={styles.item}
       onPress={() => {
         // Ici on naviguerait vers le formulaire avec la fiche sélectionnée
-        console.log('Fiche sélectionnée:', item.name);
+        console.log(`${mode === 'editer' ? 'Édition' : 'Remplissage'} de la fiche:`, item.name);
+        // TODO: Ajouter la navigation vers le formulaire
       }}
     >
       <View style={styles.itemContent}>
@@ -48,7 +54,7 @@ export default function ListeFichesScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Liste des fiches</Text>
+        <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
       </View>
       <FlatList
         data={fichesForType}

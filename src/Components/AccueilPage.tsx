@@ -85,7 +85,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
  */}
           <TouchableOpacity 
             style={styles.smallButton}
-            onPress={() => router.push(`/liste-fiches?dt=${dtType}`)}
+            onPress={() => router.push(`/liste-fiches?dt=${dtType}&mode=remplir`)}
           >
             <Feather 
               name="edit" 
@@ -97,7 +97,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onOptionPress, dtType, onBack
 
           <TouchableOpacity 
             style={styles.smallButton}
-            onPress={() => onOptionPress('editer-fiche')}
+            onPress={() => router.push(`/liste-fiches?dt=${dtType}&mode=editer`)}
           >
             <MaterialIcons 
               name="edit" 
