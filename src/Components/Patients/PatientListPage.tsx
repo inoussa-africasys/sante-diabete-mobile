@@ -131,7 +131,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       {/* Actions Bar */}
       <View style={styles.actionsBar}>
         <TouchableOpacity style={styles.actionButton}>
-          <FontAwesome5 name="file-download" size={20} color="#4CAF50" />
+          <FontAwesome5 name="download" size={20} color="#4CAF50" />
         </TouchableOpacity>
         <View style={styles.actionDivider} />
         <TouchableOpacity style={styles.actionButton}>
