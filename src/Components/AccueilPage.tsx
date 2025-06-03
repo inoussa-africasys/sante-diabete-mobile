@@ -1,8 +1,8 @@
-import { Entypo, Feather, FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Entypo, Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useDiabetes } from '../context/DiabetesContext';
 import React from 'react';
 import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useDiabetes } from '../context/DiabetesContext';
 
 interface AccueilPageProps {
   onBackPress?: () => void;
@@ -32,7 +32,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Accueil</Text>
         <TouchableOpacity style={styles.headerButton} onPress={handleScannerPress}>
-          <MaterialCommunityIcons name="qrcode-scan" size={28} color="#fff" />
+          <FontAwesome5 name="qrcode" size={28} color="#fff" />
         </TouchableOpacity>
       </View>
       <View style={styles.allContent}>
@@ -112,7 +112,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
             onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=vierge`)}
           >
             <Entypo 
-              name="new-message" 
+              name="download" 
               size={32} 
               color="#2196F3" 
             />

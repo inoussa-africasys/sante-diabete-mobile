@@ -62,6 +62,11 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     { id: '3', name: 'TRAORE Hawa', date: '2025-03-16', patientId: 'P-72455E0F' },
     { id: '4', name: 'Test Test', date: '2025-02-25', patientId: 'P-88DFD856' },
     { id: '5', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+    { id: '6', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+    { id: '7', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+    { id: '8', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+    { id: '9', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+    { id: '10', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
   ];
 
   const renderPatientItem = ({ item }: { item: Patient }) => (
@@ -110,7 +115,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
             style={styles.headerButton}
             onPress={() => setShowQRScanner(true)}
           >
-            <FontAwesome5 name="th-large" size={20} color="#E91E63" />
+            <FontAwesome5 name="qrcode" size={20} color="#E91E63" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerButton}>
             <Ionicons name="search" size={24} color="#212121" />
@@ -147,12 +152,12 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       />
       
       {/* Add Button */}
-      <TouchableOpacity 
-        style={styles.addButton}
-        onPress={onAddPress}
-      >
-        <Ionicons name="add" size={30} color="#FFFFFF" />
-      </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={onAddPress}
+        >
+          <Ionicons name="add" size={30} color="#FFFFFF" />
+        </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -277,7 +282,7 @@ const styles = StyleSheet.create({
   addButton: {
     position: 'absolute',
     bottom: 20,
-    right: 20,
+    alignSelf: 'center',
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -290,6 +295,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
   },
+
 });
 
 export default PatientListPage;
