@@ -22,7 +22,12 @@
         "foregroundImage": "./assets/images/splash-icon.png",
         "backgroundColor": "#FF0000"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.africasys.santediabete.mobile"
     },
     "web": {
       "bundler": "metro",
@@ -66,6 +71,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6c5e4456-a83f-4d39-8d13-40332dfd2578"
+      }
     }
   }
 }
