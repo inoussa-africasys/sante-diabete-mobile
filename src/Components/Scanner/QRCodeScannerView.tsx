@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
+  import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface QRCodeScannerViewProps {
+  type: 'patient' | 'user';
   onScan: (data: string) => void;
   onClose: () => void;
 }
 
-const QRCodeScannerView: React.FC<QRCodeScannerViewProps> = ({ onScan, onClose }) => {
+const QRCodeScannerView: React.FC<QRCodeScannerViewProps> = ({ type, onScan, onClose }) => {
   const [scanned, setScanned] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [analyzing, setAnalyzing] = useState(false);
@@ -170,7 +171,7 @@ const QRCodeScannerView: React.FC<QRCodeScannerViewProps> = ({ onScan, onClose }
             >
               <Ionicons name="close" size={28} color="#FFFFFF" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Scanner un QR code</Text>
+            <Text style={styles.headerTitle}>{type === 'patient' ? 'Scanner un QR code patient' : 'Scanner un QR code'}</Text>
           </View>
           
           <View style={styles.scanArea}>

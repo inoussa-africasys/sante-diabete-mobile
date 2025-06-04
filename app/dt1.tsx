@@ -23,8 +23,6 @@ function DT1Page() {
 
   return (
     <AccueilPage
-      dtType="DT1"
-      onOptionPress={handleOptionPress}
       onBackPress={handleBackPress}
     />
   );

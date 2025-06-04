@@ -1,12 +1,11 @@
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import QRCodeScannerView from '../Scanner/QRCodeScannerView';
-
+import { FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useDiabetes } from '../../context/DiabetesContext';
 
 interface PatientListPageProps {
-  diabetesType: 'DT1' | 'DT2';
   onPatientPress: (patientId: string) => void;
   onBackPress: () => void;
   onAddPress: () => void;
@@ -20,40 +19,20 @@ interface Patient {
   patientId: string;
 }
 
-const PatientListPage: React.FC<PatientListPageProps> = ({ 
-  diabetesType, 
-  onPatientPress, 
+const PatientListPage: React.FC<PatientListPageProps> = ({
+  onPatientPress,
   onBackPress,
   onAddPress,
-  onQRCodeScan 
+  onQRCodeScan
 }) => {
-  // État pour contrôler l'affichage du scanner QR Code
-  const [showQRScanner, setShowQRScanner] = useState(false);
-  
-  // Fonction pour gérer le scan d'un QR Code
-  const handleQRCodeScan = (data: string) => {
-    // Fermer le scanner
-    setShowQRScanner(false);
-    
-    // Rechercher le patient par ID
-    const patient = patients.find(p => p.patientId === data);
-    
-    if (patient) {
-      // Si le patient est trouvé, appeler la fonction onPatientPress avec l'ID du patient
-      onPatientPress(patient.id);
-      Alert.alert('Patient trouvé', `Patient ${patient.name} identifié avec succès.`);
-    } else {
-      // Si le patient n'est pas trouvé, afficher une alerte
-      Alert.alert('Patient non trouvé', `Aucun patient trouvé avec l'ID: ${data}`);
-    }
-    
-    // Appeler la fonction de callback si elle existe
-    if (onQRCodeScan) {
-      onQRCodeScan(data);
-    } else {
-      // Sinon, afficher les données dans la console
-      console.log('QR Code scanné:', data);
-    }
+  const router = useRouter();
+  const diabetesType = useDiabetes().diabetesType;
+  const [showSearchbar, setShowSearchbar] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+
+  const gotoPatientScanner = () => {
+    router.push('/patient/scanner');
   };
   // Données de test pour les patients
   const patients: Patient[] = [
@@ -70,7 +49,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   ];
 
   const renderPatientItem = ({ item }: { item: Patient }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.patientItem}
       onPress={() => onPatientPress(item.id)}
     >
@@ -89,45 +68,66 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     </TouchableOpacity>
   );
 
+  const handleSearch = () => {
+    // Logique de recherche
+    console.log('Recherche:', searchQuery);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" hidden={false} />
-      
-      {/* Afficher le scanner QR Code si showQRScanner est true */}
-      {showQRScanner && (
-        <QRCodeScannerView 
-          onScan={handleQRCodeScan}
-          onClose={() => setShowQRScanner(false)}
-        />
-      )}
-      
+
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={onBackPress}
-        >
-          <Ionicons name="arrow-back" size={24} color="#212121" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Patients - Usagers</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={styles.headerButton}
-            onPress={() => setShowQRScanner(true)}
-          >
-            <FontAwesome5 name="qrcode" size={20} color="#E91E63" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton}>
-            <Ionicons name="search" size={24} color="#212121" />
-          </TouchableOpacity>
-        </View>
+
+        {showSearchbar ? (
+          <View style={styles.searchContainer}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => setShowSearchbar(false)}
+            >
+              <Ionicons name="arrow-back" size={24} color="#212121" />
+            </TouchableOpacity>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Rechercher un patient..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onChange={handleSearch}
+            />
+
+          </View>
+        ) : (
+          <>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={onBackPress}
+            >
+              <Ionicons name="arrow-back" size={24} color="#212121" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Patients - Usagers</Text>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={gotoPatientScanner}
+              >
+                <FontAwesome5 name="qrcode" size={20} color="#E91E63" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerButton} onPress={() => setShowSearchbar(true)}>
+                <Ionicons name="search" size={24} color="#212121" />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
       </View>
 
       {/* Type de diabète */}
       <View style={styles.diabetesTypeContainer}>
         <Text style={styles.diabetesTypeText}>Type: {diabetesType}</Text>
       </View>
-      
+
       {/* Actions Bar */}
       <View style={styles.actionsBar}>
         <TouchableOpacity style={styles.actionButton}>
@@ -142,7 +142,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
           <FontAwesome5 name="trash" size={20} color="#E91E63" />
         </TouchableOpacity>
       </View>
-      
+
       {/* Patient List */}
       <FlatList
         data={patients}
@@ -150,14 +150,14 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
       />
-      
+
       {/* Add Button */}
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={onAddPress}
-        >
-          <Ionicons name="add" size={30} color="#FFFFFF" />
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={onAddPress}
+      >
+        <Ionicons name="add" size={30} color="#FFFFFF" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -294,6 +294,23 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginRight: 10,
+  },
+  searchButton: {
+    padding: 10,
   },
 
 });

@@ -33,7 +33,7 @@ const ConsultationsPage: React.FC<ConsultationsPageProps> = ({ onOptionPress, on
           activeOpacity={0.7}
         >
           <View style={styles.iconContainer}>
-            <FontAwesome5 name="tachometer-alt" size={24} color="#D50000" />
+            <FontAwesome5 name="tachometer-alt" size={48} color="#D50000" />
           </View>
           <Text style={styles.optionText}>DT1</Text>
         </TouchableOpacity>
@@ -86,13 +86,13 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   optionCard: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
-    paddingVertical : 64,
-    marginBottom: 16,
+    paddingVertical : 20,
+    marginBottom: 20,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -102,16 +102,16 @@ const styles = StyleSheet.create({
     borderColor: '#FFCDD2',
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 80,
+    height: 80,
+    borderRadius: 50,
     backgroundColor: '#FFEBEE',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   optionText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '600',
     color: '#212121',
   },
