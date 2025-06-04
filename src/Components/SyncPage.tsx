@@ -57,7 +57,7 @@ const SyncPage = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Entypo name="chevron-left" size={28} color="#000" />
+          <Entypo name="chevron-left" size={28} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {selectedFolder ? selectedFolder : 'Synchronisation de fiche'}
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: 'red',
     elevation: 4,
   },
   backButton: {
@@ -161,6 +161,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '500',
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,

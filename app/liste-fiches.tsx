@@ -72,7 +72,7 @@ export default function ListeFichesScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3a7bd5" />
+      <StatusBar barStyle="light-content" backgroundColor="red" />
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -101,9 +101,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#3a7bd5',
-    paddingTop: 48,
-    paddingBottom: 16
+    backgroundColor: 'red',
+    paddingBottom: 10
   },
   backButton: {
     padding: 8,

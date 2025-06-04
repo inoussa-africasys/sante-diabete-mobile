@@ -124,11 +124,13 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
               style={styles.backButton}
               onPress={() => setShowSearchbar(false)}
             >
-              <Ionicons name="arrow-back" size={24} color="#212121" />
+              <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
             <TextInput
               style={styles.searchInput}
               placeholder="Rechercher un patient..."
+              placeholderTextColor="white"
+              
               value={searchQuery}
               onChangeText={handleSearch}
             />
@@ -140,7 +142,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
               style={styles.backButton}
               onPress={onBackPress}
             >
-              <Ionicons name="arrow-back" size={24} color="#212121" />
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Patients - Usagers</Text>
             <View style={styles.headerActions}>
@@ -148,10 +150,10 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                 style={styles.headerButton}
                 onPress={gotoPatientScanner}
               >
-                <FontAwesome5 name="qrcode" size={20} color="#E91E63" />
+                <FontAwesome5 name="qrcode" size={20} color="#CCC" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.headerButton} onPress={() => setShowSearchbar(true)}>
-                <Ionicons name="search" size={24} color="#212121" />
+                <Ionicons name="search" size={24} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
           </>
@@ -215,9 +217,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 15,
+    paddingVertical: 10,
     paddingHorizontal: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'red',
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
   },
@@ -227,7 +229,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#212121',
+    color: '#FFFFFF',
   },
   headerActions: {
     flexDirection: 'row',
@@ -341,15 +343,16 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'red',
   },
   searchInput: {
     flex: 1,
     height: 40,
-    borderWidth: 1,
     borderColor: '#EEEEEE',
-    borderRadius: 5,
+    backgroundColor: 'red',
+    color: 'white',
     paddingHorizontal: 10,
+    borderBottomWidth: 4,
     marginRight: 10,
   },
   searchButton: {

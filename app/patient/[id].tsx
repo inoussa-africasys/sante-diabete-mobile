@@ -45,15 +45,15 @@ export default function PatientDetailScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>TRAORE CITOA</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.headerButton}>
-            <Feather name="edit-2" size={24} color="#2196F3" />
+            <Feather name="edit-2" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerButton}>
-            <MaterialIcons name="delete" size={24} color="#E53935" />
+            <MaterialIcons name="delete" size={24} color="white" />
           </TouchableOpacity>
         </View>
       </View>
@@ -139,10 +139,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 40,
+    paddingTop: 10,
     paddingBottom: 15,
     paddingHorizontal: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'red',
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
   },
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: 'white',
   },
   headerActions: {
     flexDirection: 'row',

@@ -36,7 +36,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3a7bd5" />
+      <StatusBar barStyle="light-content" backgroundColor="red" />
       
       {/* Slide-out Menu */}
       <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }] }]}>
@@ -49,7 +49,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         <View style={{
           width: '100%',
           height: '15%',
-            backgroundColor: '#3a7bd5',
+            backgroundColor: 'red',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
   menuHeader: {
-    backgroundColor: '#3a7bd5',
+    backgroundColor: 'red',
     paddingVertical: 10,
     paddingHorizontal: 20,
     flexDirection: 'row',
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb'
   },
   header: {
-    backgroundColor: '#3a7bd5',
+    backgroundColor: 'red',
     paddingHorizontal: 16,
     paddingVertical: 10,
     flexDirection: 'row',

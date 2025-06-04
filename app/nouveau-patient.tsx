@@ -47,7 +47,7 @@ export default function NouveauPatientScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Nouveau Patient</Text>
         <View style={styles.headerRight} />
@@ -178,20 +178,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 40,
+    paddingTop: 10,
     paddingBottom: 15,
     paddingHorizontal: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'red',
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
   },
   backButton: {
     padding: 5,
+    color: 'white',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: 'white',
   },
   headerRight: {
     width: 34, // Pour équilibrer avec le bouton retour

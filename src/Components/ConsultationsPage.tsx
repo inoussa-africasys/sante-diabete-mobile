@@ -19,7 +19,7 @@ const ConsultationsPage: React.FC<ConsultationsPageProps> = ({ onOptionPress, on
           style={styles.backButton}
           onPress={onBackPress}
         >
-          <FontAwesome5 name="arrow-left" size={20} color="#212121" />
+          <FontAwesome5 name="arrow-left" size={20} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Consultations</Text>
       </View>
@@ -65,7 +65,8 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'red',
+    color: 'white',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
@@ -75,11 +76,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+    color: 'white',
   },
   headerTitle: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#212121',
+    color: 'white',
   },
   content: {
     flex: 1,
