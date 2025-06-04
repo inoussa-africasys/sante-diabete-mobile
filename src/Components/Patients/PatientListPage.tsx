@@ -4,6 +4,9 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useDiabetes } from '../../context/DiabetesContext';
+import Empty from '../Empty';
+import SyncLoader from '../SyncLoader';
+import SynchSucces from '../synchSucces';
 
 interface PatientListPageProps {
   onPatientPress: (patientId: string) => void;
@@ -19,6 +22,23 @@ interface Patient {
   patientId: string;
 }
 
+// Données de test pour les patients
+const patients: Patient[] = [
+  { id: '1', name: 'DIARRA Moussa', date: '2025-03-16', patientId: 'P-E428AA1C' },
+  { id: '2', name: 'KEITA Ramata', date: '2025-03-16', patientId: 'P-638799C5' },
+  { id: '3', name: 'TRAORE Hawa', date: '2025-03-16', patientId: 'P-72455E0F' },
+  { id: '4', name: 'Test Test', date: '2025-02-25', patientId: 'P-88DFD856' },
+  { id: '5', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+  { id: '6', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+  { id: '7', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+  { id: '8', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+  { id: '9', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+  { id: '10', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
+];
+
+
+
+
 const PatientListPage: React.FC<PatientListPageProps> = ({
   onPatientPress,
   onBackPress,
@@ -29,24 +49,41 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const diabetesType = useDiabetes().diabetesType;
   const [showSearchbar, setShowSearchbar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
+
+  const [filteredPatients, setFilteredPatients] = useState<Patient[]>(patients);
 
 
   const gotoPatientScanner = () => {
     router.push('/patient/scanner');
   };
-  // Données de test pour les patients
-  const patients: Patient[] = [
-    { id: '1', name: 'DIARRA Moussa', date: '2025-03-16', patientId: 'P-E428AA1C' },
-    { id: '2', name: 'KEITA Ramata', date: '2025-03-16', patientId: 'P-638799C5' },
-    { id: '3', name: 'TRAORE Hawa', date: '2025-03-16', patientId: 'P-72455E0F' },
-    { id: '4', name: 'Test Test', date: '2025-02-25', patientId: 'P-88DFD856' },
-    { id: '5', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-    { id: '6', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-    { id: '7', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-    { id: '8', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-    { id: '9', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-    { id: '10', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-  ];
+
+  const handleSearch = (text: string) => {
+    // Logique de recherche
+    console.log('Recherche:', text);
+    if (text === '') {
+      setFilteredPatients(patients)
+      setSearchQuery('')
+      return;
+    }
+    const filteredPs = patients.filter((patient) => patient.patientId.toLowerCase().includes(text.toLowerCase()));
+    console.log('Patients filtrés:', filteredPs);
+    setSearchQuery(text);
+    setFilteredPatients(filteredPs);
+  };
+
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    // Simulate sync process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsSyncing(false);
+    setSyncSuccess(true);
+  };
+
+
+
 
   const renderPatientItem = ({ item }: { item: Patient }) => (
     <TouchableOpacity
@@ -68,10 +105,10 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     </TouchableOpacity>
   );
 
-  const handleSearch = () => {
-    // Logique de recherche
-    console.log('Recherche:', searchQuery);
-  };
+
+
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -93,8 +130,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
               style={styles.searchInput}
               placeholder="Rechercher un patient..."
               value={searchQuery}
-              onChangeText={setSearchQuery}
-              onChange={handleSearch}
+              onChangeText={handleSearch}
             />
 
           </View>
@@ -130,11 +166,11 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
       {/* Actions Bar */}
       <View style={styles.actionsBar}>
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/liste-fiches?mode=vierge&dt=${diabetesType}`)}>
           <FontAwesome5 name="download" size={20} color="#4CAF50" />
         </TouchableOpacity>
         <View style={styles.actionDivider} />
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleSync}>
           <FontAwesome5 name="sync-alt" size={20} color="#4CAF50" />
         </TouchableOpacity>
         <View style={styles.actionDivider} />
@@ -145,11 +181,18 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
       {/* Patient List */}
       <FlatList
-        data={patients}
+        data={filteredPatients}
         renderItem={renderPatientItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
+        ListEmptyComponent={<Empty message="Aucun patient trouvé" icon={<Ionicons name="archive" size={76} color="#BDBDBD" />} />}
+
       />
+
+
+      {/* Success Modal */}
+      <SyncLoader isSyncing={isSyncing} />
+      <SynchSucces isSyncingSuccess={syncSuccess} setIsSyncingSuccess={setSyncSuccess} />
 
       {/* Add Button */}
       <TouchableOpacity

@@ -1,8 +1,8 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { useDiabetes } from '../src/context/DiabetesContext';
 import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useDiabetes } from '../src/context/DiabetesContext';
 
 // Liste temporaire des fiches (à remplacer par les vraies données)
 const fiches = {
@@ -25,13 +25,13 @@ export default function ListeFichesScreen() {
   const getHeaderTitle = () => {
     switch (mode) {
       case 'editer':
-        return `Éditer une fiche - ${diabetesType}`;
+        return `Éditer une fiche `;
       case 'remplir':
-        return `${mode === 'editer' ? 'Éditer' : 'Remplir'} une fiche - ${diabetesType}`;
+        return `${mode === 'remplir' ? 'Remplir' : 'Éditer'} une fiche `;
       case 'vierge':
-        return `Téléchargement de fiche - ${diabetesType}`;
+        return `Téléchargement de fiche `;
       default:
-        return `Liste des fiches - ${diabetesType}`;
+        return `Liste des fiches `;
     }
   };
 

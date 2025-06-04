@@ -38,6 +38,7 @@ export default function NouveauPatientScreen() {
     console.log('Prendre une photo');
   };
 
+  
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -98,23 +99,22 @@ export default function NouveauPatientScreen() {
             />
           </View>
 
-          <TouchableOpacity style={styles.genreContainer}>
+          <View style={styles.genreContainer}>
             <Text style={styles.genreLabel}>Genre</Text>
             <View style={styles.genreSelector}>
 
               <Picker
                 selectedValue={formData.genre}
                 onValueChange={(itemValue, itemIndex) => setFormData({...formData, genre: itemValue})}
-                style={{ height: 50, width: 200 }}
+                style={{ height: 50, width: "100%" }}
               >
                 <Picker.Item label="Sélectionner le genre" />
-                <Picker.Item label="Masculin" value="masculin" />
-                <Picker.Item label="Feminin" value="feminin" />
+                <Picker.Item label="Homme" value="H" />
+                <Picker.Item label="Femme" value="F" />
               </Picker>
 
-              <FontAwesome5 name="chevron-right" size={16} color="#666" />
             </View>
-          </TouchableOpacity>
+          </View>
 
           <View style={styles.inputContainer}>
             <FontAwesome5 name="briefcase" size={20} color="#666" />
@@ -156,7 +156,7 @@ export default function NouveauPatientScreen() {
               value={formData.commentaire}
               onChangeText={(text) => setFormData({...formData, commentaire: text})}
               multiline
-              numberOfLines={3}
+              numberOfLines={4}
             />
           </View>
 
