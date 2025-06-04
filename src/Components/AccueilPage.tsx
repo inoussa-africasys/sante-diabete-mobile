@@ -1,4 +1,5 @@
 import { Entypo, Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -44,6 +45,23 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
           <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
             <Entypo name="cross" size={28} color="#fff" />
           </TouchableOpacity>
+        </View>
+        <View style={{
+          width: '100%',
+          height: '15%',
+            backgroundColor: '#3a7bd5',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Image
+              source={require('../../assets/images/splash-icon-v2.png')}
+              style={{
+                width: 150,
+                height: 150,
+              }}
+              contentFit="contain"
+            />
+
         </View>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuItemText}>CONFIG QR CODE</Text>
@@ -179,7 +197,8 @@ const styles = StyleSheet.create({
   },
   menuHeader: {
     backgroundColor: '#3a7bd5',
-    padding: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
