@@ -1,7 +1,7 @@
 import { Entypo, Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StatusBar, StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions } from 'react-native';
+import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDiabetes } from '../context/DiabetesContext';
 
 interface AccueilPageProps {
@@ -73,6 +73,35 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         </TouchableOpacity>
       </View>
       <View style={styles.allContent}>
+
+      <View style={styles.gridContainer}>
+
+      <TouchableOpacity 
+            style={[styles.mediumButton]}
+            onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
+          >
+           <Feather 
+              name="edit" 
+              size={32} 
+              color="#2196F3" 
+            />
+            <Text style={styles.buttonText}>Remplir{"\n"}une fiche</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.mediumButton}
+            onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=editer`)}
+          >
+            <MaterialIcons 
+              name="edit" 
+              size={32} 
+              color="#FFA000" 
+            />
+            <Text style={[styles.buttonText, styles.amberText]}>Editer{"\n"}une fiche</Text>
+          </TouchableOpacity>
+      </View>
+
+        
         {/* Gros boutons */}
         <View style={styles.bigButtonsContainer}>
           <TouchableOpacity 
@@ -84,68 +113,26 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
               <Text style={styles.bigButtonText}>Patients</Text>
             </View>
           </TouchableOpacity>
-          
-          {/* <TouchableOpacity 
+
+          <TouchableOpacity 
             style={styles.bigButton}
-            onPress={() => console.log('Stock - à implémenter')}
+            onPress={() => router.push('/sync')}
           >
             <View style={styles.buttonContent}>
-              <MaterialCommunityIcons name="warehouse" size={40} color="#2196F3" />
-              <Text style={styles.bigButtonText}>Gestion de Stock</Text>
+              <Ionicons 
+                name="sync" 
+                size={40} 
+                color="#2196F3" 
+              />
+              <Text style={styles.bigButtonText}>Synchroniser</Text>
             </View>
-          </TouchableOpacity> */}
+          </TouchableOpacity>
+          
         </View>
         {/* Grille de petits boutons */}
         <View style={styles.gridContainer}>
-          {/* <TouchableOpacity 
-            style={styles.mediumButton}
-            onPress={() => console.log('Recherche - à implémenter')}
-          >
-            <Ionicons 
-              name="search" 
-              size={32} 
-              color="#2196F3" 
-            />
-            <Text style={styles.buttonText}>Recherche</Text>
-          </TouchableOpacity>
           <TouchableOpacity 
             style={styles.mediumButton}
-            onPress={() => console.log('Stock - à implémenter')}
-          >
-            <MaterialIcons 
-              name="medical-services" 
-              size={32} 
-              color="#2196F3" 
-            />
-            <Text style={styles.buttonText}>Stock{"\n"}médicaments</Text>
-          </TouchableOpacity>
- */}
-          <TouchableOpacity 
-            style={styles.smallButton}
-            onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
-          >
-            <Feather 
-              name="edit" 
-              size={32} 
-              color="#2196F3" 
-            />
-            <Text style={styles.buttonText}>Remplir{"\n"}une fiche</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.smallButton}
-            onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=editer`)}
-          >
-            <MaterialIcons 
-              name="edit" 
-              size={32} 
-              color="#FFA000" 
-            />
-            <Text style={[styles.buttonText, styles.amberText]}>Editer{"\n"}une fiche</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.smallButton}
             onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=vierge`)}
           >
             <Entypo 
@@ -155,6 +142,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
             />
             <Text style={styles.buttonText}>Fiche vierge</Text>
           </TouchableOpacity>
+
 
           <TouchableOpacity 
             style={[styles.mediumButton, styles.deleteButton]}
@@ -167,18 +155,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
             />
             <Text style={[styles.buttonText, styles.redText]}>Supprimer{"\n"}une fiche</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.mediumButton}
-            onPress={() => router.push('/sync')}
-          >
-            <Ionicons 
-              name="sync" 
-              size={32} 
-              color="#2196F3" 
-            />
-            <Text style={styles.buttonText}>Synchroniser</Text>
-          </TouchableOpacity>
+          
         </View>
       </View>
     </View>
