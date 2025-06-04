@@ -1,7 +1,7 @@
 import { Entypo, Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StatusBar, StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions } from 'react-native';
 import { useDiabetes } from '../context/DiabetesContext';
 
 interface AccueilPageProps {
@@ -12,6 +12,18 @@ interface AccueilPageProps {
 const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const router = useRouter();
   const { diabetesType } = useDiabetes();
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const slideAnim = React.useRef(new Animated.Value(-300)).current;
+
+  const toggleMenu = () => {
+    const toValue = menuOpen ? -300 : 0;
+    Animated.timing(slideAnim, {
+      toValue,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+    setMenuOpen(!menuOpen);
+  };
 
   const handlePatientPress = () => {
     router.push(`/liste-patient?dt=${diabetesType}`);
@@ -25,9 +37,34 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#3a7bd5" />
       
+      {/* Slide-out Menu */}
+      <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }] }]}>
+        <View style={styles.menuHeader}>
+          <Text style={styles.menuTitle}>Menu</Text>
+          <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
+            <Entypo name="cross" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>CONFIG QR CODE</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>UTILISATEUR</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>CHANGER DE PROFIL</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>TRAFIC ASSISTANT</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>ADMINISTRATION</Text>
+        </TouchableOpacity>
+      </Animated.View>
+
       {/* Header avec dégradé */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerButton}>
+        <TouchableOpacity style={styles.headerButton} onPress={toggleMenu}>
           <Entypo name="menu" size={28} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Accueil</Text>
@@ -133,7 +170,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 
           <TouchableOpacity 
             style={styles.mediumButton}
-            onPress={() => console.log('Synchronisation - à implémenter')}
+            onPress={() => router.push('/sync')}
           >
             <Ionicons 
               name="sync" 
@@ -149,6 +186,44 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 };
 
 const styles = StyleSheet.create({
+  menu: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 300,
+    backgroundColor: '#fff',
+    zIndex: 999,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  menuHeader: {
+    backgroundColor: '#3a7bd5',
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  menuTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  menuItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f9fafb'

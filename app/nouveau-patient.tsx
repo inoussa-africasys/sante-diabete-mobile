@@ -1,4 +1,5 @@
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -100,7 +101,17 @@ export default function NouveauPatientScreen() {
           <TouchableOpacity style={styles.genreContainer}>
             <Text style={styles.genreLabel}>Genre</Text>
             <View style={styles.genreSelector}>
-              <Text style={styles.genreText}>Sélectionner le genre</Text>
+
+              <Picker
+                selectedValue={formData.genre}
+                onValueChange={(itemValue, itemIndex) => setFormData({...formData, genre: itemValue})}
+                style={{ height: 50, width: 200 }}
+              >
+                <Picker.Item label="Sélectionner le genre" />
+                <Picker.Item label="Masculin" value="masculin" />
+                <Picker.Item label="Feminin" value="feminin" />
+              </Picker>
+
               <FontAwesome5 name="chevron-right" size={16} color="#666" />
             </View>
           </TouchableOpacity>
