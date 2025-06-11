@@ -1,4 +1,5 @@
 import { DatabaseConnection } from '../core/database/database';
+import { QueryBuilder } from '../core/database/QueryBuilder';
 import { BaseModel } from '../models/BaseModel';
 
 export class GenericRepository<T extends BaseModel> {
@@ -43,5 +44,10 @@ export class GenericRepository<T extends BaseModel> {
   findAll(): T[] {
     const results = this.db.getAllSync(`SELECT * FROM ${this.tableName}`);
     return results.map(this.modelFactory);
+  }
+
+
+  query(): QueryBuilder<T> {
+    return new QueryBuilder(this.tableName, this.db, this.modelFactory);
   }
 }

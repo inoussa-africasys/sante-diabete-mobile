@@ -1,9 +1,10 @@
 import { Entypo, Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDiabetes } from '../context/DiabetesContext';
+import { QRCodeRepository } from '../Repositories/QRCodeRepository';
 
 interface AccueilPageProps {
   onBackPress?: () => void;
@@ -33,6 +34,13 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const handleScannerPress = () => {
     router.push('/scanner');
   };
+
+
+  useEffect(() => {
+    const repo = new QRCodeRepository();
+    const qrCode = repo.findAll();
+    console.log('QR Code:', qrCode);
+  }, []);
 
   return (
     <View style={styles.container}>

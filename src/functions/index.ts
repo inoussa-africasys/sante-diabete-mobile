@@ -1,2 +1,2 @@
-export { decodeBase64, decoderQRCodeInformation, encodeBase64 } from './qrcodeFunctions';
+export { decodeBase64, decoderQRCodeInformation, encodeBase64, hashTo512 } from './qrcodeFunctions';
 
