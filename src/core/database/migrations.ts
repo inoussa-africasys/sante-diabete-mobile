@@ -1,66 +1,65 @@
-import { getDb } from './database';
+import { DatabaseConnection } from './database';
 
-export const initDB = async (): Promise<void> => {
-  const db = await getDb();
+export class Migration {
+  static initialize(): void {
+    console.log('Migration initialize');
+    const db = DatabaseConnection.getInstance();
+    console.log('db', db);
 
-  if (!db) {
-    throw new Error('Database instance is null');
+
+    db.execSync('BEGIN TRANSACTION');
+
+    try {
+      this.createConfigTable(db);
+      this.createQRCodeTable(db);
+      this.createPatientTable(db);
+
+      db.execSync('COMMIT');
+    } catch (error) {
+      console.error("Erreur lors de la migration : ", error);
+      db.execSync('ROLLBACK');
+    }
   }
 
-  await db.withTransactionAsync(async () => {
-    await db.execAsync(`
+
+  private static createConfigTable(db: any): void {
+    db.execSync(`
       CREATE TABLE IF NOT EXISTS config (
-        id TEXT PRIMARY KEY NOT NULL,
-        name VARCHAR(100),
-        value TEXT
-      );
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        value TEXT NOT NULL
+      )
     `);
+  }
 
-    await db.execAsync(`
+  private static createQRCodeTable(db: any): void {
+    db.execSync(`
       CREATE TABLE IF NOT EXISTS qr_codes (
-        id TEXT PRIMARY KEY NOT NULL,
-        url TEXT,
-        code TEXT,
-        username TEXT
-      );
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        url TEXT NOT NULL,
+        code TEXT NOT NULL,
+        username TEXT NOT NULL
+      )
     `);
+  }
 
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS organisations (
-        id TEXT PRIMARY KEY NOT NULL,
-        name VARCHAR(100)
-      );
-    `);
-
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY NOT NULL,
-        name VARCHAR(100),
-        email VARCHAR(100),
-        organisation_id TEXT,
-        created_at DATETIME,
-        updated_at DATETIME,
-        synced INTEGER DEFAULT 0,
-        CONSTRAINT fk_organisation_users FOREIGN KEY (organisation_id) REFERENCES organisations(id)
-      );
-    `);
-
-    await db.execAsync(`
+  private static createPatientTable(db: any): void {
+    db.execSync(`
       CREATE TABLE IF NOT EXISTS patients (
-        id TEXT PRIMARY KEY NOT NULL,
-        id_patient VARCHAR(100),
-        first_name VARCHAR(50),
-        last_name VARCHAR(60),
-        date DATE,
-        photo TEXT,
-        user_id TEXT,
-        status VARCHAR(20),
-        created_at DATETIME,
-        updated_at DATETIME,
-        last_synced_at DATETIME,
-        synced INTEGER DEFAULT 0,
-        CONSTRAINT fk_users_patients FOREIGN KEY (user_id) REFERENCES users(id)
-      );
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_patient TEXT NOT NULL,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        date TEXT NOT NULL,
+        photo TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        last_synced_at TEXT NOT NULL,
+        synced INTEGER NOT NULL
+      )
     `);
-  });
-};
+  }
+}

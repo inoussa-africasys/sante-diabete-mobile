@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SurveyJS Offline</title>
+
+  <!-- CSS -->
+  <link href="./survey-core.min.css" rel="stylesheet" />
+
+  <!-- JS -->
+  <script src="./survey.core.min.js"></script>
+  <script src="./survey-js-ui.min.js"></script>
+
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; }
+    #surveyContainer { height: 100vh; }
+  </style>
+</head>
+
+<body>
+  <div id="surveyContainer"></div>
+
+  <script>
+    function launchSurvey(surveyJSON) {
+      const model = new Survey.Model(surveyJSON);
+      model.onComplete.add(function (sender) {
+        if (window.ReactNativeWebView?.postMessage) {
+          window.ReactNativeWebView.postMessage(JSON.stringify(sender.data));
+        } else {
+          console.log("Résultat local :", sender.data);
+        }
+      });
+
+      // 🔥 AJOUT OBLIGATOIRE QUI MANQUAIT !!!
+      SurveyCore.StylesManager.applyTheme("defaultV2");
+
+
+      const survey = new SurveyUI.Survey(model);
+      survey.render("surveyContainer");
+    }
+
+    if (!window.ReactNativeWebView) {
+      // Mode test navigateur
+      launchSurvey({
+        title: "Formulaire de test",
+        pages: [{ name: "p1", elements: [{ type: "text", name: "q1", title: "Ton nom ?" }] }]
+      });
+    }
+
+    // Mode WebView React Native
+    document.addEventListener("message", function (event) {
+      const surveyJSON = JSON.parse(event.data);
+      launchSurvey(surveyJSON);
+    });
+  </script>
+</body>
+</html>

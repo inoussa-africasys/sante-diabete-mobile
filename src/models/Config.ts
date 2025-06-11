@@ -1,33 +1,12 @@
 import { BaseModel } from "./BaseModel";
 
-export default class Config implements BaseModel {
-    id: number | null;
+export default class Config extends BaseModel {
     name: string;
     value: string;
-  
-    constructor(name: string, value: string, id: number | null = null) {
-      this.id = id;
-      this.name = name;
-      this.value = value;
-    }
-  
-    toDB(): any[] {
-      return [
-        this.id,
-        this.name,
-        this.value,
-      ];
-    }
 
-    static columns(): string[] {
-      return [
-        'name',
-        'value',
-      ];
+    constructor(data?: Partial<Config>) {
+        super();
+        this.name = data?.name || '';
+        this.value = data?.value || '';
     }
-  
-    static fromRow(row: any): Config {
-      return new Config(row.name, row.value, row.id);
-    }
-  }
-  
+}

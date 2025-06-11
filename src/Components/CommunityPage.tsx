@@ -45,6 +45,14 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onOpenPress }) => {
 
         <TouchableOpacity 
           style={styles.button}
+          onPress={() => router.push('/dt/test2')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonText}>got to test2</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.button}
           onPress={onOpenPress}
           activeOpacity={0.8}
         >

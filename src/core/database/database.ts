@@ -1,25 +1,23 @@
 import { DATABASE_NAME } from '@/src/Constants/Database';
 import * as SQLite from 'expo-sqlite';
-import { initDB as initDBMigrations } from './migrations';
+import { Migration } from './migrations';
 
-let dbInstance: SQLite.SQLiteDatabase | null = null;
+export class DatabaseConnection {
+  private static instance: SQLite.SQLiteDatabase;
 
-export const initDB = async (): Promise<void> => {
-    try {
-        initDBMigrations();
-      console.log('[DB] Initialisation réussie');
-    } catch (error) {
-      console.error('[DB] Erreur d\'initialisation :', error);
+  static getInstance(): SQLite.SQLiteDatabase {
+    if (!DatabaseConnection.instance) {
+      DatabaseConnection.instance = SQLite.openDatabaseSync(DATABASE_NAME);
     }
-  };
-  
+    
+    return DatabaseConnection.instance;
+  }
 
-/**
- * Retourne l'instance SQLite unique.
- */
-export const getDb = async () => {
-    if (!dbInstance) {
-        dbInstance = await SQLite.openDatabaseAsync(DATABASE_NAME);
-    }
-    return dbInstance;
-};
+  static getDb(): SQLite.SQLiteDatabase {
+    return DatabaseConnection.getInstance();
+  }
+
+  static initDB(): void {
+    Migration.initialize();
+  }
+}
