@@ -1,5 +1,5 @@
-import React from 'react';
 import { router } from 'expo-router';
+import React from 'react';
 import AccueilPage from '../src/Components/AccueilPage';
 
 function DT2Page() {
@@ -23,7 +23,7 @@ function DT2Page() {
   };
 
   return (
-    <AccueilPage dtType="DT2" onOptionPress={() => {}} onBackPress={handleBackPress} />
+    <AccueilPage onBackPress={handleBackPress} />
   );
 }
 

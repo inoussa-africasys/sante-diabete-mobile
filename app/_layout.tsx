@@ -1,3 +1,4 @@
+import { AuthProvider } from '@/src/context/AuthContext';
 import { Migration } from '@/src/core/database/migrations';
 import { PatientRepository } from '@/src/Repositories/PatientRepository';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -42,9 +43,11 @@ export default function RootLayout() {
       {isAppReady &&
           <QueryClientProvider client={queryClient}>
             <DiabetesProvider>
-              <Stack screenOptions={{
-                headerShown : false
-              }} />
+              <AuthProvider>
+                <Stack screenOptions={{
+                  headerShown : false
+                }} />
+              </AuthProvider>
             </DiabetesProvider>
           </QueryClientProvider>
       }

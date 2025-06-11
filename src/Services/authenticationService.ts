@@ -3,16 +3,16 @@ import QRCode from "../models/QRCode";
 import { QRCodeRepository } from "../Repositories/QRCodeRepository";
 import { DiabeteType } from "../types/enums";
 
-export async function login(type: DiabeteType, qrCodeData: string): Promise<boolean> {
+export async function insertQRCode(type: DiabeteType, qrCodeData: string): Promise<string> {
     const {url, code, username} = decoderQRCodeInformation(qrCodeData);
-    const base64 = await hashTo512(code);
-    console.log('Code:', code);
-    console.log('Code hash:', base64);
-
+    console.log('url:', url);
+    console.log('code:', code);
+    console.log('username:', username);
+    const sha512 = await hashTo512(code);
+    console.log('sha512:', sha512);
     const repo = new QRCodeRepository();
-    await repo.insert(new QRCode({type, url, code: base64, username}));
-    console.log('QR Code enregistré');
-    return true;
+    await repo.insert(new QRCode({type, url, code: sha512, username}));
+    return sha512;
 }
 
 

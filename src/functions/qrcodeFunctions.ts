@@ -1,20 +1,10 @@
-import { decode as base64Decode, encode as base64Encode } from 'base-64';
 import * as Crypto from 'expo-crypto';
+import { QRCodeRepository } from '../Repositories/QRCodeRepository';
+import { DiabeteType } from '../types/enums';
 
 export function decoderQRCodeInformation(qrCode: string): {url: string, code: string, username: string} {
     const [url, code, username] = qrCode.split('|');
     return {url, code, username};
-}
-
-
-export function encodeBase64(data: string): string {
-    const encodedData = base64Encode(data);
-    return encodedData;
-}
-
-export function decodeBase64(data: string): string {
-    const decodedData = base64Decode(data);
-    return decodedData;
 }
 
 
@@ -29,4 +19,17 @@ export async function hashTo512(token: string): Promise<string> {
   return hash.padStart(32, '0');
 }
 
-  
+export function getAuthTokenKey(DiabeteType: DiabeteType): string {
+    return `auth_token_${DiabeteType.toLowerCase()}`;
+}
+
+export async function getBaseUrl(DiabeteType: DiabeteType): Promise<string | null> {
+    const repo = new QRCodeRepository();
+    const qrCode = await repo.findAll();
+    console.log('QR Code:', qrCode);
+    const baseUrl = qrCode.findLast((qrCode) => qrCode.type === DiabeteType)?.url || null;
+    console.log('Base URL:', baseUrl);
+    return baseUrl;
+}
+
+
