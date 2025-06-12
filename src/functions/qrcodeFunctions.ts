@@ -33,3 +33,24 @@ export async function getBaseUrl(DiabeteType: DiabeteType): Promise<string | nul
 }
 
 
+export function isValidURL(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url);
+
+    // Vérifie que le protocole est bien http ou https
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      return false;
+    }
+
+    // Vérifie que l'hôte existe (nom de domaine ou adresse IP)
+    if (!parsedUrl.hostname) {
+      return false;
+    }
+
+    // Si tout passe, c'est une URL valide
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+

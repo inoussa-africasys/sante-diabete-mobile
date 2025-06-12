@@ -1,3 +1,4 @@
+import { Images } from '@/src/Constants/Images';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
@@ -58,7 +59,7 @@ export default function NouveauPatientScreen() {
         <View style={styles.photoContainer}>
           <TouchableOpacity style={styles.photoButton} onPress={handlePhotoPress}>
             <Image 
-              source={require('../assets/images/user-icon.png')} 
+              source={Images.userIcon} 
               style={styles.photoImage}
             />
             <View style={styles.cameraIconContainer}>

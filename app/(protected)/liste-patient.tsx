@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import PatientListPage from '../src/Components/Patients/PatientListPage';
+import PatientListPage from '../../src/Components/Patients/PatientListPage';
 
 export default function ListePatientScreen() {
   

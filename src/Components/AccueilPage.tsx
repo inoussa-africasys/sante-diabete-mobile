@@ -3,8 +3,12 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 import { useDiabetes } from '../context/DiabetesContext';
 import { QRCodeRepository } from '../Repositories/QRCodeRepository';
+import { DiabeteType } from '../types/enums';
+import { ConfirmModal } from './Modal';
+import { useToast } from './Toast/ToastProvider';
 
 interface AccueilPageProps {
   onBackPress?: () => void;
@@ -16,6 +20,10 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const { diabetesType } = useDiabetes();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const slideAnim = React.useRef(new Animated.Value(-300)).current;
+  const { logout } = useAuth();
+  const [logoutModalVisible, setLogoutModalVisible] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const { showToast } = useToast();
 
   const toggleMenu = () => {
     const toValue = menuOpen ? -300 : 0;
@@ -42,7 +50,21 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     console.log('QR Code:', qrCode);
   }, []);
 
+  const handleLogout = () => {
+    setIsLoading(true);
+    logout({ diabetesType: diabetesType as DiabeteType });
+    setIsLoading(false);
+    router.replace('/'+diabetesType.toLowerCase());
+    showToast('Deconnexion reussie', 'success', 3000);
+  };
+
+
+  const handleCloseLogoutModal = () => {
+    setLogoutModalVisible(false);
+  };
+
   return (
+    <>
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="red" />
       
@@ -85,6 +107,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuItemText}>ADMINISTRATION</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => setLogoutModalVisible(true)}>
+          <Text style={styles.menuItemText} >DECONNEXION</Text>
         </TouchableOpacity>
       </Animated.View>
 
@@ -185,6 +210,17 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         </View>
       </View>
     </View>
+
+    <ConfirmModal 
+      type="danger"
+      onConfirm={handleLogout}
+      isVisible={logoutModalVisible} 
+      onClose={handleCloseLogoutModal}
+      title="Deconnexion reussie" 
+      message="Vous avez ete deconnecte" 
+      confirmText="OK"
+    />
+    </>
   );
 };
 

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 import "../assets/css/global.css";
 import FullScreenSplash from "../src/Components/FullScreenSplash";
+import { ToastProvider } from '../src/Components/Toast/ToastProvider';
 import { DiabetesProvider } from '../src/context/DiabetesContext';
 
 const queryClient = new QueryClient();
@@ -44,9 +45,11 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <DiabetesProvider>
               <AuthProvider>
-                <Stack screenOptions={{
-                  headerShown : false
-                }} />
+                <ToastProvider>
+                  <Stack screenOptions={{
+                    headerShown : false
+                  }} />
+                </ToastProvider>
               </AuthProvider>
             </DiabetesProvider>
           </QueryClientProvider>
