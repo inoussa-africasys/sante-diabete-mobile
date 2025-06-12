@@ -1,9 +1,10 @@
+import { useToast } from '@/src/Components/Toast';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useNetworkState } from 'expo-network';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDiabetes } from '../../src/context/DiabetesContext';
-
 // Liste temporaire des fiches (à remplacer par les vraies données)
 const fiches = {
   'DT1': [
@@ -19,8 +20,18 @@ const fiches = {
 export default function ListeFichesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const networkState = useNetworkState();
   const { diabetesType } = useDiabetes();
+  const Toast = useToast();
   const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge'].includes(params.mode)) ? params.mode : 'remplir';
+
+  useEffect(() => {
+    if (networkState && networkState.isConnected === false) {
+      router.replace('/errors/no-network');
+      Toast.showToast('Aucune connexion internet', 'error', 3000);
+    }
+  }, [networkState.isConnected]);
+
 
   const getHeaderTitle = () => {
     switch (mode) {
