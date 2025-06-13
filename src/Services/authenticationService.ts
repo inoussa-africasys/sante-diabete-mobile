@@ -16,11 +16,15 @@ export async function decodeCleanAndInsertQRCodeOnDB(type: DiabeteType, qrCodeDa
     const sha512 = await hashTo512(code);
     const repo = new QRCodeRepository();
     const qrCodes = await repo.findAll();
-    qrCodes.filter((qrCode) => qrCode.type === type).forEach((qrCode) => {
+    console.log('QR Codes:', qrCodes);
+    qrCodes.filter((qrCode) => qrCode.type == type).forEach((qrCode) => {
         repo.delete(qrCode.id!);
         console.log('Deleted QR Code:', qrCode);
     });
-    await repo.insert(new QRCode({type, url, code: sha512, username}));
+
+    console.log('Inserting QR Code:', {type, url, code: sha512, username});
+    repo.insert(new QRCode({type, url, code: sha512, username}));
+    console.log('Inserted QR Code : END');
     return {
         url,
         code,

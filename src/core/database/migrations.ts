@@ -13,6 +13,7 @@ export class Migration {
       this.createConfigTable(db);
       this.createQRCodeTable(db);
       this.createPatientTable(db);
+      this.createFicheTable(db);
 
       db.execSync('COMMIT');
     } catch (error) {
@@ -43,6 +44,18 @@ export class Migration {
       )
     `);
   }
+
+  private static createFicheTable(db: any): void {
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS fiches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type_diabete TEXT NOT NULL,
+        path TEXT       
+      )
+    `);
+  }
+
 
   private static createPatientTable(db: any): void {
     db.execSync(`

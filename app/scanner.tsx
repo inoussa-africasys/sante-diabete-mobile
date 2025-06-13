@@ -20,11 +20,15 @@ const ScannerScreen = () => {
 
   const handleScan = async (data: string) => {
     setIsLoading(true);
+    console.log('Scanning QR Code:', data);
     const {token, url,username} = await decodeCleanAndInsertQRCodeOnDB(diabetesType as DiabeteType, data);
+    console.log('Scanning QR Code:', token, url, username);
     setUsername(username);
     if(token) {
       if(isValidURL(url)) {
+        
         const loginResult = await login({baseUrl: url, token, diabetesType: diabetesType as DiabeteType});
+        console.log('Login Result:', loginResult);
         if(loginResult) {
           setLoginSuccess(true);
           } else {

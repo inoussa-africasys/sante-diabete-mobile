@@ -1,34 +1,45 @@
-import { useToast } from '@/src/Components/Toast';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { useNetworkState } from 'expo-network';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useToast } from '../../src/Components/Toast';
 import { useDiabetes } from '../../src/context/DiabetesContext';
-// Liste temporaire des fiches (à remplacer par les vraies données)
-const fiches = {
-  'DT1': [
-    { id: '1', name: 'dt1_donnees_administratives_v3' },
-    { id: '2', name: 'dt1_consultation_v3' }
-  ],
-  'DT2': [
-    { id: '3', name: 'dt2_donnees_administratives_v3' },
-    { id: '4', name: 'dt2_consultation_v3' }
-  ]
-};
+import FicheService from '../../src/Services/ficheService';
+
+
 
 export default function ListeFichesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const networkState = useNetworkState();
   const { diabetesType } = useDiabetes();
-  const Toast = useToast();
+  const { showToast } = useToast();
+
   const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge'].includes(params.mode)) ? params.mode : 'remplir';
 
+  const { data: fiches, isLoading, error } = useQuery({
+    queryKey: ['fiches'],
+    queryFn: async () => {
+      const fichesService = await FicheService.create();
+      const fichesArrayString = await fichesService.fetchAllFichesOnServerQuery();
+      await fichesService.insertAllFichesOnTheLocalDb(fichesArrayString);
+      return fichesArrayString;
+    },
+    enabled: networkState.isConnected === true,
+    retry: 2,
+
+  });
+
+  if (error) {
+    showToast('Erreur lors de la récupération des fiches', 'error', 3000);
+  }
+
   useEffect(() => {
-    if (networkState && networkState.isConnected === false) {
+    if (networkState.isConnected === false) {
       router.replace('/errors/no-network');
-      Toast.showToast('Aucune connexion internet', 'error', 3000);
+      showToast('Aucune connexion internet', 'error', 3000);
     }
   }, [networkState.isConnected]);
 
@@ -46,13 +57,11 @@ export default function ListeFichesScreen() {
     }
   };
 
-  const fichesForType = fiches[diabetesType];
 
-  const renderItem = ({ item }: { item: { id: string; name: string } }) => (
+  const renderItem = ({ item }: { item: string }) => (
     <TouchableOpacity 
       style={styles.item}
       onPress={() => {
-        // Ici on naviguerait vers le formulaire avec la fiche sélectionnée
         let action = '';
         switch (mode) {
           case 'editer':
@@ -65,13 +74,13 @@ export default function ListeFichesScreen() {
             action = 'Téléchargement';
             break;
         }
-        console.log(`${action} de la fiche:`, item.name);
-        // TODO: Ajouter la navigation vers le formulaire
+        console.log("action : ", action);
+        console.log("item : ", item);
       }}
     >
       <View style={styles.itemContent}>
         <MaterialIcons name="description" size={24} color="#2196F3" />
-        <Text style={styles.itemText}>{item.name}</Text>
+        <Text style={styles.itemText}>{item}</Text>
       </View>
       {mode === 'vierge' ? (
         <MaterialIcons name="file-download" size={24} color="#4CAF50" />
@@ -81,9 +90,47 @@ export default function ListeFichesScreen() {
     </TouchableOpacity>
   );
 
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
+        </View>
+        <View style={styles.centerContent}>
+          <ActivityIndicator size="large" color="#2196F3" />
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
+        </View>
+        <View style={styles.centerContent}>
+          <MaterialIcons name="error-outline" size={48} color="#f44336" />
+          <Text style={styles.errorText}>Une erreur est survenue</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="red" />
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -94,9 +141,9 @@ export default function ListeFichesScreen() {
         <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
       </View>
       <FlatList
-        data={fichesForType}
+        data={fiches || []}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item?.toString() || Math.random().toString()}
         contentContainerStyle={styles.list}
       />
     </View>
@@ -107,6 +154,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5'
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   header: {
     flexDirection: 'row',

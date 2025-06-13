@@ -1,18 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext } from 'react';
-import { VERSION_NAME } from '../Constants/App';
+import { ACTIVE_DIABETE_TYPE_KEY, AUTH_BASE_URL_KEY, VERSION_NAME } from '../Constants/App';
 import { getAuthTokenKey } from '../functions';
 import { DiabeteType } from '../types/enums';
 import { AuthContextType, AuthProviderProps, GetTokenParams, LoginParams, LogoutParams } from './AuthTypes';
 
 const AUTH_TOKEN_KEY = getAuthTokenKey(DiabeteType.DT1);
-const AUTH_BASE_URL_KEY = 'auth_base_url';
+
 const AUTH_QUERY_KEY = ['auth'];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 async function validateToken(baseUrl: string, token: string): Promise<boolean> {
+    
     console.log('Validation token en cours:', baseUrl, token);
     const response = await fetch(`${baseUrl}/api/json/mobile/authenticate?app_version=${VERSION_NAME}&token=${token}`, {
         method: 'POST',
@@ -70,14 +71,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
 
     // Fonction pour récupérer le token
-    const getToken = async ({diabetesType}: GetTokenParams): Promise<{token: string; baseUrl: string} | null> => {
+    const getToken = async (): Promise<string | null> => {
         try {
-            const [token, baseUrl] = await Promise.all([
-                SecureStore.getItemAsync(getAuthTokenKey(diabetesType)),
-                SecureStore.getItemAsync(AUTH_BASE_URL_KEY)
-            ]);
-            if (!token || !baseUrl) return null;
-            return {token, baseUrl};
+            console.log("BEGIN getToken");
+            // Get active diabetes type from secure storage
+            const activeDiabetesType = await SecureStore.getItemAsync(ACTIVE_DIABETE_TYPE_KEY);
+            console.log("Active diabetes type:", activeDiabetesType);
+            
+            if (!activeDiabetesType) {
+                console.error('No active diabetes type found');
+                return null;
+            }
+
+            const token = await SecureStore.getItemAsync(getAuthTokenKey(activeDiabetesType as DiabeteType));
+            console.log("token:", token);
+
+            if (!token) {
+                console.error('No token found for diabetes type:', activeDiabetesType);
+                return null;
+            }
+
+            return token;
         } catch (error) {
             console.error('Erreur lors de la récupération du token:', error);
             return null;
