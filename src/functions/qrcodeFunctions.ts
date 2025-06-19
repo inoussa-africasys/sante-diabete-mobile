@@ -23,6 +23,11 @@ export function getAuthTokenKey(DiabeteType: DiabeteType): string {
     return `auth_token_${DiabeteType.toLowerCase()}`;
 }
 
+
+export function getUserNameKey(DiabeteType: DiabeteType): string {
+  return `user_name_${DiabeteType.toLowerCase()}`;
+}
+
 export async function getBaseUrl(DiabeteType: DiabeteType): Promise<string | null> {
     const repo = new QRCodeRepository();
     const qrCode = await repo.findAll();

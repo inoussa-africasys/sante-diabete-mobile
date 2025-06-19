@@ -24,6 +24,8 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const [logoutModalVisible, setLogoutModalVisible] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const { showToast } = useToast();
+  const { userName } = useAuth();
+  const [userNameValue, setUserNameValue] = React.useState<string | null>(null);
 
   const toggleMenu = () => {
     const toValue = menuOpen ? -300 : 0;
@@ -48,6 +50,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     const repo = new QRCodeRepository();
     const qrCode = repo.findAll();
     console.log('QR Code:', qrCode);
+    userName().then((name) => setUserNameValue(name));
   }, []);
 
   const handleLogout = () => {
@@ -71,7 +74,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
       {/* Slide-out Menu */}
       <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }] }]}>
         <View style={styles.menuHeader}>
-          <Text style={styles.menuTitle}>Menu</Text>
+          <Text style={styles.menuTitle}> {userNameValue ?? 'Menu'} - {diabetesType}</Text>
           <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
             <Entypo name="cross" size={28} color="#fff" />
           </TouchableOpacity>
@@ -98,9 +101,6 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuItemText}>UTILISATEUR</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>CHANGER DE PROFIL</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuItemText}>TRAFIC ASSISTANT</Text>

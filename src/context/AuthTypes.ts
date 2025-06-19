@@ -4,6 +4,7 @@ export interface LoginParams {
     baseUrl: string;
     token: string;
     diabetesType: DiabeteType;
+    userName: string;
 }
 
 export interface LogoutParams {
@@ -23,6 +24,7 @@ export interface AuthContextType {
     // Mutations pour login/logout avec leurs états
     login: (params: LoginParams) => Promise<boolean>;
     logout: (params: LogoutParams) => Promise<boolean>;
+    userName: () => Promise<string | null>;
     
     // Récupération du token
     getToken: () => Promise<string | null>;

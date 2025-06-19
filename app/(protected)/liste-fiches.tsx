@@ -1,47 +1,33 @@
+import Fiche from '@/src/models/Fiche';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
-import { useNetworkState } from 'expo-network';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useToast } from '../../src/Components/Toast';
-import { useDiabetes } from '../../src/context/DiabetesContext';
-import FicheService from '../../src/Services/ficheService';
-
+import { useFiche } from '../../src/Hooks/useFiche';
 
 
 export default function ListeFichesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const networkState = useNetworkState();
-  const { diabetesType } = useDiabetes();
   const { showToast } = useToast();
+  const { getAllFicheDownloaded, isLoading, error } = useFiche();
+  const [fiches, setFiches] = React.useState<Fiche[]>([]);
 
   const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge'].includes(params.mode)) ? params.mode : 'remplir';
 
-  const { data: fiches, isLoading, error } = useQuery({
-    queryKey: ['fiches'],
-    queryFn: async () => {
-      const fichesService = await FicheService.create();
-      const fichesArrayString = await fichesService.fetchAllFichesOnServerQuery();
-      await fichesService.insertAllFichesOnTheLocalDb(fichesArrayString);
-      return fichesArrayString;
-    },
-    enabled: networkState.isConnected === true,
-    retry: 2,
-
+ useEffect(() => {
+  getAllFicheDownloaded().then((fiches) => {
+    console.log("fiches downloaded: ", fiches);
+    setFiches(fiches);
   });
+ }, []);
+
+
 
   if (error) {
     showToast('Erreur lors de la récupération des fiches', 'error', 3000);
   }
-
-  useEffect(() => {
-    if (networkState.isConnected === false) {
-      router.replace('/errors/no-network');
-      showToast('Aucune connexion internet', 'error', 3000);
-    }
-  }, [networkState.isConnected]);
 
 
   const getHeaderTitle = () => {
@@ -81,6 +67,39 @@ export default function ListeFichesScreen() {
       <View style={styles.itemContent}>
         <MaterialIcons name="description" size={24} color="#2196F3" />
         <Text style={styles.itemText}>{item}</Text>
+      </View>
+      {mode === 'vierge' ? (
+        <MaterialIcons name="file-download" size={24} color="#4CAF50" />
+      ) : (
+        <Ionicons name="chevron-forward" size={24} color="#666" />
+      )}
+    </TouchableOpacity>
+  );
+
+
+  const renderItemFiche = ({ item }: { item: Fiche }) => (
+    <TouchableOpacity 
+      style={styles.item}
+      onPress={() => {
+        let action = '';
+        switch (mode) {
+          case 'editer':
+            action = 'Édition';
+            break;
+          case 'remplir':
+            action = 'Remplissage';
+            break;
+          case 'vierge':
+            action = 'Téléchargement';
+            break;
+        }
+        console.log("action : ", action);
+        console.log("item : ", item);
+      }}
+    >
+      <View style={styles.itemContent}>
+        <MaterialIcons name="description" size={24} color="#2196F3" />
+        <Text style={styles.itemText}>{item.name}</Text>
       </View>
       {mode === 'vierge' ? (
         <MaterialIcons name="file-download" size={24} color="#4CAF50" />
@@ -141,9 +160,9 @@ export default function ListeFichesScreen() {
         <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
       </View>
       <FlatList
-        data={fiches || []}
-        renderItem={renderItem}
-        keyExtractor={(item) => item?.toString() || Math.random().toString()}
+        data={fiches}
+        renderItem={renderItemFiche}
+        keyExtractor={(item) => item.name?.toString() || Math.random().toString()}
         contentContainerStyle={styles.list}
       />
     </View>

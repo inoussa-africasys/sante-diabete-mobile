@@ -3,16 +3,18 @@ import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext } from 'react';
 import { ACTIVE_DIABETE_TYPE_KEY, AUTH_BASE_URL_KEY, VERSION_NAME } from '../Constants/App';
 import { getAuthTokenKey } from '../functions';
+import { getUserNameKey } from '../functions/qrcodeFunctions';
 import { DiabeteType } from '../types/enums';
-import { AuthContextType, AuthProviderProps, GetTokenParams, LoginParams, LogoutParams } from './AuthTypes';
+import { AuthContextType, AuthProviderProps, LoginParams, LogoutParams } from './AuthTypes';
 
-const AUTH_TOKEN_KEY = getAuthTokenKey(DiabeteType.DT1);
+
 
 const AUTH_QUERY_KEY = ['auth'];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 async function validateToken(baseUrl: string, token: string): Promise<boolean> {
+
     
     console.log('Validation token en cours:', baseUrl, token);
     const response = await fetch(`${baseUrl}/api/json/mobile/authenticate?app_version=${VERSION_NAME}&token=${token}`, {
@@ -32,6 +34,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: isAuthenticated = false } = useQuery({
         queryKey: AUTH_QUERY_KEY,
         queryFn: async () => {
+            const activeDiabetesType = await SecureStore.getItemAsync(ACTIVE_DIABETE_TYPE_KEY);
+            if (!activeDiabetesType) {
+                console.error('No active diabetes type found');
+                return false;
+            }
+            const AUTH_TOKEN_KEY = getAuthTokenKey(activeDiabetesType as DiabeteType);
+            
             const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
             const baseUrl = await SecureStore.getItemAsync(AUTH_BASE_URL_KEY);
             if (!token || !baseUrl) return false;
@@ -41,12 +50,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Mutation pour la connexion
     const { mutateAsync: login } = useMutation({
-        mutationFn: async ({ baseUrl, token,diabetesType }: LoginParams) => {
+        mutationFn: async ({ baseUrl, token,diabetesType,userName }: LoginParams) => {
             const isValid = await validateToken(baseUrl, token);
             if (isValid) {
                 console.log('Token valide');
                 await SecureStore.setItemAsync(getAuthTokenKey(diabetesType), token);
                 await SecureStore.setItemAsync(AUTH_BASE_URL_KEY, baseUrl);
+                await SecureStore.setItemAsync(getUserNameKey(diabetesType), userName);
                 console.log('Token et URL stockés');
                 return true;
             }
@@ -98,11 +108,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
+    const userName = async (): Promise<string | null> => {
+        try {
+           
+            const activeDiabetesType = await SecureStore.getItemAsync(ACTIVE_DIABETE_TYPE_KEY);
+            
+            if (!activeDiabetesType) {
+                console.error('No active diabetes type found');
+                return null;
+            }
+
+
+            const userName = await SecureStore.getItemAsync(getUserNameKey(activeDiabetesType as DiabeteType));
+            console.log("userName:", userName);
+
+            if (!userName) {
+                console.error('No userName found for diabetes type:', activeDiabetesType);
+                return null;
+            }
+
+            return userName;
+        } catch (error) {
+            console.error('Erreur lors de la récupération du userName:', error);
+            return null;
+        }
+    };
+
     const value = {
         isAuthenticated,
         login,
         logout,
         getToken,
+        userName,
     };
 
     return (

@@ -54,7 +54,9 @@ export class Migration {
         type_diabete TEXT NOT NULL,
         data TEXT NULL,
         is_downloaded BOOLEAN DEFAULT false,
-        path TEXT       
+        path TEXT NULL,
+        createdAt DATETIME NOT NULL,
+        updatedAt DATETIME NOT NULL      
       )
     `);
   }
@@ -67,13 +69,13 @@ export class Migration {
         id_patient TEXT NOT NULL,
         first_name TEXT NOT NULL,
         last_name TEXT NOT NULL,
-        date TEXT NOT NULL,
+        date DATETIME NOT NULL,
         photo TEXT NOT NULL,
         user_id TEXT NOT NULL,
         status TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        last_synced_at TEXT NOT NULL,
+        createdAt DATETIME NOT NULL,
+        updatedAt DATETIME NOT NULL,
+        lastSyncedAt DATETIME NOT NULL,
         synced INTEGER NOT NULL
       )
     `);

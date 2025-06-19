@@ -8,6 +8,7 @@ type UseFicheType = {
   isLoading: boolean;
   error: string | null;
   downloadFiche: (ficheName: string) => Promise<Fiche | null>;
+  getAllFicheDownloaded: () => Promise<Fiche[]>;
 }
 export const useFiche = (): UseFicheType => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -43,11 +44,27 @@ export const useFiche = (): UseFicheType => {
       }
   };
 
+  const getAllFicheDownloaded = async (): Promise<Fiche[]> => {
+    try {
+      setIsLoading(true);
+      const fichesService = await FicheService.create();
+      const fiches = await fichesService.getAllFicheDownloaded();
+      setIsLoading(false);
+      return fiches;
+    } catch (error) {
+      console.error('Erreur réseau :', error);
+      setError(error as string);
+      setIsLoading(false);
+      return [];
+    }
+  };
+
 
   return {
     getFicheList,
     isLoading,
     error,
-    downloadFiche
+    downloadFiche,
+    getAllFicheDownloaded
   };
 };

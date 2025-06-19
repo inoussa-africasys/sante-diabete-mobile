@@ -27,7 +27,7 @@ const ScannerScreen = () => {
     if(token) {
       if(isValidURL(url)) {
         
-        const loginResult = await login({baseUrl: url, token, diabetesType: diabetesType as DiabeteType});
+        const loginResult = await login({baseUrl: url, token, diabetesType: diabetesType as DiabeteType, userName: username});
         console.log('Login Result:', loginResult);
         if(loginResult) {
           setLoginSuccess(true);
