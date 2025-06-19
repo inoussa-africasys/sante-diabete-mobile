@@ -71,10 +71,18 @@ export class Migration {
         photo TEXT,
         last_name VARCHAR(40),
         first_name VARCHAR(60),
+        genre VARCHAR(10),
+        profession VARCHAR(100),
+        phone VARCHAR(20),
+        email VARCHAR(100),
+        comment VARCHAR(255),
         trafic_user VARCHAR(80),
         status VARCHAR(16),
         type_diabete VARCHAR(10),
+        longitude REAL,
+        latitude REAL,
         synced BOOLEAN NOT NULL DEFAULT false,
+        createdBy VARCHAR(80),
         createdAt DATETIME NOT NULL,
         updatedAt DATETIME NOT NULL
       )

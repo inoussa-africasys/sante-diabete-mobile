@@ -13,3 +13,6 @@ export const API_HEADER = {
     'Accept': 'application/json',
 };
 
+export const PATH_OF_PATIENTS_DIR_ON_THE_LOCAL = "Trafic/patients/instances";
+
+

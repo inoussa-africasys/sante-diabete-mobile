@@ -1,3 +1,4 @@
+import { formatPatientDate } from '@/src/functions/helpers';
 import Patient from '@/src/models/Patient';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -17,27 +18,7 @@ interface PatientListPageProps {
   onQRCodeScan?: (data: string) => void;
 }
 
-/* interface Patient {
-  id: string;
-  name: string;
-  date: string;
-  patientId: string;
-} */
 
-// Données de test pour les patients
-/* const patients: Patient[] = [
-  { id: '1', name: 'DIARRA Moussa', date: '2025-03-16', patientId: 'P-E428AA1C' },
-  { id: '2', name: 'KEITA Ramata', date: '2025-03-16', patientId: 'P-638799C5' },
-  { id: '3', name: 'TRAORE Hawa', date: '2025-03-16', patientId: 'P-72455E0F' },
-  { id: '4', name: 'Test Test', date: '2025-02-25', patientId: 'P-88DFD856' },
-  { id: '5', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-  { id: '6', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-  { id: '7', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-  { id: '8', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-  { id: '9', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-  { id: '10', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
-];
- */
 
 
 
@@ -60,11 +41,19 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
 
   useEffect(() => {
-    getAllOnTheLocalDbPatients().then((p) => {
-      setPatients(p);
-    });
-    setFilteredPatients(patients);
-  }, []);
+    const fetchPatients = async () => {
+      try {
+        const p = await getAllOnTheLocalDbPatients();
+        console.log('Patients List:', p);
+        setPatients(p);
+        setFilteredPatients(p); // Mettre à jour filteredPatients avec les données récupérées
+      } catch (error) {
+        console.error('Erreur lors de la récupération des patients:', error);
+      }
+    };
+    
+    fetchPatients();
+  }, []); // Supprimer getAllOnTheLocalDbPatients des dépendances
 
 
   const gotoPatientScanner = () => {
@@ -79,7 +68,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       setSearchQuery('')
       return;
     }
-    const filteredPs = patients.filter((patient) => patient.patientId.toLowerCase().includes(text.toLowerCase()));
+    const filteredPs = patients.filter((patient) => patient.id_patient.toLowerCase().includes(text.toLowerCase()));
     console.log('Patients filtrés:', filteredPs);
     setSearchQuery(text);
     setFilteredPatients(filteredPs);
@@ -100,16 +89,16 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const renderPatientItem = ({ item }: { item: Patient }) => (
     <TouchableOpacity
       style={styles.patientItem}
-      onPress={() => onPatientPress(item.id)}
+      onPress={() => onPatientPress(item.id_patient)}
     >
       <View style={styles.patientInfo}>
-        <Text style={styles.patientName}>{item.name}</Text>
+        <Text style={styles.patientName}>{item.last_name.toUpperCase()} {item.first_name}</Text>
         <View style={styles.patientDetails}>
           <View style={styles.dateContainer}>
-            <Text style={styles.dateText}>Date: {item.date}</Text>
+            <Text style={styles.dateText}>Date: {formatPatientDate(item.date_of_birth)}</Text>
           </View>
           <View style={styles.idContainer}>
-            <Text style={styles.idText}>ID: {item.patientId}</Text>
+            <Text style={styles.idText}>ID: {item.id_patient}</Text>
           </View>
         </View>
       </View>
@@ -197,7 +186,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       <FlatList
         data={filteredPatients}
         renderItem={renderPatientItem}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id_patient}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={<Empty message="Aucun patient trouvé" icon={<Ionicons name="archive" size={76} color="#BDBDBD" />} />}
 

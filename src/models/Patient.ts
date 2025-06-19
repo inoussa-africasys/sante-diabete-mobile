@@ -4,13 +4,21 @@ export default class Patient extends BaseModel {
 
     id_patient: string;
     date_of_birth: string;
-    photo: string;
+    photo?: string;
     last_name: string;
     first_name: string;
     trafic_user: string;
     status: string;
     synced: boolean;
     type_diabete: string;
+    genre: string;
+    profession: string;
+    phone: string;
+    email: string;
+    comment: string;
+    createdBy: string;
+    latitude?: number;
+    longitude?: number;
 
     constructor(data?: Partial<Patient>) {
         super();
@@ -26,5 +34,13 @@ export default class Patient extends BaseModel {
         this.type_diabete = data?.type_diabete || '';
         this.createdAt = data?.createdAt;
         this.updatedAt = data?.updatedAt;
+        this.genre = data?.genre || '';
+        this.profession = data?.profession || '';
+        this.phone = data?.phone || '';
+        this.email = data?.email || '';
+        this.comment = data?.comment || '';
+        this.createdBy = data?.createdBy || '';
+        this.latitude = data?.latitude || undefined;
+        this.longitude = data?.longitude || undefined;
     }
 }

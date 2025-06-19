@@ -1,11 +1,12 @@
 import { VERSION_NAME } from "../../Constants/App";
-import { getBaseUrl, getDiabetesType, getToken } from "../../functions/auth";
+import { getBaseUrl, getConnectedUsername, getDiabetesType, getToken } from "../../functions/auth";
 
 abstract class BaseService {
     protected type_diabete!: string;
     protected baseUrl!: string;
     protected token!: string;
     protected endUrl!: string;
+    protected connectedUsername!: string;
 
     // ⬇️ Méthode appelée après l'instanciation
     protected async initialize(): Promise<void> {
@@ -13,7 +14,7 @@ abstract class BaseService {
         this.type_diabete = await getDiabetesType();
         this.token = await getToken();
         this.endUrl = `?token=${this.token}&app_version=${VERSION_NAME}`;
-        
+        this.connectedUsername = await getConnectedUsername();
     }
 
     static async create<T extends BaseService>(this: new () => T): Promise<T> {
