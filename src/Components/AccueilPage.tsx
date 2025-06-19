@@ -184,7 +184,10 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         <View style={styles.gridContainer}>
           <TouchableOpacity 
             style={styles.mediumButton}
-            onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=vierge`)}
+            onPress={() => {
+              return router.push(`/download-fiche`)
+              /* return router.push(`/liste-fiches?dt=${diabetesType}&mode=vierge`) */
+            }}
           >
             <Entypo 
               name="download" 

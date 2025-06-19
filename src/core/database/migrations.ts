@@ -9,6 +9,7 @@ export class Migration {
 
     db.execSync('BEGIN TRANSACTION');
 
+
     try {
       this.createConfigTable(db);
       this.createQRCodeTable(db);
@@ -51,6 +52,8 @@ export class Migration {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         type_diabete TEXT NOT NULL,
+        data TEXT NULL,
+        is_downloaded BOOLEAN DEFAULT false,
         path TEXT       
       )
     `);
@@ -75,4 +78,28 @@ export class Migration {
       )
     `);
   }
+
+
+
+  static resetDatabase() {
+    const db = DatabaseConnection.getInstance();
+
+    // Récupère toutes les tables sauf les internes (sqlite_sequence, etc.)
+    const tables = db.getAllSync(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name NOT LIKE 'sqlite_%'
+    `);
+
+    for (const table of tables) {
+      db.runSync(`DROP TABLE IF EXISTS ${table.name}`);
+      console.log(`Table ${table.name} supprimée.`);
+    }
+
+    console.log("✅ Toutes les tables supprimées.");
+
+    // Ensuite, relancer la création des tables
+    this.initialize();
+  }
+
+
 }
