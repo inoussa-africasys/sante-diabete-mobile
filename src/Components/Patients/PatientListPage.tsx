@@ -1,8 +1,10 @@
+import Patient from '@/src/models/Patient';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { usePatient } from '../../Hooks/usePatient';
 import { useDiabetes } from '../../context/DiabetesContext';
 import Empty from '../Empty';
 import SyncLoader from '../SyncLoader';
@@ -15,15 +17,15 @@ interface PatientListPageProps {
   onQRCodeScan?: (data: string) => void;
 }
 
-interface Patient {
+/* interface Patient {
   id: string;
   name: string;
   date: string;
   patientId: string;
-}
+} */
 
 // Données de test pour les patients
-const patients: Patient[] = [
+/* const patients: Patient[] = [
   { id: '1', name: 'DIARRA Moussa', date: '2025-03-16', patientId: 'P-E428AA1C' },
   { id: '2', name: 'KEITA Ramata', date: '2025-03-16', patientId: 'P-638799C5' },
   { id: '3', name: 'TRAORE Hawa', date: '2025-03-16', patientId: 'P-72455E0F' },
@@ -35,7 +37,7 @@ const patients: Patient[] = [
   { id: '9', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
   { id: '10', name: 'Traore Lanssina', date: '2025-02-24', patientId: 'P-CC46CBF6' },
 ];
-
+ */
 
 
 
@@ -51,8 +53,18 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>([]);
 
-  const [filteredPatients, setFilteredPatients] = useState<Patient[]>(patients);
+  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
+  const { getAllOnTheLocalDbPatients } = usePatient();
+
+
+  useEffect(() => {
+    getAllOnTheLocalDbPatients().then((p) => {
+      setPatients(p);
+    });
+    setFilteredPatients(patients);
+  }, []);
 
 
   const gotoPatientScanner = () => {

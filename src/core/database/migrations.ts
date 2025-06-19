@@ -66,17 +66,17 @@ export class Migration {
     db.execSync(`
       CREATE TABLE IF NOT EXISTS patients (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_patient TEXT NOT NULL,
-        first_name TEXT NOT NULL,
-        last_name TEXT NOT NULL,
-        date DATETIME NOT NULL,
-        photo TEXT NOT NULL,
-        user_id TEXT NOT NULL,
-        status TEXT NOT NULL,
+        id_patient VARCHAR(30) UNIQUE,
+        date_of_birth DATE,
+        photo TEXT,
+        last_name VARCHAR(40),
+        first_name VARCHAR(60),
+        trafic_user VARCHAR(80),
+        status VARCHAR(16),
+        type_diabete VARCHAR(10),
+        synced BOOLEAN NOT NULL DEFAULT false,
         createdAt DATETIME NOT NULL,
-        updatedAt DATETIME NOT NULL,
-        lastSyncedAt DATETIME NOT NULL,
-        synced INTEGER NOT NULL
+        updatedAt DATETIME NOT NULL
       )
     `);
   }

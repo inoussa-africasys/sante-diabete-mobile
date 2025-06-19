@@ -1,30 +1,30 @@
 import { BaseModel } from "./BaseModel";
 
 export default class Patient extends BaseModel {
+
     id_patient: string;
-    first_name: string;
-    last_name: string;
-    date: string;
+    date_of_birth: string;
     photo: string;
-    user_id: string;
+    last_name: string;
+    first_name: string;
+    trafic_user: string;
     status: string;
-    created_at: string;
-    updated_at: string;
-    last_synced_at: string;
-    synced: number;
+    synced: boolean;
+    type_diabete: string;
 
     constructor(data?: Partial<Patient>) {
         super();
+        this.id = data?.id ;
         this.id_patient = data?.id_patient || '';
         this.first_name = data?.first_name || '';
         this.last_name = data?.last_name || '';
-        this.date = data?.date || '';
+        this.date_of_birth = data?.date_of_birth || '';
         this.photo = data?.photo || '';
-        this.user_id = data?.user_id || '';
+        this.trafic_user = data?.trafic_user || '';
         this.status = data?.status || '';
-        this.created_at = data?.created_at || '';
-        this.updated_at = data?.updated_at || '';
-        this.last_synced_at = data?.last_synced_at || '';
-        this.synced = data?.synced || 0;
+        this.synced = data?.synced || false;
+        this.type_diabete = data?.type_diabete || '';
+        this.createdAt = data?.createdAt;
+        this.updatedAt = data?.updatedAt;
     }
 }
