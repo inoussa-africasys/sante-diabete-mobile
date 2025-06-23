@@ -16,6 +16,10 @@ export class PatientRepository extends GenericRepository<Patient> {
     return this.modelFactory(result);
   }
 
+  async findByPatientId(id_patient: string): Promise<Patient> {
+    const result = this.db.getFirstSync(`SELECT * FROM ${this.tableName} WHERE id_patient = ?`, [id_patient]);
+    return this.modelFactory(result);
+  }
 
 
 }

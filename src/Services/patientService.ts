@@ -185,6 +185,20 @@ export default class PatientService extends Service {
           console.error("❌ Erreur lors de la suppression du fichier JSON :", error);
         }
       }
+
+      async getPatient(id_patient: string): Promise<Patient | null> {
+        try {
+          const patient = await this.patientRepository.findByPatientId(id_patient);
+          if (!patient) {
+            console.error("❌ Patient non trouvé :", id_patient);
+            return null;
+          }
+          return patient;
+        } catch (error) {
+          console.error("❌ Erreur lors de la lecture du fichier JSON :", error);
+          return null;
+        }
+      }
       
 
       

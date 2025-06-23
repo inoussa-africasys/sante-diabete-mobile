@@ -15,9 +15,7 @@ export class FicheRepository extends GenericRepository<Fiche> {
   }
 
   public findAllDownloadedAndNotEmptyFiche(type_diabete: string): Fiche[] {
-    console.log("type_diabete : ", type_diabete);
     const result = this.db.getAllSync(`SELECT * FROM ${this.tableName} WHERE type_diabete = ? AND is_downloaded = true AND data IS NOT NULL`, [type_diabete]);
-    console.log("result : ", result);
     return result.map((item) => this.modelFactory(item));
   }
 
@@ -41,12 +39,10 @@ export class FicheRepository extends GenericRepository<Fiche> {
 
     for (const name of newNames) {
       values.push(name, type_diabete,'', false, now, now); // name, type_diabete, path, is_downloaded, createdAt, updatedAt
-      console.log("values : ", values);
     }
 
     const rowsSql = newNames.map(() => '(?, ?, ?, ?, ?, ?)').join(',');
     const sql = `INSERT INTO fiches (name, type_diabete, path, is_downloaded, createdAt, updatedAt) VALUES ${rowsSql}`;
-    console.log("sql : ", sql);
     db.runSync(sql, values);
   }
 

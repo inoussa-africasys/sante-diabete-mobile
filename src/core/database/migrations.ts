@@ -87,6 +87,23 @@ export class Migration {
         updatedAt DATETIME NOT NULL
       )
     `);
+
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS consultations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fileName VARCHAR(80) NOT NULL,
+        data TEXT NOT NULL,
+        id_patient VARCHAR(30) NOT NULL,
+        id_fiche VARCHAR(30) NOT NULL,
+        type_diabete VARCHAR(10) NOT NULL,
+        longitude REAL,
+        latitude REAL,
+        synced BOOLEAN NOT NULL DEFAULT false,
+        createdBy VARCHAR(80),
+        createdAt DATETIME NOT NULL,
+        updatedAt DATETIME NOT NULL
+      )
+    `);
   }
 
 

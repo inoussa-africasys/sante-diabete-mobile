@@ -10,6 +10,7 @@ type usePatientReturnType = {
     insertPatientOnTheLocalDb : (patient : PatientFormData) => Promise<boolean>;
     updatePatientOnTheLocalDb : (patientId: string, patient: PatientFormData) => Promise<boolean>;
     deletePatientOnTheLocalDb : (patientId: string) => Promise<boolean>;
+    getPatientOnTheLocalDb : (patientId: string) => Promise<Patient | null>;
     isLoading : boolean;
     error : string | null;
 }
@@ -96,12 +97,29 @@ export const usePatient = () : usePatientReturnType => {
         }
     };
 
+    const getPatientOnTheLocalDb = async (patientId : string) => {
+        try {
+            setIsLoading(true);
+            const patientsService = await PatientService.create();
+            const patient = await patientsService.getPatient(patientId);
+            console.log("patient : ",patient);
+            return patient;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            setError(error as string);
+            return null;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return {
         getAllOnTheLocalDbPatients,
         getAllOnTheServerPatients,
         insertPatientOnTheLocalDb,
         updatePatientOnTheLocalDb,
         deletePatientOnTheLocalDb,
+        getPatientOnTheLocalDb,
         isLoading,
         error
     };

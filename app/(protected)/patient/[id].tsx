@@ -1,25 +1,41 @@
-import { usePatient } from '@/src/Hooks/usePatient';
 import { AlertModal, ConfirmModal, LoadingModal } from '@/src/Components/Modal';
+import useConsultation from '@/src/Hooks/useConsultation';
+import { usePatient } from '@/src/Hooks/usePatient';
+import { Consultation } from '@/src/models/Consultation';
+import Patient from '@/src/models/Patient';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-interface Consultation {
-  id: string;
-  date: string;
-  fileName: string;
-}
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function PatientDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [showOptions, setShowOptions] = useState(false);
-  
-  const { deletePatientOnTheLocalDb, isLoading : isLoadingPatient, error : errorPatient } = usePatient();
-  
+  const { deletePatientOnTheLocalDb, isLoading : isLoadingPatient, error : errorPatient, getPatientOnTheLocalDb } = usePatient();
+  const { getConsultations, isLoading : isLoadingConsultations, error : errorConsultations } = useConsultation();
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [consultations, setConsultations] = useState<Record<string, Consultation[]> | null>(null);
   const patientId = params.id as string;
+  
+  useEffect(() => {
+    const fetchPatient = async () => {
+      const patient = await getPatientOnTheLocalDb(patientId);
+      setPatient(patient);
+      const consultationsData = await getConsultations(patientId);
+      console.log("consultations : ",consultationsData);
+
+
+      if (consultationsData) {
+        Object.entries(consultationsData).forEach(([date, dateConsultations]) => {
+          console.log("consultation : ",date);
+        });
+        setConsultations(consultationsData);
+      }
+    };
+    fetchPatient();
+  }, [patientId]);
   
   // États pour les modales
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -28,22 +44,16 @@ export default function PatientDetailScreen() {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Exemple de consultation
-  const consultations: Consultation[] = [
-    {
-      id: '1',
-      date: '03/06/2025',
-      fileName: 'consultation_03-06-2025_11h38min49'
-    }
-  ];
-
-  const handleFolderPress = () => {
-    setIsExpanded(!isExpanded);
+  const toggleFolder = (date: string) => {
+    setExpandedFolders(prev => ({
+      ...prev,
+      [date]: !prev[date]
+    }));
   };
 
   const handleConsultationPress = (consultation: Consultation) => {
-    // TODO: Ouvrir la consultation
-    console.log('Ouvrir consultation:', consultation.fileName);
+    // Naviguer vers la page de détail de la consultation
+    router.push(`/consultation/${consultation.id}`);
   };
 
   const handleAddPress = () => {
@@ -56,6 +66,16 @@ export default function PatientDetailScreen() {
 
   const handleDeletePatient = () => {
     setShowConfirmModal(true);
+  };
+
+  const handleNewConsultation = () => {
+    router.push(`/nouvelle-consultation?patientId=${patientId}`);
+    setShowOptions(false);
+  };
+
+  const handleNewRecord = () => {
+    router.push(`/nouveau-dossier?patientId=${patientId}`);
+    setShowOptions(false);
   };
 
   const confirmDeletePatient = async () => {
@@ -86,6 +106,13 @@ export default function PatientDetailScreen() {
     router.replace('/liste-patient');
   };
 
+  // Formater la date pour l'affichage
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Date inconnue';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
   return (
     <>
       <View style={styles.container}>
@@ -97,7 +124,7 @@ export default function PatientDetailScreen() {
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>TRAORE CITOA</Text>
+          <Text style={styles.headerTitle}>{patient?.first_name} {patient?.last_name}</Text>
           <View style={styles.headerActions}>
             <TouchableOpacity onPress={() => handleEditPatient(patientId)} style={styles.headerButton}>
               <Feather name="edit-2" size={24} color="white" />
@@ -108,40 +135,70 @@ export default function PatientDetailScreen() {
           </View>
         </View>
 
-      {/* Folder */}
-      <TouchableOpacity style={styles.folderContainer} onPress={handleFolderPress}>
-        <View style={styles.folderHeader}>
-          <FontAwesome5 
-            name="folder" 
-            size={24} 
-            color="#9E9E9E" 
-          />
-          <Text style={styles.folderDate}>03/06/2025</Text>
-          <FontAwesome5 
-            name={isExpanded ? 'chevron-down' : 'chevron-right'} 
-            size={16} 
-            color="#9E9E9E" 
-          />
-        </View>
-      </TouchableOpacity>
-
       {/* Consultations List */}
-      {isExpanded && consultations.map((consultation) => (
-        <TouchableOpacity
-          key={consultation.id}
-          style={styles.consultationItem}
-          onPress={() => handleConsultationPress(consultation)}
-        >
-          <FontAwesome5 name="file-alt" size={20} color="#9E9E9E" />
-          <Text style={styles.consultationText}>{consultation.fileName}</Text>
-        </TouchableOpacity>
-      ))}
+      <ScrollView style={styles.scrollContainer}>
+        {isLoadingConsultations ? (
+          <View style={styles.centerMessage}>
+            <Text>Chargement des consultations...</Text>
+          </View>
+        ) : errorConsultations ? (
+          <View style={styles.centerMessage}>
+            <Text style={styles.errorText}>Erreur: {errorConsultations}</Text>
+          </View>
+        ) : consultations && Object.entries(consultations).length > 0 ? (
+          Object.entries(consultations).map(([date, dateConsultations]) => (
+            <View key={date} style={styles.folderSection}>
+              {/* Folder Header */}
+              <TouchableOpacity 
+                style={styles.folderContainer} 
+                onPress={() => toggleFolder(date)}
+              >
+                <View style={styles.folderHeader}>
+                  <FontAwesome5 
+                    name="folder" 
+                    size={24} 
+                    color="#9E9E9E" 
+                  />
+                  <Text style={styles.folderDate}>{formatDate(date)}</Text>
+                  <FontAwesome5 
+                    name={expandedFolders[date] ? 'chevron-down' : 'chevron-right'} 
+                    size={16} 
+                    color="#9E9E9E" 
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {/* Consultations in this folder */}
+              {expandedFolders[date] && (
+                <View style={styles.consultationsContainer}>
+                  {dateConsultations.map((consultation, index) => (
+                    <TouchableOpacity
+                      key={consultation.id || index}
+                      style={styles.consultationItem}
+                      onPress={() => handleConsultationPress(consultation)}
+                    >
+                      <FontAwesome5 name="file-alt" size={20} color="#9E9E9E" />
+                      <Text style={styles.consultationText}>
+                        {consultation.fileName || `Consultation ${index + 1}`}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))
+        ) : (
+          <View style={styles.centerMessage}>
+            <Text style={styles.noConsultationsText}>Aucune consultation disponible</Text>
+          </View>
+        )}
+      </ScrollView>
 
       {/* Add Button and Options */}
       <View style={styles.fabContainer}>
         {showOptions && (
           <View style={styles.optionsContainer}>
-            <TouchableOpacity style={styles.optionButton}>
+            <TouchableOpacity style={styles.optionButton} onPress={handleNewConsultation}>
               <View style={styles.optionContent}>
                 <View style={styles.optionTextContainer}>
                   <Text style={styles.optionText}>Nouvelle</Text>
@@ -152,7 +209,7 @@ export default function PatientDetailScreen() {
                 </View>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButton}>
+            <TouchableOpacity style={styles.optionButton} onPress={handleNewRecord}>
               <View style={styles.optionContent}>
                 <View style={styles.optionTextContainer}>
                   <Text style={styles.optionText}>Dossier</Text>
@@ -217,6 +274,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  scrollContainer: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -244,10 +304,14 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 5,
   },
+  folderSection: {
+    marginBottom: 1,
+  },
   folderContainer: {
     padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
+    backgroundColor: '#f9f9f9',
   },
   folderHeader: {
     flexDirection: 'row',
@@ -258,6 +322,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#616161',
     flex: 1,
+  },
+  consultationsContainer: {
+    backgroundColor: '#fff',
   },
   consultationItem: {
     flexDirection: 'row',
@@ -271,6 +338,19 @@ const styles = StyleSheet.create({
   consultationText: {
     fontSize: 14,
     color: '#616161',
+  },
+  noConsultationsText: {
+    padding: 20,
+    textAlign: 'center',
+    color: '#9E9E9E',
+    fontStyle: 'italic',
+  },
+  centerMessage: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
   },
   fabContainer: {
     position: 'absolute',

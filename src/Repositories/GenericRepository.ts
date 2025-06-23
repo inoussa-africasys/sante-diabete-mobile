@@ -14,17 +14,13 @@ export class GenericRepository<T extends BaseModel> {
   }
 
   insert(item: T): void {
-    const db = this.db;
-    console.log('Inserting item:', item);
     const fields = Object.keys(item).filter(k => item[k as keyof T] !== undefined);
-    console.log('Fields:', fields);
     const placeholders = fields.map(() => '?').join(',');
     const values = fields.map(k => item[k as keyof T]);
-    console.log('Values:', values);
     const query = `INSERT INTO ${this.tableName} (${fields.join(',')}) VALUES (${placeholders})`;
-    console.log('Query:', query);
+    console.log(query);
+    console.log(values);
     this.db.runSync(query, values);
-    console.log('Inserted item:', item);
   }
 
   update(id: number, item: Partial<T>): void {
@@ -34,12 +30,6 @@ export class GenericRepository<T extends BaseModel> {
 
     const query = `UPDATE ${this.tableName} SET ${assignments} WHERE id = ?`;
     
-    console.log("----------------");
-    console.log(query);
-    console.log(values);
-    console.log(id);
-    
-
     this.db.runSync(query, [...values, id]);
   }
 
@@ -88,9 +78,6 @@ export class GenericRepository<T extends BaseModel> {
           const values = fields.map(k => item[k as keyof T]);
           allValues.push(...values);
         }
-
-        console.log(query);
-        console.log(allValues);
   
         db.runSync(query, allValues);
       }
@@ -109,6 +96,8 @@ export class GenericRepository<T extends BaseModel> {
     db.execSync('BEGIN TRANSACTION');
     try {
       for (const item of items) {
+        if (!item.createdAt) item.createdAt = new Date().toISOString();
+        if (!item.updatedAt) item.updatedAt = new Date().toISOString();
         this.insert(item);
       }
       db.execSync('COMMIT');
@@ -148,13 +137,9 @@ export class GenericRepository<T extends BaseModel> {
   
     const query = `UPDATE ${this.tableName} SET ${fields.join(', ')} WHERE id = ?`;
   
-    console.log("----------------");
-    console.log(query);
-    console.log(values);
-    console.log(id);
-  
     this.db.runSync(query, [...values, id]);
   }
   
+
   
 }
