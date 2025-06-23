@@ -6,8 +6,9 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { format } from 'date-fns';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { PatientMapper } from '@/src/mappers/patientMapper';
 import { ActivityIndicator, Alert, Image, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface FormErrors {
@@ -20,6 +21,8 @@ interface FormErrors {
 
 export default function NouveauPatientScreen() {
   const router = useRouter();
+  const { patientId } = useLocalSearchParams();
+  const isEditMode = Boolean(patientId);
   const [formData, setFormData] = useState<PatientFormData>({
     nom: '',
     prenom: '',
@@ -35,7 +38,13 @@ export default function NouveauPatientScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showImageOptions, setShowImageOptions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const {insertPatientOnTheLocalDb, isLoading : isLoadingPatient, error : errorPatient} = usePatient();
+  const {
+    insertPatientOnTheLocalDb, 
+    updatePatientOnTheLocalDb, 
+    getAllOnTheLocalDbPatients,
+    isLoading : isLoadingPatient, 
+    error : errorPatient
+  } = usePatient();
 
   useEffect(() => {
     (async () => {
@@ -43,8 +52,30 @@ export default function NouveauPatientScreen() {
       if (galleryStatus.status !== 'granted') {
         Alert.alert('Permission requise', 'Nous avons besoin de votre permission pour accéder à la galerie d\'images');
       }
+      
+      // Charger les données du patient si on est en mode édition
+      if (isEditMode && patientId) {
+        try {
+          setIsLoading(true);
+          const patients = await getAllOnTheLocalDbPatients();
+          const patientToEdit = patients.find(p => p.id_patient === patientId);
+          
+          if (patientToEdit) {
+            const formDataFromPatient = PatientMapper.toPatientFormData(patientToEdit);
+            setFormData(formDataFromPatient);
+          } else {
+            Alert.alert('Erreur', `Patient avec l'ID ${patientId} non trouvé`);
+            router.back();
+          }
+        } catch (error) {
+          console.error('Erreur lors du chargement du patient:', error);
+          Alert.alert('Erreur', 'Impossible de charger les données du patient');
+        } finally {
+          setIsLoading(false);
+        }
+      }
     })();
-  }, []);
+  }, [patientId, isEditMode]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -80,13 +111,33 @@ export default function NouveauPatientScreen() {
 
   const handleSave = async () => {
     if (validateForm()) {
-      console.log('Enregistrer patient:', formData);
-      const result = await insertPatientOnTheLocalDb(formData);
-      if (result && !isLoadingPatient && !errorPatient) {
-        Alert.alert('Succès', 'Patient enregistré avec succès');
-        router.push('/liste-patient');
-      } else {
-        Alert.alert('Message Erreur', 'Veuillez remplir correctement les champs !');
+      try {
+        let result;
+        
+        if (isEditMode && patientId) {
+          // Mode édition
+          console.log('Mise à jour patient:', formData);
+          result = await updatePatientOnTheLocalDb(patientId as string, formData);
+          if (result && !isLoadingPatient && !errorPatient) {
+            Alert.alert('Succès', 'Patient mis à jour avec succès');
+            router.push('/liste-patient');
+          }
+        } else {
+          // Mode création
+          console.log('Enregistrer nouveau patient:', formData);
+          result = await insertPatientOnTheLocalDb(formData);
+          if (result && !isLoadingPatient && !errorPatient) {
+            Alert.alert('Succès', 'Patient enregistré avec succès');
+            router.push('/liste-patient');
+          }
+        }
+        
+        if (!result || isLoadingPatient || errorPatient) {
+          Alert.alert('Message Erreur', 'Veuillez remplir correctement les champs !');
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'enregistrement:', error);
+        Alert.alert('Message Erreur', 'Une erreur est survenue lors de l\'enregistrement');
       }
     } else {
       Alert.alert('Message Erreur', 'Veuillez remplir correctement les champs !');
@@ -168,7 +219,7 @@ export default function NouveauPatientScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nouveau Patient</Text>
+        <Text style={styles.headerTitle}>{isEditMode ? 'Modifier Patient' : 'Nouveau Patient'}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -335,7 +386,7 @@ export default function NouveauPatientScreen() {
           </View>
 
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>{isLoading ? <ActivityIndicator size="small" color="white" /> : ''} ENREGISTRER</Text>
+            <Text style={styles.saveButtonText}>{isLoading ? <ActivityIndicator size="small" color="white" /> : ''} {isEditMode ? 'METTRE À JOUR' : 'ENREGISTRER'}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

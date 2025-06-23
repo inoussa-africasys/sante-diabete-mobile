@@ -1,3 +1,5 @@
+import { usePatient } from '@/src/Hooks/usePatient';
+import { AlertModal, ConfirmModal, LoadingModal } from '@/src/Components/Modal';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -14,6 +16,17 @@ export default function PatientDetailScreen() {
   const params = useLocalSearchParams();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  
+  const { deletePatientOnTheLocalDb, isLoading : isLoadingPatient, error : errorPatient } = usePatient();
+  
+  const patientId = params.id as string;
+  
+  // États pour les modales
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Exemple de consultation
   const consultations: Consultation[] = [
@@ -37,26 +50,63 @@ export default function PatientDetailScreen() {
     setShowOptions(!showOptions);
   };
 
+  const handleEditPatient = (patientId: string) => {
+    router.push(`/nouveau-patient?patientId=${patientId}`);
+  };
+
+  const handleDeletePatient = () => {
+    setShowConfirmModal(true);
+  };
+
+  const confirmDeletePatient = async () => {
+    try {
+      setShowConfirmModal(false);
+      setShowLoadingModal(true);
+      
+      const result = await deletePatientOnTheLocalDb(patientId);
+      
+      setShowLoadingModal(false);
+      
+      if (result) {
+        setShowSuccessModal(true);
+      } else {
+        setErrorMessage('La suppression du patient a échoué');
+        setShowErrorModal(true);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression du patient:', error);
+      setShowLoadingModal(false);
+      setErrorMessage('Erreur lors de la suppression: ' + (error instanceof Error ? error.message : 'Erreur inconnue'));
+      setShowErrorModal(true);
+    }
+  };
+  
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    router.replace('/liste-patient');
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>TRAORE CITOA</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerButton}>
-            <Feather name="edit-2" size={24} color="white" />
+    <>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton}>
-            <MaterialIcons name="delete" size={24} color="white" />
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>TRAORE CITOA</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => handleEditPatient(patientId)} style={styles.headerButton}>
+              <Feather name="edit-2" size={24} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleDeletePatient} style={styles.headerButton}>
+              <MaterialIcons name="delete" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
       {/* Folder */}
       <TouchableOpacity style={styles.folderContainer} onPress={handleFolderPress}>
@@ -126,7 +176,39 @@ export default function PatientDetailScreen() {
           )}
         </TouchableOpacity>
       </View>
-    </View>
+      </View>
+
+      {/* Modales */}
+      <ConfirmModal
+        isVisible={showConfirmModal}
+        title="Confirmation"
+        message="Êtes-vous sûr de vouloir supprimer ce patient ? Cette action est irréversible."
+        onConfirm={confirmDeletePatient}
+        onClose={() => setShowConfirmModal(false)}
+        type="danger"
+        confirmText="Supprimer"
+        cancelText="Annuler"
+      />
+      
+      <LoadingModal
+        isVisible={showLoadingModal}
+        message="Suppression du patient en cours..."
+      />
+      
+      <AlertModal
+        isVisible={showSuccessModal}
+        title="Succès"
+        message="Le patient a été supprimé avec succès"
+        onClose={handleSuccessModalClose}
+      />
+      
+      <AlertModal
+        isVisible={showErrorModal}
+        title="Erreur"
+        message={errorMessage}
+        onClose={() => setShowErrorModal(false)}
+      />
+    </>
   );
 }
 

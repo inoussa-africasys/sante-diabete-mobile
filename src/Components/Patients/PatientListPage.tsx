@@ -59,6 +59,10 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const gotoPatientScanner = () => {
     router.push('/patient/scanner');
   };
+  
+  const gotoNewPatient = () => {
+    router.push('/nouveau-patient');
+  };
 
   const handleSearch = (text: string) => {
     // Logique de recherche
@@ -200,7 +204,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       {/* Add Button */}
       <TouchableOpacity
         style={styles.addButton}
-        onPress={onAddPress}
+        onPress={gotoNewPatient}        
       >
         <Ionicons name="add" size={30} color="#FFFFFF" />
       </TouchableOpacity>
@@ -265,6 +269,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 1.5,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editButton: {
+    padding: 8,
+    marginRight: 5,
   },
   actionButton: {
     padding: 10,

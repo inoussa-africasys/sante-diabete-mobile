@@ -33,6 +33,12 @@ export class GenericRepository<T extends BaseModel> {
     const values = fields.map(k => item[k as keyof T]);
 
     const query = `UPDATE ${this.tableName} SET ${assignments} WHERE id = ?`;
+    
+    console.log("----------------");
+    console.log(query);
+    console.log(values);
+    console.log(id);
+    
 
     this.db.runSync(query, [...values, id]);
   }
@@ -131,5 +137,24 @@ export class GenericRepository<T extends BaseModel> {
       db.execSync('ROLLBACK');
     }
   }
+
+
+  updatev2(id: number, item: Partial<T>): void {
+    // Enlever les champs undefined et ne pas inclure 'id'
+    const entries = Object.entries(item).filter(([key, value]) => key !== 'id' && value !== undefined);
+  
+    const fields = entries.map(([key]) => `${key} = ?`);
+    const values = entries.map(([_, value]) => value);
+  
+    const query = `UPDATE ${this.tableName} SET ${fields.join(', ')} WHERE id = ?`;
+  
+    console.log("----------------");
+    console.log(query);
+    console.log(values);
+    console.log(id);
+  
+    this.db.runSync(query, [...values, id]);
+  }
+  
   
 }

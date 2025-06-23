@@ -1,3 +1,4 @@
+import { AlertModal, LoadingModal } from '@/src/Components/Modal';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNetworkState } from 'expo-network';
@@ -18,6 +19,9 @@ export default function DownloadFicheScreen() {
   const {downloadFiche, isLoading: isLoadingDownloadFiche} = useFiche();
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [ficheDownloadingName, setFicheDownloadingName] = React.useState('');
+  const [showLoadingModal, setShowLoadingModal] = React.useState(false);
+  const [showErrorModal, setShowErrorModal] = React.useState(false);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   
 
   const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge'].includes(params.mode)) ? params.mode : 'remplir';
@@ -47,31 +51,26 @@ export default function DownloadFicheScreen() {
   }, [networkState.isConnected]);
 
 
-  const getHeaderTitle = () => {
-    switch (mode) {
-      case 'editer':
-        return `Éditer une fiche `;
-      case 'remplir':
-        return `${mode === 'remplir' ? 'Remplir' : 'Éditer'} une fiche `;
-      case 'vierge':
-        return ` `;
-      default:
-        return `Liste des fiches `;
-    }
-  };
 
 
   const handleDownload = async (ficheName: string) => {
     try {
       setIsDownloading(true);
+      setShowLoadingModal(true);
       setFicheDownloadingName(ficheName);
       await downloadFiche(ficheName);
-      setIsDownloading(false);
-      showToast('Fiche téléchargée avec succès', 'success', 3000);
+
     } catch (error) {
       console.error('Erreur lors du téléchargement de la fiche', error);
+    }
+    finally {
       setIsDownloading(false);
-      showToast('Erreur lors du téléchargement de la fiche', 'error', 3000);
+      setShowLoadingModal(false);
+      if (error) {
+        setShowErrorModal(true);
+      } else {
+        setShowSuccessModal(true);
+      }
     }
   };
 
@@ -133,7 +132,8 @@ export default function DownloadFicheScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <>
+      <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -149,7 +149,12 @@ export default function DownloadFicheScreen() {
         keyExtractor={(item) => item?.toString() || Math.random().toString()}
         contentContainerStyle={styles.list}
       />
+      
     </View>
+    {showLoadingModal && <LoadingModal isVisible={showLoadingModal} message={"En cours de téléchargement " + ficheDownloadingName} />}
+    {showErrorModal && <AlertModal isVisible={showErrorModal} message="Une erreur est survenue lors du téléchargement de la fiche" onClose={() => setShowErrorModal(false)} title="Erreur" />}
+    {showSuccessModal && <AlertModal isVisible={showSuccessModal} message="La fiche a été téléchargée avec succès" onClose={() => setShowSuccessModal(false)} title="Succès" />}
+    </>
   );
 }
 
