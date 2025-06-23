@@ -4,10 +4,8 @@
   <meta charset="UTF-8">
   <title>SurveyJS Offline</title>
 
-  <!-- CSS -->
   <link href="./survey-core.min.css" rel="stylesheet" />
 
-  <!-- JS -->
   <script src="./survey.core.min.js"></script>
   <script src="./survey-js-ui.min.js"></script>
 
@@ -18,27 +16,37 @@
 </head>
 
 <body>
+  <h1>Questionnaire</h1>
   <div id="surveyContainer"></div>
 
   <script>
     function launchSurvey(surveyJSON) {
-      const model = new Survey.Model(surveyJSON);
-      model.onComplete.add(function (sender) {
-        if (window.ReactNativeWebView?.postMessage) {
-          window.ReactNativeWebView.postMessage(JSON.stringify(sender.data));
-        } else {
-          console.log("Résultat local :", sender.data);
-        }
-      });
+      try {
+        console.log("Lancement du questionnaire avec JSON:", JSON.stringify(surveyJSON));
+        
+        // Appliquer le thème par défaut selon la documentation
+        Survey.StylesManager.applyTheme("defaultV2");
+        
+        // Créer le modèle de questionnaire
+        const survey = new Survey.Model(surveyJSON);
+        
+        // Configurer l'événement de complétion
+        survey.onComplete.add(function (sender) {
+          if (window.ReactNativeWebView?.postMessage) {
+            window.ReactNativeWebView.postMessage(JSON.stringify(sender.data));
+          } else {
+            console.log("Résultat local :", sender.data);
+          }
+        });
 
-      // 🔥 AJOUT OBLIGATOIRE QUI MANQUAIT !!!
-      SurveyCore.StylesManager.applyTheme("defaultV2");
-
-
-      const survey = new SurveyUI.Survey(model);
-      survey.render("surveyContainer");
+        // Rendre le questionnaire dans le conteneur
+        survey.render("surveyContainer");
+      } catch (error) {
+        console.error("Erreur lors du lancement du questionnaire:", error);
+      }
     }
 
+    // Mode test navigateur (pour le développement)
     if (!window.ReactNativeWebView) {
       // Mode test navigateur
       launchSurvey({
@@ -47,10 +55,24 @@
       });
     }
 
-    // Mode WebView React Native
+    // Mode WebView React Native - Écouter les deux types d'événements
     document.addEventListener("message", function (event) {
-      const surveyJSON = JSON.parse(event.data);
-      launchSurvey(surveyJSON);
+      try {
+        const surveyJSON = JSON.parse(event.data);
+        launchSurvey(surveyJSON);
+      } catch (error) {
+        console.error("Erreur dans l'événement message:", error);
+      }
+    });
+
+    // Écouter également les MessageEvent (utilisé par notre injectJavaScript)
+    window.addEventListener("message", function (event) {
+      try {
+        const surveyJSON = JSON.parse(event.data);
+        launchSurvey(surveyJSON);
+      } catch (error) {
+        console.error("Erreur dans l'événement window.message:", error);
+      }
     });
   </script>
 </body>

@@ -15,10 +15,11 @@ export default function ListeFichesScreen() {
   const [fiches, setFiches] = React.useState<Fiche[]>([]);
 
   const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge'].includes(params.mode)) ? params.mode : 'remplir';
+  const patientId = params.patientId as string;
 
  useEffect(() => {
   getAllFicheDownloaded().then((fiches) => {
-    console.log("fiches downloaded: ", fiches);
+    console.log("patientId : ", patientId);
     setFiches(fiches);
   });
  }, []);

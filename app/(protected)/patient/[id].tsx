@@ -69,7 +69,8 @@ export default function PatientDetailScreen() {
   };
 
   const handleNewConsultation = () => {
-    router.push(`/nouvelle-consultation?patientId=${patientId}`);
+    // Rediriger vers la liste des fiches tout en conservant l'ID du patient
+    router.push(`/liste-fiches?patientId=${patientId}&mode=remplir`);
     setShowOptions(false);
   };
 
