@@ -30,4 +30,7 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
       return grouped;
     }
 
+
+
+
 }

@@ -58,7 +58,7 @@ export default function ListeFichesScreen() {
   const handleMakeAction = (action: Action, fiche: Fiche) => {
     switch (action) {
       case Action.Edit:
-        router.push(`/patient/${patientId}/consultations/create?mode=edit&ficheId=${fiche.id}`);
+        router.push(`/patient/${patientId}/consultations/edit?mode=edit&ficheId=${fiche.id}`);
         break;
       case Action.Fill:
         router.push(`/patient/${patientId}/consultations/create?mode=fill&ficheId=${fiche.id}`);

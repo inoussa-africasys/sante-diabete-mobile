@@ -22,4 +22,17 @@ export class PatientRepository extends GenericRepository<Patient> {
   }
 
 
+  public getPatientByConsultationIdOnLocalDB(consultationId: number): Patient {
+    const result = this.db.getFirstSync(
+      `SELECT p.* FROM ${this.tableName} p
+      INNER JOIN consultations c ON c.id_patient = p.id
+      WHERE c.id = ?`,
+     [consultationId]
+    );
+    return this.modelFactory(result);
+  }
+
+
+
+
 }

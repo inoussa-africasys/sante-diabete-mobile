@@ -13,6 +13,7 @@ export class Consultation extends BaseModel {
 
     constructor(data?: Partial<Consultation>) {
         super();
+        this.id = data?.id 
         this.fileName = data?.fileName || '';
         this.data = data?.data || '';
         this.synced = data?.synced || false;
@@ -22,5 +23,8 @@ export class Consultation extends BaseModel {
         this.longitude = data?.longitude || 0;
         this.latitude = data?.latitude || 0;
         this.createdBy = data?.createdBy || '';
+        this.createdAt = data?.createdAt || ''
+        this.updatedAt = data?.updatedAt || ''
+
     }
 }

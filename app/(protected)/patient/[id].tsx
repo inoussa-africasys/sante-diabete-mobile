@@ -53,7 +53,8 @@ export default function PatientDetailScreen() {
 
   const handleConsultationPress = (consultation: Consultation) => {
     // Naviguer vers la page de détail de la consultation
-    router.push(`/consultation/${consultation.id}`);
+    console.log("consultation id : ",consultation.id);
+    router.push(`/patient/${patientId}/consultations/show?consultationId=${consultation.id}`);
   };
 
   const handleAddPress = () => {

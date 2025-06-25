@@ -1,0 +1,178 @@
+import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
+import { parseSurveyData } from "@/src/functions/helpers";
+import useConsultation from "@/src/Hooks/useConsultation";
+import { useFiche } from "@/src/Hooks/useFiche";
+import { usePatient } from "@/src/Hooks/usePatient";
+import { Consultation } from "@/src/models/Consultation";
+import Fiche from "@/src/models/Fiche";
+import Patient from "@/src/models/Patient";
+import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+export default function ShowConsultationScreen() {
+  const params = useLocalSearchParams<{ patientId?: string; consultationId?: string }>();
+  const patientId = params.patientId || '';
+  const consultationId = params.consultationId || '';
+
+  const [consultation, setConsultation] = useState<Consultation | null>(null);
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [fiche, setFiche] = useState<Fiche | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const { getConsultationById } = useConsultation();
+  const { getPatientByIdOnTheLocalDb } = usePatient();
+  const { getFicheById } = useFiche();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const consultationFetched = await getConsultationById(consultationId);
+        const patientFetched = await getPatientByIdOnTheLocalDb(patientId);
+
+        setConsultation(consultationFetched);
+        setPatient(patientFetched);
+
+        if (consultationFetched?.id_fiche) {
+            console.log("consultation : ",consultationFetched);
+          const ficheFetched = await getFicheById(consultationFetched.id_fiche);
+          setFiche(ficheFetched);
+        }
+
+      } catch (e) {
+        console.error("Erreur lors du chargement des données :", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [consultationId, patientId]);
+
+
+  const handleEditConsultation = (consultationId: string) => {
+    router.push(`/patient/${patientId}/consultations/edit?consultationId=${consultationId}`);
+  };
+
+  const handleDeleteConsultation = (consultationId: string) => {
+    console.log("handleDeleteConsultation ",consultationId);
+  };
+
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#FF0000" />
+        <Text>Chargement...</Text>
+      </View>
+    );
+  }
+
+  if (!consultation || !patient || !fiche) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>Impossible de charger la consultation.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{patient.first_name} {patient.last_name}</Text>
+        <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => handleEditConsultation(consultationId)} style={styles.headerButton}>
+              <Feather name="edit-2" size={24} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleDeleteConsultation(consultationId)} style={styles.headerButton}>
+              <MaterialIcons name="delete" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+      </View>
+
+      <SurveyScreenDom
+        surveyJson={fiche?.data}
+        data={parseSurveyData(consultation?.data)}
+        isReadOnly={true}
+        handleSurveyComplete={() => {}}
+      />
+    </View>
+  );
+}
+
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#F5F5F5'
+    },
+    centerContent: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#666',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: 'red',
+        paddingBottom: 10
+    },
+    backButton: {
+        padding: 8,
+        marginRight: 8
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#fff',
+        flex: 1,
+        textAlign: 'center',
+        marginRight: 40 // Pour compenser le bouton retour et centrer le titre
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+      },
+      headerButton: {
+        padding: 5,
+        marginLeft: 15,
+      },
+    list: {
+        padding: 16
+    },
+    item: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#fff',
+        padding: 16,
+        marginBottom: 12,
+        borderRadius: 12,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4
+    },
+    itemContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1
+    },
+    itemText: {
+        fontSize: 16,
+        marginLeft: 12,
+        color: '#333'
+    }
+});

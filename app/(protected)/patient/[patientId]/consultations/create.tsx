@@ -72,8 +72,9 @@ export default function CreateConsultationScreen() {
       console.error('Location non disponible');
       return;
     }
+    console.log("data : ", data);
     const consultation : ConsultationFormData = {
-      data : data,  
+      data : JSON.stringify(data),  
       id_fiche : ficheId,
     }
     console.log("consultation : ", consultation);
