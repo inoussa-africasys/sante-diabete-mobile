@@ -139,6 +139,26 @@ export class GenericRepository<T extends BaseModel> {
   
     this.db.runSync(query, [...values, id]);
   }
+
+
+  insertAndReturn(item: T): T | null {
+    const fields = Object.keys(item).filter(k => k !== 'id' && item[k as keyof T] !== undefined);
+    const placeholders = fields.map(() => '?').join(',');
+    const values = fields.map(k => item[k as keyof T]);
+  
+    const insertQuery = `INSERT INTO ${this.tableName} (${fields.join(',')}) VALUES (${placeholders})`;
+    this.db.runSync(insertQuery, values);
+  
+    // SQLite retourne l'ID de la dernière insertion auto-incrémentée via cette fonction spéciale
+    const result = this.db.getFirstSync(`SELECT last_insert_rowid() as id`);
+    const insertedId = result?.id!;
+  
+    if (!insertedId) return null;
+  
+    const row = this.db.getFirstSync(`SELECT * FROM ${this.tableName} WHERE id = ?`, [insertedId]);
+    return row ? this.modelFactory(row) : null;
+  }
+  
   
 
   

@@ -7,6 +7,13 @@ import { useToast } from '../../src/Components/Toast';
 import { useFiche } from '../../src/Hooks/useFiche';
 
 
+enum Action {
+  None = '',
+  Edit = 'edit',
+  Fill = 'fill',
+  Empty = 'empty'
+}
+
 export default function ListeFichesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -19,7 +26,6 @@ export default function ListeFichesScreen() {
 
  useEffect(() => {
   getAllFicheDownloaded().then((fiches) => {
-    console.log("patientId : ", patientId);
     setFiches(fiches);
   });
  }, []);
@@ -35,8 +41,12 @@ export default function ListeFichesScreen() {
     switch (mode) {
       case 'editer':
         return `Éditer une fiche `;
-      case 'remplir':
-        return `${mode === 'remplir' ? 'Remplir' : 'Éditer'} une fiche `;
+      case 'remplir':{
+        if(patientId){
+          return `Consultation pour le patient ${patientId}`;
+        }
+        return `Consultation `;
+      }
       case 'vierge':
         return `Téléchargement de fiche `;
       default:
@@ -45,57 +55,37 @@ export default function ListeFichesScreen() {
   };
 
 
-  const renderItem = ({ item }: { item: string }) => (
-    <TouchableOpacity 
-      style={styles.item}
-      onPress={() => {
-        let action = '';
-        switch (mode) {
-          case 'editer':
-            action = 'Édition';
-            break;
-          case 'remplir':
-            action = 'Remplissage';
-            break;
-          case 'vierge':
-            action = 'Téléchargement';
-            break;
-        }
-        console.log("action : ", action);
-        console.log("item : ", item);
-      }}
-    >
-      <View style={styles.itemContent}>
-        <MaterialIcons name="description" size={24} color="#2196F3" />
-        <Text style={styles.itemText}>{item}</Text>
-      </View>
-      {mode === 'vierge' ? (
-        <MaterialIcons name="file-download" size={24} color="#4CAF50" />
-      ) : (
-        <Ionicons name="chevron-forward" size={24} color="#666" />
-      )}
-    </TouchableOpacity>
-  );
-
+  const handleMakeAction = (action: Action, fiche: Fiche) => {
+    switch (action) {
+      case Action.Edit:
+        router.push(`/patient/${patientId}/consultations/create?mode=edit&ficheId=${fiche.id}`);
+        break;
+      case Action.Fill:
+        router.push(`/patient/${patientId}/consultations/create?mode=fill&ficheId=${fiche.id}`);
+        break;
+      case Action.Empty:
+        router.push(`/patient/${patientId}/consultations/create?mode=empty&ficheId=${fiche.id}`);
+        break;
+    }
+  };
 
   const renderItemFiche = ({ item }: { item: Fiche }) => (
     <TouchableOpacity 
       style={styles.item}
       onPress={() => {
-        let action = '';
+        let action: Action = Action.None;
         switch (mode) {
           case 'editer':
-            action = 'Édition';
+            action = Action.Edit;
             break;
           case 'remplir':
-            action = 'Remplissage';
+            action = Action.Fill;
             break;
           case 'vierge':
-            action = 'Téléchargement';
+            action = Action.Empty;
             break;
         }
-        console.log("action : ", action);
-        console.log("item : ", item);
+        handleMakeAction(action, item);
       }}
     >
       <View style={styles.itemContent}>

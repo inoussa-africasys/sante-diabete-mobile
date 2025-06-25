@@ -72,7 +72,7 @@ export default class FicheService extends Service {
             const data: any = await response.json();
             const fiche = await this.ficheRepository.findByName(ficheName);
             if (!fiche) { throw new Error('Fiche not found'); }
-            fiche.data = data;
+            fiche.data = JSON.stringify(data);
             fiche.is_downloaded = true;
             await this.ficheRepository.update(fiche.id!, fiche);
 
@@ -89,6 +89,11 @@ export default class FicheService extends Service {
 
     async getAllFicheDownloaded(): Promise<Fiche[]> {
         return await this.ficheRepository.findAllDownloadedAndNotEmptyFiche(this.getTypeDiabete()!);
+    }
+
+    async getByIdInLocalDB(ficheId : string): Promise<Fiche | null> {
+        const id = parseInt(ficheId)
+        return await this.ficheRepository.findById(id);
     }
 
 }

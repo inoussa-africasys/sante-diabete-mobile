@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -77,3 +77,56 @@
   </script>
 </body>
 </html>
+ -->
+
+ <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Consultation dt1</title>
+    <meta name="viewport" content="width=device-width" />
+    <script src="./v2/jquery.js"></script>
+
+    <link href="./v2/modern.css" type="text/css" rel="stylesheet" />
+    <script src="./v2/survey.jquery.min.js"></script>
+
+<body style="margin: 0">
+
+    <div id="surveyContainer"></div>
+
+</body>
+
+<script>
+    Survey.StylesManager.applyTheme("modern");
+
+
+    var surveyJSON = {
+     title: "Formulaire SurveyJS",
+    pages: [
+      {
+        name: "page1",
+        elements: [
+          { type: "text", name: "nom", title: "Quel est votre nom ?" },
+          { type: "radiogroup", name: "satisfait", title: "Satisfait ?", choices: ["Oui", "Non"] }
+        ]
+      }
+    ]
+  }
+  
+
+    function sendDataToServer(survey) {
+        //send Ajax request to your web server
+        alert("The results are: " + JSON.stringify(survey.data));
+    }
+
+    var survey = new Survey.Model(surveyJSON);
+    $("#surveyContainer").Survey({
+        model: survey,
+        onComplete: sendDataToServer
+    });
+
+
+</script>
+
+</html>
+

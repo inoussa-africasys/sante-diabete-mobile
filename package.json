@@ -52,10 +52,12 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.10.0",
     "react-native-uuid": "^2.0.3",
-    "react-native-web": "~0.20.0",
+    "react-native-web": "^0.20.0",
     "react-native-webview": "13.13.5",
     "react-native-zip-archive": "^7.0.2",
-    "tailwindcss": "3.4.17"
+    "survey-react-ui": "^2.2.1",
+    "tailwindcss": "3.4.17",
+    "@expo/metro-runtime": "~5.0.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

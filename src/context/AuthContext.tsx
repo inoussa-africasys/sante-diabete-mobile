@@ -13,19 +13,35 @@ const AUTH_QUERY_KEY = ['auth'];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-async function validateToken(baseUrl: string, token: string): Promise<boolean> {
+async function validateTokenOnLine(baseUrl: string, token: string): Promise<boolean> {
 
     
-    console.log('Validation token en cours:', baseUrl, token);
     const response = await fetch(`${baseUrl}/api/json/mobile/authenticate?app_version=${VERSION_NAME}&token=${token}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
     });
-    console.log('Validation token response:', response.status);
     return response.status === 200;
 }
+
+async function validateToken(activeDiabetesType :DiabeteType ): Promise<boolean> {
+
+    
+    const AUTH_TOKEN_KEY = getAuthTokenKey(activeDiabetesType as DiabeteType);
+            
+    const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+    const baseUrl = await SecureStore.getItemAsync(AUTH_BASE_URL_KEY);
+    if( token && baseUrl){
+        return true
+    }
+    
+    return false;
+}
+
+
+
+
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const queryClient = useQueryClient();
@@ -39,19 +55,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.error('No active diabetes type found');
                 return false;
             }
-            const AUTH_TOKEN_KEY = getAuthTokenKey(activeDiabetesType as DiabeteType);
-            
-            const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-            const baseUrl = await SecureStore.getItemAsync(AUTH_BASE_URL_KEY);
-            if (!token || !baseUrl) return false;
-            return validateToken(baseUrl, token);
+
+            return validateToken(activeDiabetesType as DiabeteType);
         },
     });
 
     // Mutation pour la connexion
     const { mutateAsync: login } = useMutation({
         mutationFn: async ({ baseUrl, token,diabetesType,userName }: LoginParams) => {
-            const isValid = await validateToken(baseUrl, token);
+            const isValid = await validateTokenOnLine(baseUrl, token);
             if (isValid) {
                 console.log('Token valide');
                 await SecureStore.setItemAsync(getAuthTokenKey(diabetesType), token);

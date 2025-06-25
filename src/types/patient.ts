@@ -9,3 +9,9 @@ export interface PatientFormData {
   commentaire: string;
   photo: string | null;
 }
+
+
+export interface ConsultationFormData {
+    data: string;
+    id_fiche: string;
+}

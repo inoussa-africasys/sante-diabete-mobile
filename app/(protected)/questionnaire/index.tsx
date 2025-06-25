@@ -1,10 +1,9 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import useSurveyJson from '@/src/Hooks/useSurveyJson';
-import SurveyScreen from '../../../src/Components/Survey/SurveyScreen';
+import SurveyScreenDom from '@/src/Components/Survey/SurveyScreenDom';
 
 
 export default function QuestionnaireScreen() {
@@ -22,90 +21,18 @@ export default function QuestionnaireScreen() {
   const consultationId = params.consultationId || '';
   const questionnaireType = (params.type as 'initial' | 'suivi' | 'prevention') || 'initial';
   
-  // Utiliser notre hook personnalisé pour générer le JSON du questionnaire
-  const { surveyJson, loading, error } = useSurveyJson({
-    title: `Questionnaire ${questionnaireType === 'initial' ? 'Initial' : 
-           questionnaireType === 'suivi' ? 'de Suivi' : 'de Prévention'}`,
-    description: "Veuillez répondre à toutes les questions",
-    patientId,
-    consultationId,
-    questionnaireType,
-    locale: 'fr'
-  });
-
-  // Gérer la soumission du questionnaire - simplement logger les résultats
-  const handleSurveyComplete = (data: any) => {
-    try {
-      setIsSubmitting(true);
-      
-      // Créer un objet avec les métadonnées et les données
-      const resultData = {
-        patientId,
-        consultationId,
-        questionnaireType,
-        timestamp: new Date().toISOString(),
-        data
-      };
-      
-      // Logger les résultats dans la console
-      console.log('Résultats du questionnaire:', JSON.stringify(resultData, null, 2));
-      
-      // Afficher un message de confirmation
-      Alert.alert(
-        "Questionnaire complété",
-        "Les réponses ont été enregistrées avec succès.",
-        [
-          { 
-            text: "OK", 
-            onPress: () => {
-              // Rediriger vers la page appropriée selon le contexte
-              if (consultationId) {
-                router.push(`/consultation/${consultationId}`);
-              } else if (patientId) {
-                router.push(`/patient/${patientId}`);
-              } else {
-                router.back();
-              }
-            }
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Erreur lors du traitement des résultats:', error);
-      Alert.alert(
-        "Erreur",
-        "Une erreur est survenue lors du traitement des résultats."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Afficher un indicateur de chargement pendant la génération du JSON
-  if (loading || isSubmitting) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.loadingText}>
-          {loading ? "Chargement du questionnaire..." : "Traitement des réponses..."}
-        </Text>
-      </View>
-    );
+  const surveyJson = {
+    elements: [{
+      name: "FirstName",
+      title: "Enter your first name:",
+      type: "text"
+    }, {
+      name: "LastName",
+      title: "Enter your last name:",
+      type: "text"
+    }]
   }
 
-  // Afficher un message d'erreur si la génération du JSON a échoué
-  if (error || !surveyJson) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>
-          {error || "Impossible de charger le questionnaire"}
-        </Text>
-        <Text style={styles.errorSubText}>
-          Veuillez réessayer ultérieurement ou contacter le support technique.
-        </Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -119,10 +46,9 @@ export default function QuestionnaireScreen() {
       <StatusBar style="auto" />
       
       {/* Composant SurveyScreen qui affiche le questionnaire */}
-      <SurveyScreen 
-        surveyJson={surveyJson}
-        onComplete={handleSurveyComplete}
-      />
+      <SurveyScreenDom surveyJson={surveyJson} handleSurveyComplete={(data) => {
+        console.log('Survey data:', data);
+      }} />
     </View>
   );
 }
