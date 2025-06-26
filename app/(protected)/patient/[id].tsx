@@ -4,8 +4,9 @@ import { usePatient } from '@/src/Hooks/usePatient';
 import { Consultation } from '@/src/models/Consultation';
 import Patient from '@/src/models/Patient';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function PatientDetailScreen() {
@@ -13,30 +14,33 @@ export default function PatientDetailScreen() {
   const params = useLocalSearchParams();
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [showOptions, setShowOptions] = useState(false);
-  const { deletePatientOnTheLocalDb, isLoading : isLoadingPatient, error : errorPatient, getPatientOnTheLocalDb } = usePatient();
-  const { getConsultations, isLoading : isLoadingConsultations, error : errorConsultations } = useConsultation();
+  const { deletePatientOnTheLocalDb, isLoading: isLoadingPatient, error: errorPatient, getPatientOnTheLocalDb } = usePatient();
+  const { getConsultations, isLoading: isLoadingConsultations, error: errorConsultations } = useConsultation();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [consultations, setConsultations] = useState<Record<string, Consultation[]> | null>(null);
   const patientId = params.id as string;
-  
-  useEffect(() => {
-    const fetchPatient = async () => {
-      const patient = await getPatientOnTheLocalDb(patientId);
-      setPatient(patient);
-      const consultationsData = await getConsultations(patientId);
-      console.log("consultations : ",consultationsData);
 
 
-      if (consultationsData) {
-        Object.entries(consultationsData).forEach(([date, dateConsultations]) => {
-          console.log("consultation : ",date);
-        });
-        setConsultations(consultationsData);
-      }
-    };
-    fetchPatient();
-  }, [patientId]);
-  
+  useFocusEffect(
+    useCallback(() => {
+      const fetchPatient = async () => {
+        const patient = await getPatientOnTheLocalDb(patientId);
+        setPatient(patient);
+        const consultationsData = await getConsultations(patientId);
+        console.log("consultations : ", consultationsData);
+
+
+        if (consultationsData) {
+          Object.entries(consultationsData).forEach(([date, dateConsultations]) => {
+            console.log("consultation : ", date);
+          });
+          setConsultations(consultationsData);
+        }
+      };
+      fetchPatient();
+    }, [patientId])
+  );
+
   // États pour les modales
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showLoadingModal, setShowLoadingModal] = useState(false);
@@ -53,7 +57,7 @@ export default function PatientDetailScreen() {
 
   const handleConsultationPress = (consultation: Consultation) => {
     // Naviguer vers la page de détail de la consultation
-    console.log("consultation id : ",consultation.id);
+    console.log("consultation id : ", consultation.id);
     router.push(`/patient/${patientId}/consultations/show?consultationId=${consultation.id}`);
   };
 
@@ -84,11 +88,11 @@ export default function PatientDetailScreen() {
     try {
       setShowConfirmModal(false);
       setShowLoadingModal(true);
-      
+
       const result = await deletePatientOnTheLocalDb(patientId);
-      
+
       setShowLoadingModal(false);
-      
+
       if (result) {
         setShowSuccessModal(true);
       } else {
@@ -102,7 +106,7 @@ export default function PatientDetailScreen() {
       setShowErrorModal(true);
     }
   };
-  
+
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
     router.replace('/liste-patient');
@@ -120,7 +124,7 @@ export default function PatientDetailScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
           >
@@ -137,104 +141,104 @@ export default function PatientDetailScreen() {
           </View>
         </View>
 
-      {/* Consultations List */}
-      <ScrollView style={styles.scrollContainer}>
-        {isLoadingConsultations ? (
-          <View style={styles.centerMessage}>
-            <Text>Chargement des consultations...</Text>
-          </View>
-        ) : errorConsultations ? (
-          <View style={styles.centerMessage}>
-            <Text style={styles.errorText}>Erreur: {errorConsultations}</Text>
-          </View>
-        ) : consultations && Object.entries(consultations).length > 0 ? (
-          Object.entries(consultations).map(([date, dateConsultations]) => (
-            <View key={date} style={styles.folderSection}>
-              {/* Folder Header */}
-              <TouchableOpacity 
-                style={styles.folderContainer} 
-                onPress={() => toggleFolder(date)}
-              >
-                <View style={styles.folderHeader}>
-                  <FontAwesome5 
-                    name="folder" 
-                    size={24} 
-                    color="#9E9E9E" 
-                  />
-                  <Text style={styles.folderDate}>{formatDate(date)}</Text>
-                  <FontAwesome5 
-                    name={expandedFolders[date] ? 'chevron-down' : 'chevron-right'} 
-                    size={16} 
-                    color="#9E9E9E" 
-                  />
+        {/* Consultations List */}
+        <ScrollView style={styles.scrollContainer}>
+          {isLoadingConsultations ? (
+            <View style={styles.centerMessage}>
+              <Text>Chargement des consultations...</Text>
+            </View>
+          ) : errorConsultations ? (
+            <View style={styles.centerMessage}>
+              <Text style={styles.errorText}>Erreur: {errorConsultations}</Text>
+            </View>
+          ) : consultations && Object.entries(consultations).length > 0 ? (
+            Object.entries(consultations).map(([date, dateConsultations]) => (
+              <View key={date} style={styles.folderSection}>
+                {/* Folder Header */}
+                <TouchableOpacity
+                  style={styles.folderContainer}
+                  onPress={() => toggleFolder(date)}
+                >
+                  <View style={styles.folderHeader}>
+                    <FontAwesome5
+                      name="folder"
+                      size={24}
+                      color="#9E9E9E"
+                    />
+                    <Text style={styles.folderDate}>{formatDate(date)}</Text>
+                    <FontAwesome5
+                      name={expandedFolders[date] ? 'chevron-down' : 'chevron-right'}
+                      size={16}
+                      color="#9E9E9E"
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Consultations in this folder */}
+                {expandedFolders[date] && (
+                  <View style={styles.consultationsContainer}>
+                    {dateConsultations.map((consultation, index) => (
+                      <TouchableOpacity
+                        key={consultation.id || index}
+                        style={styles.consultationItem}
+                        onPress={() => handleConsultationPress(consultation)}
+                      >
+                        <FontAwesome5 name="file-alt" size={20} color="#9E9E9E" />
+                        <Text style={styles.consultationText}>
+                          {consultation.fileName || `Consultation ${index + 1}`}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))
+          ) : (
+            <View style={styles.centerMessage}>
+              <Text style={styles.noConsultationsText}>Aucune consultation disponible</Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Add Button and Options */}
+        <View style={styles.fabContainer}>
+          {showOptions && (
+            <View style={styles.optionsContainer}>
+              <TouchableOpacity style={styles.optionButton} onPress={handleNewConsultation}>
+                <View style={styles.optionContent}>
+                  <View style={styles.optionTextContainer}>
+                    <Text style={styles.optionText}>Nouvelle</Text>
+                    <Text style={styles.optionText}>Consultation</Text>
+                  </View>
+                  <View style={styles.optionIconContainer}>
+                    <FontAwesome5 name="stethoscope" size={20} color="#fff" />
+                  </View>
                 </View>
               </TouchableOpacity>
-
-              {/* Consultations in this folder */}
-              {expandedFolders[date] && (
-                <View style={styles.consultationsContainer}>
-                  {dateConsultations.map((consultation, index) => (
-                    <TouchableOpacity
-                      key={consultation.id || index}
-                      style={styles.consultationItem}
-                      onPress={() => handleConsultationPress(consultation)}
-                    >
-                      <FontAwesome5 name="file-alt" size={20} color="#9E9E9E" />
-                      <Text style={styles.consultationText}>
-                        {consultation.fileName || `Consultation ${index + 1}`}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+              <TouchableOpacity style={styles.optionButton} onPress={handleNewRecord}>
+                <View style={styles.optionContent}>
+                  <View style={styles.optionTextContainer}>
+                    <Text style={styles.optionText}>Dossier</Text>
+                    <Text style={styles.optionText}>informatisé</Text>
+                  </View>
+                  <View style={styles.optionIconContainer}>
+                    <FontAwesome5 name="folder-plus" size={20} color="#fff" />
+                  </View>
                 </View>
-              )}
+              </TouchableOpacity>
             </View>
-          ))
-        ) : (
-          <View style={styles.centerMessage}>
-            <Text style={styles.noConsultationsText}>Aucune consultation disponible</Text>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Add Button and Options */}
-      <View style={styles.fabContainer}>
-        {showOptions && (
-          <View style={styles.optionsContainer}>
-            <TouchableOpacity style={styles.optionButton} onPress={handleNewConsultation}>
-              <View style={styles.optionContent}>
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionText}>Nouvelle</Text>
-                  <Text style={styles.optionText}>Consultation</Text>
-                </View>
-                <View style={styles.optionIconContainer}>
-                  <FontAwesome5 name="stethoscope" size={20} color="#fff" />
-                </View>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButton} onPress={handleNewRecord}>
-              <View style={styles.optionContent}>
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionText}>Dossier</Text>
-                  <Text style={styles.optionText}>informatisé</Text>
-                </View>
-                <View style={styles.optionIconContainer}>
-                  <FontAwesome5 name="folder-plus" size={20} color="#fff" />
-                </View>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
-        <TouchableOpacity 
-          style={[styles.addButton, showOptions && styles.addButtonActive]}
-          onPress={handleAddPress}
-        >
-          {showOptions ? (
-            <Ionicons name="close" size={30} color="#FFFFFF" />
-          ) : (
-            <Ionicons name="information" size={30} color="#FFFFFF" />
           )}
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[styles.addButton, showOptions && styles.addButtonActive]}
+            onPress={handleAddPress}
+          >
+            {showOptions ? (
+              <Ionicons name="close" size={30} color="#FFFFFF" />
+            ) : (
+              <Ionicons name="information" size={30} color="#FFFFFF" />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Modales */}
@@ -248,19 +252,19 @@ export default function PatientDetailScreen() {
         confirmText="Supprimer"
         cancelText="Annuler"
       />
-      
+
       <LoadingModal
         isVisible={showLoadingModal}
         message="Suppression du patient en cours..."
       />
-      
+
       <AlertModal
         isVisible={showSuccessModal}
         title="Succès"
         message="Le patient a été supprimé avec succès"
         onClose={handleSuccessModalClose}
       />
-      
+
       <AlertModal
         isVisible={showErrorModal}
         title="Erreur"
@@ -367,7 +371,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 6,
     marginBottom: 10,
-    marginEnd : 64,
+    marginEnd: 64,
     minWidth: 200,
   },
   optionIconContainer: {
@@ -397,7 +401,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    
+
   },
   optionText: {
     color: '#000',

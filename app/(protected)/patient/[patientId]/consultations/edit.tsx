@@ -1,3 +1,4 @@
+import { AlertModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
 import { parseSurveyData } from "@/src/functions/helpers";
 import useConsultation from "@/src/Hooks/useConsultation";
@@ -6,6 +7,7 @@ import { usePatient } from "@/src/Hooks/usePatient";
 import { Consultation } from "@/src/models/Consultation";
 import Fiche from "@/src/models/Fiche";
 import Patient from "@/src/models/Patient";
+import { ConsultationFormData } from "@/src/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -20,10 +22,12 @@ export default function EditConsultationScreen() {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [fiche, setFiche] = useState<Fiche | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const { getConsultationById } = useConsultation();
   const { getPatientByIdOnTheLocalDb } = usePatient();
   const { getFicheById } = useFiche();
+  const { updateConsultationByIdOnLocalDB } = useConsultation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,6 +56,27 @@ export default function EditConsultationScreen() {
     fetchData();
   }, [consultationId, patientId]);
 
+
+  const handleSurveyComplete = async (data: any) => {
+    setLoading(true); 
+    if(!consultation){
+      setLoading(false);
+      setError("Une erreur est survenue lors de la mise à jour de la consultation");
+      return;
+    }
+    const consultationFormData : ConsultationFormData = {data:data,id_fiche:consultation.id_fiche};
+    const result = await updateConsultationByIdOnLocalDB(consultationId,consultationFormData);
+    console.log("result : ",result);
+    if(result){
+      setLoading(false);
+      router.replace(`/patient/${patientId}/consultations/show?consultationId=${consultation.id}`);
+    }
+    setLoading(false);
+    setError("Une erreur est survenue lors de la mise à jour de la consultation");
+  };
+
+
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
@@ -69,6 +94,8 @@ export default function EditConsultationScreen() {
     );
   }
 
+
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -81,9 +108,15 @@ export default function EditConsultationScreen() {
       <SurveyScreenDom
         surveyJson={fiche?.data}
         data={parseSurveyData(consultation?.data)}
-        isReadOnly={true}
-        handleSurveyComplete={() => {}}
+        handleSurveyComplete={handleSurveyComplete}
       />
+
+      {
+        error && (
+          <AlertModal type="error" message={error} isVisible={true} onClose={() => setError(null)} title="Erreur" />
+        )
+      }
+      
     </View>
   );
 }

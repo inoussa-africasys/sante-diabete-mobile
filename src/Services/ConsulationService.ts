@@ -6,6 +6,8 @@ import Patient from '../models/Patient';
 import { ConsultationRepository } from "../Repositories/ConsultationRepository";
 import { PatientRepository } from '../Repositories/PatientRepository';
 import { ConsultationFormData, Coordinates } from "../types";
+import { generateConsultationName } from '../utils/consultation';
+import Logger from '../utils/Logger';
 import Service from "./core/Service";
 
 export default class ConsultationService extends Service {
@@ -56,7 +58,7 @@ export default class ConsultationService extends Service {
   async saveConsultationAsJson(consultation: Consultation): Promise<string> {
     try {
       const jsonContent = JSON.stringify(consultation.toJson(), null, 2);
-      const fileName = `${consultation.fileName || consultation.id_patient}_${Date.now()}.json`;
+      const fileName = `${generateConsultationName()}.json`;
 
       const folderUri = `${FileSystem.documentDirectory}${PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL}/`;
       const fileUri = `${folderUri}${fileName}`;
@@ -72,7 +74,7 @@ export default class ConsultationService extends Service {
 
 
       console.log(`✅ Consultation enregistrée dans le fichier : ${fileUri}`);
-      return fileUri;
+      return fileName;
     } catch (error) {
       console.error("❌ Erreur d'enregistrement de la consultation :", error);
       return "";
@@ -102,15 +104,75 @@ export default class ConsultationService extends Service {
 
   async deleteConsultationOnTheLocalDb(consultationId: number): Promise<boolean> {
     try {
-      await this.consultationRepository.delete(consultationId);
+      const consultation = await this.consultationRepository.findById(consultationId);
+      if(!consultation){
+        throw new Error('La consultation locale n\'a pas pu etre recupere');
+      }
+      await this.consultationRepository.softDelete(consultationId.toString());
+      await this.deleteConsultationFile(consultation.fileName);
       return true;
     } catch (error) {
       console.error('Erreur de suppression de la consultation :', error);
+      Logger.log('error', 'Error deleting consultation on the local db', { error });
+      return false;
+    }
+  }
+
+  async updateConsultationByIdOnLocalDB(consultationId: number,consultation: ConsultationFormData): Promise<boolean> {
+    try {
+      const consultationToCreate = await this.consultationRepository.findById(consultationId);
+      if(!consultationToCreate){
+        throw new Error('La consultation locale n\'a pas pu etre recupere');
+      }
+      consultationToCreate.data = consultation.data;
+      consultationToCreate.updatedAt = new Date().toISOString();
+      consultationToCreate.synced = false;
+
+      await this.consultationRepository.update(consultationId,consultationToCreate);
+      await this.updateConsultationFile(consultationToCreate.fileName,consultationToCreate.toJson());
+      return true;
+    } catch (error) {
+      console.error('Erreur de mise à jour de la consultation :', error);
+      Logger.log('error', 'Error updating consultation on the local db', { error });
       return false;
     }
   }
 
 
+  
+ async updateConsultationFile(fileName: string, updatedData: any) {
+  const folderUri = `${FileSystem.documentDirectory}${PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL}/`;
+  const fileUri = `${folderUri}${fileName}`;
+
+  try {
+    const folderInfo = await FileSystem.getInfoAsync(folderUri);
+    if (!folderInfo.exists) {
+      await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
+    }
+    await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(updatedData, null, 2));
+    console.log("✅ Fichier consultation mis à jour :", fileUri);
+  } catch (err) {
+    console.error("❌ Erreur mise à jour consultation file :", err);
+  }
+}
+
+
+async deleteConsultationFile(fileName: string): Promise<void> {
+  const folderUri = `${FileSystem.documentDirectory}${PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL}/`;
+  const fileUri = `${folderUri}${fileName}`;
+
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(fileUri);
+    if (fileInfo.exists) {
+      await FileSystem.deleteAsync(fileUri);
+      console.log("🗑️ Fichier supprimé avec succès :", fileUri);
+    } else {
+      console.warn("⚠️ Le fichier n'existe pas :", fileUri);
+    }
+  } catch (err) {
+    console.error("❌ Erreur lors de la suppression du fichier :", err);
+  }
+}
 
 
 

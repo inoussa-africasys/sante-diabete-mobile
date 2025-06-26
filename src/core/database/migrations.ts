@@ -84,7 +84,9 @@ export class Migration {
         synced BOOLEAN NOT NULL DEFAULT false,
         createdBy VARCHAR(80),
         createdAt DATETIME NOT NULL,
-        updatedAt DATETIME NOT NULL
+        updatedAt DATETIME NOT NULL,
+        deletedAt DATETIME NULL,
+        isLocalCreated BOOLEAN NOT NULL DEFAULT true
       )
     `);
 
@@ -101,7 +103,10 @@ export class Migration {
         synced BOOLEAN NOT NULL DEFAULT false,
         createdBy VARCHAR(80),
         createdAt DATETIME NOT NULL,
-        updatedAt DATETIME NOT NULL
+        updatedAt DATETIME NOT NULL,
+        deletedAt DATETIME NULL,
+        isLocalCreated BOOLEAN NOT NULL DEFAULT true
+
       )
     `);
   }

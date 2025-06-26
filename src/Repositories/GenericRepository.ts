@@ -2,15 +2,18 @@ import { BATCH_SIZE } from '../Constants/App';
 import { DatabaseConnection } from '../core/database/database';
 import { QueryBuilder } from '../core/database/QueryBuilder';
 import { BaseModel } from '../models/BaseModel';
+import Logger from '../utils/Logger';
 
 export class GenericRepository<T extends BaseModel> {
   protected db = DatabaseConnection.getInstance();
   protected tableName: string;
   protected modelFactory: (data: any) => T;
+  protected ignoreSoftDelete: boolean;
 
-  constructor(tableName: string, modelFactory: (data: any) => T) {
+  constructor(tableName: string, modelFactory: (data: any) => T, ignoreSoftDelete = true) {
     this.tableName = tableName;
     this.modelFactory = modelFactory;
+    this.ignoreSoftDelete = ignoreSoftDelete;
   }
 
   insert(item: T): void {
@@ -18,8 +21,6 @@ export class GenericRepository<T extends BaseModel> {
     const placeholders = fields.map(() => '?').join(',');
     const values = fields.map(k => item[k as keyof T]);
     const query = `INSERT INTO ${this.tableName} (${fields.join(',')}) VALUES (${placeholders})`;
-    console.log(query);
-    console.log(values);
     this.db.runSync(query, values);
   }
 
@@ -42,11 +43,22 @@ export class GenericRepository<T extends BaseModel> {
     return result ? this.modelFactory(result) : null;
   }
 
-  findAll(): T[] {
+ /*  findAll(): T[] {
     const results = this.db.getAllSync(`SELECT * FROM ${this.tableName}`);
     return results.map(this.modelFactory);
   }
+ */
 
+  findAll(): T[] {
+    const query = this.ignoreSoftDelete
+      ? `SELECT * FROM ${this.tableName}`
+      : `SELECT * FROM ${this.tableName} WHERE deletedAt IS NULL`;
+  
+    const rows = this.db.getAllSync(query);
+    return rows.map(this.modelFactory);
+  }
+
+ 
 
   query(): QueryBuilder<T> {
     return new QueryBuilder(this.tableName, this.db, this.modelFactory);
@@ -85,6 +97,7 @@ export class GenericRepository<T extends BaseModel> {
       db.execSync('COMMIT');
     } catch (err) {
       console.error("InsertAll Optimized Batch Error:", err);
+      Logger.log('error', 'InsertAll Optimized Batch Error', { error: err });
       db.execSync('ROLLBACK');
     }
   }
@@ -103,6 +116,7 @@ export class GenericRepository<T extends BaseModel> {
       db.execSync('COMMIT');
     } catch (err) {
       console.error("InsertAll Error:", err);
+      Logger.log('error', 'InsertAll Error', { error: err });
       db.execSync('ROLLBACK');
     }
   }
@@ -123,6 +137,7 @@ export class GenericRepository<T extends BaseModel> {
       db.execSync('COMMIT');
     } catch (error) {
       console.error('Clean Error:', error);
+      Logger.log('error', 'Clean Error', { error });
       db.execSync('ROLLBACK');
     }
   }
@@ -159,6 +174,26 @@ export class GenericRepository<T extends BaseModel> {
     return row ? this.modelFactory(row) : null;
   }
   
+  
+  async softDelete(id: string): Promise<void> {
+    const query = `UPDATE ${this.tableName} SET deletedAt = ? WHERE id = ?`;
+    const deletedAt = new Date().toISOString();
+  
+    try {
+      await this.db.runAsync(query, [deletedAt, id]);
+      console.log(`🗑️ Soft delete OK sur ${this.tableName} pour ID=${id}`);
+    } catch (err) {
+      console.error(`❌ Soft delete échoué sur ${this.tableName}`, err);
+      Logger.log('error', 'Soft delete error', { error: err });
+    }
+  }
+
+  async restore(id: string): Promise<void> {
+    const query = `UPDATE ${this.tableName} SET deletedAt = NULL WHERE id = ?`;
+    await this.db.runAsync(query, [id]);
+    console.log(`🗑️ Soft delete OK sur ${this.tableName} pour ID=${id}`);
+    Logger.log('info', 'Restore OK sur', { tableName: this.tableName, id });
+  }
   
 
   

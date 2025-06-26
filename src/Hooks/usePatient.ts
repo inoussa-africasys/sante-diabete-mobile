@@ -3,6 +3,7 @@ import { useDiabetes } from "../context/DiabetesContext";
 import Patient from "../models/Patient";
 import PatientService from "../Services/patientService";
 import { PatientFormData } from "../types";
+import Logger from "../utils/Logger";
 
 type usePatientReturnType = {
     getAllOnTheLocalDbPatients : () => Promise<Patient[]>;
@@ -30,6 +31,7 @@ export const usePatient = () : usePatientReturnType => {
             return patients;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error fetching patients by type diabete', { error });
             setError(error as string);
             setIsLoading(false);
             return [];
@@ -45,6 +47,7 @@ export const usePatient = () : usePatientReturnType => {
             return patients;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error fetching patients by type diabete', { error });
             setError(error as string);
             setIsLoading(false);
             return [];
@@ -61,6 +64,7 @@ export const usePatient = () : usePatientReturnType => {
             return true;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error inserting patient on the local db', { error });
             setError(error as string);
             setIsLoading(false);
             return false;
@@ -76,6 +80,7 @@ export const usePatient = () : usePatientReturnType => {
             return true;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error updating patient on the local db', { error });
             setError(error as string);
             return false;
         } finally {
@@ -91,6 +96,7 @@ export const usePatient = () : usePatientReturnType => {
             return true;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error deleting patient on the local db', { error });
             setError(error as string);
             return false;
         } finally {
@@ -107,6 +113,7 @@ export const usePatient = () : usePatientReturnType => {
             return patient;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error getting patient on the local db', { error });
             setError(error as string);
             return null;
         } finally {
@@ -123,8 +130,9 @@ export const usePatient = () : usePatientReturnType => {
             return patient;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error getting patient by id on the local db', { error });
             setError(error as string);
-            return null;
+            return null;    
         } finally {
             setIsLoading(false);
         }

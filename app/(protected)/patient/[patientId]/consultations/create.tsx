@@ -69,17 +69,14 @@ export default function CreateConsultationScreen() {
 
   const handleCompletSurveyForm = async (data: any) => {
     if (!location) {
-      console.error('Location non disponible');
       return;
     }
-    console.log("data : ", data);
     const consultation : ConsultationFormData = {
       data : JSON.stringify(data),  
       id_fiche : ficheId,
     }
-    console.log("consultation : ", consultation);
     await createConsultationOnLocalDB(consultation,patientId,location.coords);
-    router.back();
+    router.push(`/patient/${patientId}`);
   };
 
 

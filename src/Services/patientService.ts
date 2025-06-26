@@ -125,7 +125,7 @@ export default class PatientService extends Service {
         try {
             const id = (await this.patientRepository.findAllByPatientId(patientId)).id;
             if (!id) {throw new Error(` Patient avec l'ID ${patientId} non trouvé`);}
-            this.patientRepository.delete(id);
+            this.patientRepository.softDelete(id.toString());
             this.deletePatientJson(patientId);
             console.log(`✅ Patient supprimé : ${patientId}`);
         } catch (error) {

@@ -19,6 +19,8 @@ export default class Patient extends BaseModel {
     createdBy: string;
     latitude?: number;
     longitude?: number;
+    deletedAt?: string;
+    isLocalCreated?: boolean;
 
     constructor(data?: Partial<Patient>) {
         super();
@@ -42,5 +44,7 @@ export default class Patient extends BaseModel {
         this.createdBy = data?.createdBy || '';
         this.latitude = data?.latitude || undefined;
         this.longitude = data?.longitude || undefined;
+        this.deletedAt = data?.deletedAt || undefined;
+        this.isLocalCreated = data?.isLocalCreated || true;
     }
 }

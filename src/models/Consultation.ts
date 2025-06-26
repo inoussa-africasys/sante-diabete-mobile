@@ -10,6 +10,8 @@ export class Consultation extends BaseModel {
     longitude: number;
     latitude: number;
     createdBy: string;
+    deletedAt?: string;
+    isLocalCreated?: boolean;
 
     constructor(data?: Partial<Consultation>) {
         super();
@@ -25,6 +27,7 @@ export class Consultation extends BaseModel {
         this.createdBy = data?.createdBy || '';
         this.createdAt = data?.createdAt || ''
         this.updatedAt = data?.updatedAt || ''
-
+        this.deletedAt = data?.deletedAt || undefined;
+        this.isLocalCreated = data?.isLocalCreated || true;
     }
 }

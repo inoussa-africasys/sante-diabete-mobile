@@ -1,3 +1,4 @@
+import { AlertModal, ConfirmModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
 import { parseSurveyData } from "@/src/functions/helpers";
 import useConsultation from "@/src/Hooks/useConsultation";
@@ -20,8 +21,11 @@ export default function ShowConsultationScreen() {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [fiche, setFiche] = useState<Fiche | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showDeleteSuccessModal, setShowDeleteSuccessModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const { getConsultationById } = useConsultation();
+  const { getConsultationById,deleteConsultationOnTheLocalDb } = useConsultation();
   const { getPatientByIdOnTheLocalDb } = usePatient();
   const { getFicheById } = useFiche();
 
@@ -44,6 +48,7 @@ export default function ShowConsultationScreen() {
 
       } catch (e) {
         console.error("Erreur lors du chargement des données :", e);
+        setError("Une erreur est survenue lors du chargement des données");
       } finally {
         setLoading(false);
       }
@@ -57,9 +62,28 @@ export default function ShowConsultationScreen() {
     router.push(`/patient/${patientId}/consultations/edit?consultationId=${consultationId}`);
   };
 
-  const handleDeleteConsultation = (consultationId: string) => {
+  const handleDeleteConsultation = async (consultationId: string) => {
     console.log("handleDeleteConsultation ",consultationId);
+    const result = await deleteConsultationOnTheLocalDb(consultationId); 
+    if(!result){
+      console.error("Erreur lors de la suppression de la consultation");
+      setError("Une erreur est survenue lors de la suppression de la consultation");
+      return;
+    }
+    setShowDeleteSuccessModal(true);
+    
+    
   };
+
+  const handleDeleteModalOpen = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowDeleteSuccessModal(false);
+    router.replace(`/patient/${patientId}`);
+  };
+
 
 
   if (loading) {
@@ -90,7 +114,7 @@ export default function ShowConsultationScreen() {
             <TouchableOpacity onPress={() => handleEditConsultation(consultationId)} style={styles.headerButton}>
               <Feather name="edit-2" size={24} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDeleteConsultation(consultationId)} style={styles.headerButton}>
+            <TouchableOpacity onPress={handleDeleteModalOpen} style={styles.headerButton}>
               <MaterialIcons name="delete" size={24} color="white" />
             </TouchableOpacity>
           </View>
@@ -102,6 +126,22 @@ export default function ShowConsultationScreen() {
         isReadOnly={true}
         handleSurveyComplete={() => {}}
       />
+
+      {
+        error && (
+          <AlertModal type="error" message={error} isVisible={true} onClose={() => setError(null)} title="Erreur"/>
+        )
+      }
+      {
+        showDeleteModal && (
+          <ConfirmModal type="danger" message="Voulez-vous vraiment supprimer cette consultation ?" isVisible={true} onClose={() => setShowDeleteModal(false)} title="Supprimer la consultation" onConfirm={() => handleDeleteConsultation(consultationId)}/>
+        )
+      }
+      {
+        showDeleteSuccessModal && (
+          <AlertModal type="success" message="Consultation supprimée avec succès" isVisible={true} onClose={handleSuccessModalClose} title="Suppression reussie"/>
+        )
+      }
     </View>
   );
 }

@@ -3,6 +3,7 @@ import ConsultationService from "../Services/ConsulationService";
 import { Consultation } from "../models/Consultation";
 import Patient from "../models/Patient";
 import { ConsultationFormData, Coordinates } from "../types";
+import Logger from "../utils/Logger";
 
 type useConsultationReturnType = {
     isLoading: boolean;
@@ -12,6 +13,7 @@ type useConsultationReturnType = {
     getConsultationById: (consultationId: string) => Promise<Consultation | null>;
     getPatientByConsultationId: (patientId: string) => Promise<Patient | null>;
     deleteConsultationOnTheLocalDb: (consultationId: string) => Promise<boolean>;
+    updateConsultationByIdOnLocalDB: (consultationId: string,consultation: ConsultationFormData) => Promise<boolean>;
 }
 
 export default function useConsultation(): useConsultationReturnType {
@@ -28,6 +30,7 @@ export default function useConsultation(): useConsultationReturnType {
             return consultations;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error fetching consultations by patient id', { error });
             setError(error as string);
             setIsLoading(false);
             return null;
@@ -39,7 +42,6 @@ export default function useConsultation(): useConsultationReturnType {
     const createConsultationOnLocalDB = async (consultation: ConsultationFormData,patientId: string,coordinates:Coordinates): Promise<Consultation | null> => {
         try {
             setIsLoading(true);
-            console.log("consultation : ", consultation);
             const consultationService = await ConsultationService.create();
             const consultationCreated = await consultationService.createConsultationOnLocalDBAndCreateJson(consultation,patientId,coordinates);
             setConsultations((prevConsultations) => {
@@ -58,6 +60,7 @@ export default function useConsultation(): useConsultationReturnType {
             return consultationCreated;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error creating consultation on the local db', { error });
             setError(error as string);
             setIsLoading(false);
             return null;
@@ -74,6 +77,7 @@ export default function useConsultation(): useConsultationReturnType {
             return consultation;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error getting consultation by id on the local db', { error });
             setError(error as string);
             setIsLoading(false);
             return null;
@@ -90,6 +94,7 @@ export default function useConsultation(): useConsultationReturnType {
             return patient;
         } catch (error) {
             console.error('Erreur de recherche du patient :', error);
+            Logger.log('error', 'Error getting patient by consultation id on the local db', { error });
             setError(error as string);
             setIsLoading(false);
             return null;
@@ -106,6 +111,24 @@ export default function useConsultation(): useConsultationReturnType {
             return result;
         } catch (error) {
             console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error deleting consultation on the local db', { error });
+            setError(error as string);
+            setIsLoading(false);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const updateConsultationByIdOnLocalDB = async (consultationId: string,consultation: ConsultationFormData): Promise<boolean> => {
+        try {
+            setIsLoading(true);
+            const consultationService = await ConsultationService.create();
+            const result = await consultationService.updateConsultationByIdOnLocalDB(parseInt(consultationId),consultation);
+            return result;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error updating consultation on the local db', { error });
             setError(error as string);
             setIsLoading(false);
             return false;
@@ -123,6 +146,7 @@ export default function useConsultation(): useConsultationReturnType {
         createConsultationOnLocalDB,
         getConsultationById,
         getPatientByConsultationId,
-        deleteConsultationOnTheLocalDb
+        deleteConsultationOnTheLocalDb,
+        updateConsultationByIdOnLocalDB
     };
 }

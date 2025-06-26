@@ -7,6 +7,8 @@ export const SURVEY_FOLDER = `${FileSystem.documentDirectory}surveys/`
 export const AUTH_BASE_URL_KEY = 'auth_base_url'
 export const ACTIVE_DIABETE_TYPE_KEY = 'active_diabete_type'
 export const USER_NAME_KEY = 'user_name'
+export const USER_PREFERENCES_KEY = 'userPreferences'
+export const LANGUAGE_KEY = 'language'
 export const BATCH_SIZE = 200
 export const API_HEADER = {
     'Content-Type': 'application/json',
@@ -15,5 +17,7 @@ export const API_HEADER = {
 
 export const PATH_OF_PATIENTS_DIR_ON_THE_LOCAL = "Trafic/patients/instances";
 export const PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL = "Trafic/consultations/instances";
+export const LOG_FILE_PATH = `logs/`;
+
 
 
