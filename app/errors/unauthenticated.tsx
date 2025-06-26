@@ -8,9 +8,9 @@ const Unauthenticated = () => {
     <View style={styles.container}>
       <Ionicons name="shield-outline" size={100} color="#D50000" />
       <Text style={styles.title}>Non authentifié</Text>
-      <Text style={styles.text}>Vous devez vous authentifier pour accéder à cette page</Text>
+      <Text style={styles.text}>Vous devez scanner un QR CODE autorisé pour accéder à cette page</Text>
       <TouchableOpacity style={styles.button} onPress={() => router.push('/scanner')}>
-        <Text style={styles.buttonText}>Se connecter</Text>
+        <Text style={styles.buttonText}>Scanner un QR CODE</Text>
       </TouchableOpacity>
     </View>
   )

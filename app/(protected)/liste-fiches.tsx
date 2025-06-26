@@ -45,7 +45,7 @@ export default function ListeFichesScreen() {
         if(patientId){
           return `Consultation pour le patient ${patientId}`;
         }
-        return `Consultation `;
+        return `Remplir une fiche `;
       }
       case 'vierge':
         return `Téléchargement de fiche `;
@@ -155,7 +155,17 @@ export default function ListeFichesScreen() {
         renderItem={renderItemFiche}
         keyExtractor={(item) => item.name?.toString() || Math.random().toString()}
         contentContainerStyle={styles.list}
+        ListEmptyComponent={<EmptyList />}
       />
+    </View>
+  );
+}
+
+const EmptyList = () => {
+  return (
+    <View style={styles.emptyList}>
+    <MaterialIcons name="edit-document" size={124} color="#666" />
+      <Text style={styles.errorText}>Aucune fiche disponible</Text>
     </View>
   );
 }
@@ -169,9 +179,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  emptyList: {
+    flex: 1,
+    textAlign: 'center',
+    
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
   errorText: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop: 32,
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textTransform: 'uppercase',
     color: '#666',
   },
   header: {

@@ -153,7 +153,7 @@ export default function DownloadFicheScreen() {
     </View>
     {showLoadingModal && <LoadingModal isVisible={showLoadingModal} message={"En cours de téléchargement " + ficheDownloadingName} />}
     {showErrorModal && <AlertModal isVisible={showErrorModal} message="Une erreur est survenue lors du téléchargement de la fiche" onClose={() => setShowErrorModal(false)} title="Erreur" />}
-    {showSuccessModal && <AlertModal isVisible={showSuccessModal} message="La fiche a été téléchargée avec succès" onClose={() => setShowSuccessModal(false)} title="Succès" />}
+    {showSuccessModal && <AlertModal isVisible={showSuccessModal} message="Fiche téléchargée avec succès" onClose={() => setShowSuccessModal(false)} title="Succès" />}
     </>
   );
 }

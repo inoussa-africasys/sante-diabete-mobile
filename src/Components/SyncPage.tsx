@@ -1,43 +1,40 @@
 import { Entypo, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSyncData } from '../Hooks/useSyncData';
 
-interface FolderData {
-  name: string;
-  files?: Array<{
-    name: string;
-    date: string;
-    id: string;
-  }>;
-}
+// Utilisation de l'interface SyncFolderData du hook useSyncData
 
 const SyncPage = () => {
   const router = useRouter();
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncSuccess, setSyncSuccess] = useState(false);
+  
+  // Utilisation du hook personnalisé pour gérer les données de synchronisation
+  const { 
+    folders, 
+    loading, 
+    error, 
+    isSyncing, 
+    syncSuccess, 
+    loadData, 
+    syncData, 
+    resetSyncSuccess 
+  } = useSyncData();
 
-  const folders: FolderData[] = [
-    {
-      name: 'fiche_v1',
-      files: [
-        { name: 'fiche_v1', date: '03-06-2025_10h24min7', id: 'TF-73843994' },
-        { name: 'fiche_v1', date: '03-06-2025_10h26min39', id: 'TF-81846ACB' },
-      ]
-    },
-    {
-      name: 'suivi_etude_v1',
-      files: []
+  // Charger les données au montage du composant uniquement
+  useEffect(() => {
+    // Utiliser un flag pour éviter les chargements multiples
+    let isMounted = true;
+    if (isMounted) {
+      loadData();
     }
-  ];
+    return () => { isMounted = false; };
+  }, []);
 
-  const handleSync = async () => {
-    setIsSyncing(true);
-    // Simulate sync process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsSyncing(false);
-    setSyncSuccess(true);
+  // Gérer la synchronisation
+  const handleSync = () => {
+    syncData();
   };
 
   const handleFolderPress = (folderName: string) => {
@@ -51,6 +48,11 @@ const SyncPage = () => {
       router.back();
     }
   };
+  
+  // Trouver le dossier sélectionné
+  const selectedFolderData = selectedFolder 
+    ? folders.find(f => f.name === selectedFolder) 
+    : null;
 
   return (
     <View style={styles.container}>
@@ -66,43 +68,83 @@ const SyncPage = () => {
 
       {/* Content */}
       <View style={styles.content}>
-        {!selectedFolder ? (
-          // Folder List View
-          folders.map((folder, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.folderItem}
-              onPress={() => handleFolderPress(folder.name)}
-            >
-              <MaterialIcons name="folder" size={24} color="#666" />
-              <Text style={styles.folderName}>{folder.name}</Text>
-              <Entypo name="chevron-right" size={24} color="#666" />
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF1744" />
+            <Text style={styles.loadingText}>Chargement des données...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+              <Text style={styles.retryButtonText}>Réessayer</Text>
             </TouchableOpacity>
-          ))
+          </View>
+        ) : !selectedFolder ? (
+          // Folder List View
+          folders.length > 0 ? (
+            <FlatList
+              data={folders}
+              keyExtractor={(item, index) => `folder-${index}`}
+              renderItem={({ item: folder }) => (
+                <TouchableOpacity
+                  style={styles.folderItem}
+                  onPress={() => handleFolderPress(folder.name)}
+                >
+                  <MaterialIcons name="folder" size={24} color="#666" />
+                  <Text style={styles.folderName}>{folder.name}</Text>
+                  <View style={styles.badgeContainer}>
+                    <Text style={styles.badgeText}>{folder.files?.length || 0}</Text>
+                  </View>
+                  <Entypo name="chevron-right" size={24} color="#666" />
+                </TouchableOpacity>
+              )}
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <MaterialIcons name="folder-off" size={100} color="#ccc" />
+              <Text style={styles.emptyText}>Aucune fiche à synchroniser</Text>
+            </View>
+          )
         ) : (
           // File List View
-          folders
-            .find(f => f.name === selectedFolder)
-            ?.files?.map((file, index) => (
-              <View key={index} style={styles.fileItem}>
-                <View style={styles.fileInfo}>
-                  <Entypo name="paper-plane" size={24} color="#2196F3" />
-                  <Entypo name="check" size={16} color="#4CAF50" />
-                  <View style={styles.fileDetails}>
-                    <Text style={styles.fileName}>{file.name}</Text>
-                    <View style={styles.fileMetadata}>
-                      <View style={styles.dateContainer}>
-                        <Text style={styles.dateText}>Date: {file.date}</Text>
-                      </View>
-                      <View style={styles.idContainer}>
-                        <Text style={styles.idText}>{file.id}</Text>
+          <>
+            <Text style={styles.sectionTitle}>Consultations locales</Text>
+            {selectedFolderData && selectedFolderData.files && selectedFolderData.files.length > 0 ? (
+              <FlatList
+                data={selectedFolderData.files}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item: file }) => (
+                  <View style={styles.fileItem}>
+                    <View style={styles.fileInfo}>
+                      <Entypo name="paper-plane" size={24} color="#2196F3" />
+                      {/* {file.consultation.isLocalCreated && (
+                         <View style={styles.localBadge}>
+                          <Text style={styles.localBadgeText}>Local</Text>
+                        </View> 
+                      )} */}
+                      <View style={styles.fileDetails}>
+                        <Text style={styles.fileName}>{file.name}</Text>
+                        <View style={styles.fileMetadata}>
+                          <View style={styles.dateContainer}>
+                            <Text style={styles.dateText}>Date: {file.date}</Text>
+                          </View>
+                          <View style={styles.idContainer}>
+                            <Text style={styles.idText}>{file.id}</Text>
+                          </View>
+                        </View>
                       </View>
                     </View>
                   </View>
-                  
-                </View>
+                )}
+              />
+            ) : (
+              <View style={styles.emptyContainer}>
+                <MaterialIcons name="description" size={64} color="#ccc" />
+                <Text style={styles.emptyText}>Aucune consultation locale</Text>
               </View>
-            ))
+            )}
+          </>
         )}
       </View>
 
@@ -132,7 +174,7 @@ const SyncPage = () => {
             <Text style={styles.modalText}>Synchronisation effectuée avec succès !</Text>
             <TouchableOpacity
               style={styles.okButton}
-              onPress={() => setSyncSuccess(false)}
+              onPress={resetSyncSuccess}
             >
               <Text style={styles.okButtonText}>OK</Text>
             </TouchableOpacity>
@@ -144,6 +186,79 @@ const SyncPage = () => {
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#FF1744',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#FF1744',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 4,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 20,
+    color: '#666',
+    marginTop: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    marginBottom: 16,
+    color: '#333',
+  },
+  badgeContainer: {
+    backgroundColor: '#FF1744',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginRight: 8,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  localBadge: {
+    backgroundColor: '#FF9800',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  localBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '500',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',

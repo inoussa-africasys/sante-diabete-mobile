@@ -102,6 +102,31 @@ export default class ConsultationService extends Service {
     }
   }
 
+  async getLocalConsultationsByFicheId(ficheId: string): Promise<Consultation[]> {
+    try {
+      // Convertir ficheId en chaîne pour assurer la compatibilité
+      const ficheIdValue = ficheId.toString();
+      
+      // Utiliser la méthode query du repository pour construire une requête personnalisée
+      const consultations = this.consultationRepository.query()
+        .where('id_fiche = ?', [ficheIdValue])
+        .where('isLocalCreated = ?', [1]) // isLocalCreated est stocké comme 1 en SQLite
+        .where('deletedAt IS NULL')
+        .all();
+      
+      // Log minimal pour éviter les boucles de rendu
+      if (consultations.length > 0) {
+        console.log(`Trouvé ${consultations.length} consultation(s) pour la fiche ${ficheIdValue}`);
+      }
+      
+      return consultations;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des consultations locales par fiche:', error);
+      Logger.log('error', 'Error fetching local consultations by fiche id', { error, ficheId });
+      return [];
+    }
+  }
+
   async deleteConsultationOnTheLocalDb(consultationId: number): Promise<boolean> {
     try {
       const consultation = await this.consultationRepository.findById(consultationId);
