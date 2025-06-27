@@ -13,6 +13,7 @@ type usePatientReturnType = {
     deletePatientOnTheLocalDb : (patientId: string) => Promise<boolean>;
     getPatientOnTheLocalDb : (patientId: string) => Promise<Patient | null>;
     getPatientByIdOnTheLocalDb : (patientId: string) => Promise<Patient | null>;
+    syncPatients : () => Promise<boolean>;
     isLoading : boolean;
     error : string | null;
 }
@@ -138,6 +139,22 @@ export const usePatient = () : usePatientReturnType => {
         }
     };
 
+    const syncPatients = async (): Promise<boolean> => {
+        try {
+            setIsLoading(true);
+            const patientsService = await PatientService.create();
+            const patients = await patientsService.syncPatients();
+            setIsLoading(false);
+            return true;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error syncing patient on the local db', { error });
+            setError(error as string);
+            setIsLoading(false);
+            return false;
+        }
+    };
+
     return {
         getAllOnTheLocalDbPatients,
         getAllOnTheServerPatients,
@@ -146,6 +163,7 @@ export const usePatient = () : usePatientReturnType => {
         deletePatientOnTheLocalDb,
         getPatientOnTheLocalDb,
         getPatientByIdOnTheLocalDb,
+        syncPatients,
         isLoading,
         error
     };

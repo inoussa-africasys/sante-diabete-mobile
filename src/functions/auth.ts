@@ -36,4 +36,15 @@ export const getConnectedUsername = async (): Promise<string> => {
     }
     return connectedUsername ;
 };
+/* 
+export const getLastSyncDate = async (): Promise<string> => {
+    const lastSyncDate = await getItemAsync(LAST_SYNC_DATE_KEY);
+    if (!lastSyncDate) {
+        throw new Error('No lastSyncDate found');
+    }
+    return lastSyncDate ;
+}; */
+
+
+
 

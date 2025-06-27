@@ -37,14 +37,13 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const [patients, setPatients] = useState<Patient[]>([]);
 
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  const { getAllOnTheLocalDbPatients } = usePatient();
+  const { getAllOnTheLocalDbPatients, syncPatients } = usePatient();
 
 
   useEffect(() => {
     const fetchPatients = async () => {
       try {
         const p = await getAllOnTheLocalDbPatients();
-        console.log('Patients List:', p);
         setPatients(p);
         setFilteredPatients(p); // Mettre à jour filteredPatients avec les données récupérées
       } catch (error) {
@@ -66,14 +65,12 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
   const handleSearch = (text: string) => {
     // Logique de recherche
-    console.log('Recherche:', text);
     if (text === '') {
       setFilteredPatients(patients)
       setSearchQuery('')
       return;
     }
     const filteredPs = patients.filter((patient) => patient.id_patient.toLowerCase().includes(text.toLowerCase()));
-    console.log('Patients filtrés:', filteredPs);
     setSearchQuery(text);
     setFilteredPatients(filteredPs);
   };
@@ -82,7 +79,8 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const handleSync = async () => {
     setIsSyncing(true);
     // Simulate sync process
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await syncPatients();
     setIsSyncing(false);
     setSyncSuccess(true);
   };

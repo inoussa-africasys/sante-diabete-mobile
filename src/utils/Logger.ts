@@ -15,22 +15,39 @@ function formatLog(level: LogLevel, message: string, meta?: LogMeta): string {
 }
 
 class Logger {
-  static async log(level: LogLevel, message: string, meta?: LogMeta): Promise<void> {
-    const logEntry = formatLog(level, message, meta);
 
-    try {
-      const fileInfo = await FileSystem.getInfoAsync(logFileUri);
-      if (fileInfo.exists) {
-        const existing = await FileSystem.readAsStringAsync(logFileUri);
-        await FileSystem.writeAsStringAsync(logFileUri, existing + logEntry);
-      } else {
-        await FileSystem.writeAsStringAsync(logFileUri, logEntry);
+    static async log(level: LogLevel, message: string, meta?: LogMeta): Promise<void> {
+      const logEntry = formatLog(level, message, meta);
+    
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(logFileUri);
+    
+        if (fileInfo.exists) {
+          const existing = await FileSystem.readAsStringAsync(logFileUri);
+          await FileSystem.writeAsStringAsync(logFileUri, existing + logEntry);
+        } else {
+          await FileSystem.writeAsStringAsync(logFileUri, logEntry, {
+            encoding: FileSystem.EncodingType.UTF8,
+          });
+        }
+      } catch (err) {
+        console.error('Erreur lors de l’écriture du log :', err);
+        try {
+          const dir = logFileUri.substring(0, logFileUri.lastIndexOf('/'));
+          const dirInfo = await FileSystem.getInfoAsync(dir);
+          if (!dirInfo.exists) {
+            await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+          }
+    
+          await FileSystem.writeAsStringAsync(logFileUri, logEntry, {
+            encoding: FileSystem.EncodingType.UTF8,
+          });
+        } catch (nestedErr) {
+          console.error('Erreur lors de la création du dossier ou du fichier log :', nestedErr);
+        }
       }
-    } catch (err) {
-      console.error('Erreur écriture log:', err);
     }
-  }
-
+    
   static info(message: string, meta?: LogMeta): void {
     this.log('info', message, meta);
   }

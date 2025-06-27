@@ -194,6 +194,12 @@ export class GenericRepository<T extends BaseModel> {
     console.log(`🗑️ Soft delete OK sur ${this.tableName} pour ID=${id}`);
     Logger.log('info', 'Restore OK sur', { tableName: this.tableName, id });
   }
+
+  async forceDelete(id: number): Promise<void> {
+    await this.db.runAsync(`DELETE FROM ${this.tableName} WHERE id = ?`, [id]);
+    console.log(`Force delete OK sur ${this.tableName} pour ID=${id}`);
+    Logger.log('info', 'Force delete OK sur', { tableName: this.tableName, id });
+  }
   
 
   

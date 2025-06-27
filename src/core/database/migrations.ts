@@ -95,7 +95,7 @@ export class Migration {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         fileName VARCHAR(80) NOT NULL,
         data TEXT NOT NULL,
-        id_patient VARCHAR(30) NOT NULL,
+        id_patient VARCHAR(30) NULL,
         id_fiche VARCHAR(30) NOT NULL,
         type_diabete VARCHAR(10) NOT NULL,
         longitude REAL,

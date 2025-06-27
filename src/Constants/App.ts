@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system';
 export const APP_NAME = process.env.APP_NAME
 
 export const VERSION_NAME = "1.2.24"
+export const APP_VERSION = "1.2.24"
 export const SURVEY_FOLDER = `${FileSystem.documentDirectory}surveys/`
 export const AUTH_BASE_URL_KEY = 'auth_base_url'
 export const ACTIVE_DIABETE_TYPE_KEY = 'active_diabete_type'
@@ -17,7 +18,8 @@ export const API_HEADER = {
 
 export const PATH_OF_PATIENTS_DIR_ON_THE_LOCAL = "Trafic/patients/instances";
 export const PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL = "Trafic/consultations/instances";
-export const LOG_FILE_PATH = `logs/`;
+export const LOG_FILE_PATH = `Trafic/`;
+export const LAST_SYNC_DATE_KEY = 'last_sync_date';
 
 
 
