@@ -6,7 +6,7 @@ import Patient from '../models/Patient';
 import { ConsultationRepository } from "../Repositories/ConsultationRepository";
 import { PatientRepository } from '../Repositories/PatientRepository';
 import { ConsultationFormData, Coordinates } from "../types";
-import { generateConsultationName } from '../utils/consultation';
+import { generateConsultationName, generateUUID } from '../utils/consultation';
 import Logger from '../utils/Logger';
 import Service from "./core/Service";
 
@@ -33,6 +33,7 @@ export default class ConsultationService extends Service {
       consultationToCreate.synced = false;
       consultationToCreate.longitude = coordinates.longitude;
       consultationToCreate.latitude = coordinates.latitude;
+      consultationToCreate.uuid = generateUUID();
       consultationToCreate.createdBy = this.getConnectedUsername();
       consultationToCreate.createdAt = new Date().toISOString();
       consultationToCreate.updatedAt = new Date().toISOString();

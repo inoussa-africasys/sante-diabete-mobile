@@ -1,3 +1,4 @@
+
 export interface PatientFormData {
   nom: string;
   prenom: string;
@@ -43,4 +44,16 @@ export interface PatientDeletedSyncError {
 }
 
 export interface PatientUpdatedSyncError extends PatientDeletedSyncError {
+}
+
+export interface ConsultationSyncError {
+  consultationId: string;
+  error: string;
+}
+
+export interface ConsultationCreatedSyncData {
+  form_name: string,
+  consultation_name: string,
+  uuid: string,
+  content: string
 }

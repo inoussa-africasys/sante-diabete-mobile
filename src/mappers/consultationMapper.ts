@@ -1,5 +1,6 @@
 import { Consultation } from "../models/Consultation";
-import { ConsultationFormData } from "../types";
+import { ConsultationCreatedSyncData, ConsultationFormData } from "../types";
+import { generateConsultationFileName } from "../utils/consultation";
 
 export class ConsultationMapper {
     static toConsultationFormData(consultation: Consultation): ConsultationFormData {
@@ -14,5 +15,14 @@ export class ConsultationMapper {
         consultation.data = consultationFormData.data;
         consultation.id_fiche = consultationFormData.id_fiche;
         return consultation;
+    }
+
+    static toConsultationCreatedSyncData(consultation: Consultation): ConsultationCreatedSyncData {
+        return {
+            form_name: consultation.getFiche().name as string,
+            consultation_name: generateConsultationFileName(consultation.fileName),
+            uuid: consultation.uuid,
+            content: consultation.data
+        };
     }
 }

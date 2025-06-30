@@ -1,3 +1,5 @@
+import { randomUUID } from "expo-crypto";
+
 export function generateConsultationName(date: Date = new Date()): string {
     const pad = (n: number) => n.toString().padStart(2, '0');
   
@@ -10,4 +12,15 @@ export function generateConsultationName(date: Date = new Date()): string {
   
     return `consultation_${day}-${month}-${year}_${hours}h${minutes}min`;
   }
+
+  export const generateUUID = (): string => {
+    return randomUUID();
+  };
   
+
+
+  export function generateConsultationFileName(fileJsonUri: string): string {
+    const fileName = fileJsonUri.split('/').pop();
+    const fileNameWithoutExtension = fileName?.split('.').shift();
+    return fileNameWithoutExtension || '';
+  }

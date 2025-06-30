@@ -1,7 +1,10 @@
+import { FicheRepository } from './../Repositories/FicheRepository';
 import { BaseModel } from "./BaseModel";
+import Fiche from "./Fiche";
 
 export class Consultation extends BaseModel {
     fileName: string;
+    uuid: string;
     data: string;
     synced: boolean;
     type_diabete: string;
@@ -17,6 +20,7 @@ export class Consultation extends BaseModel {
         super();
         this.id = data?.id 
         this.fileName = data?.fileName || '';
+        this.uuid = data?.uuid || '';
         this.data = data?.data || '';
         this.synced = data?.synced || false;
         this.type_diabete = data?.type_diabete || '';
@@ -29,5 +33,14 @@ export class Consultation extends BaseModel {
         this.updatedAt = data?.updatedAt || ''
         this.deletedAt = data?.deletedAt || undefined;
         this.isLocalCreated = data?.isLocalCreated || true;
+    }
+
+    public getFiche() : Fiche{
+        const ficheRepository = new FicheRepository();
+        const fiche = ficheRepository.findById(parseInt(this.id_fiche));    
+        if (!fiche) {
+            throw new Error(`Fiche avec l'ID ${this.id_fiche} non trouvé`);
+        }
+        return fiche;
     }
 }

@@ -58,6 +58,9 @@ export class GenericRepository<T extends BaseModel> {
     return rows.map(this.modelFactory);
   }
 
+  getAll(): T[] {
+    return this.findAll();
+  }
  
 
   query(): QueryBuilder<T> {

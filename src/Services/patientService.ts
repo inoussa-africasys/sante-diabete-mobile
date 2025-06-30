@@ -2,25 +2,29 @@ import axios from 'axios';
 import * as FileSystem from 'expo-file-system';
 import uuid from 'react-native-uuid';
 import { API_HEADER, APP_VERSION, PATH_OF_PATIENTS_DIR_ON_THE_LOCAL } from "../Constants/App";
+import { ConsultationRepository } from '../Repositories/ConsultationRepository';
 import { PatientRepository } from "../Repositories/PatientRepository";
 import { getLastSyncDate } from '../functions';
 import { setLastSyncDate } from '../functions/syncHelpers';
+import { ConsultationMapper } from '../mappers/consultationMapper';
 import { PatientMapper } from '../mappers/patientMapper';
 import Patient from "../models/Patient";
-import { PatientDeletedSyncError, PatientFormData, PatientUpdatedSyncError } from "../types";
+import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientUpdatedSyncError } from "../types";
 import Logger from '../utils/Logger';
 import { sendTraficAuditEvent } from '../utils/traficAudit';
-import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
+import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
 import Service from "./core/Service";
 
 
 export default class PatientService extends Service {
     private patientRepository: PatientRepository;
+    private consultationRepository: ConsultationRepository;
   
 
     constructor() {
         super();
         this.patientRepository = new PatientRepository();
+        this.consultationRepository = new ConsultationRepository();
     }
 
     async getAllOnTheLocalDb(type_diabete: string): Promise<Patient[]> {
@@ -211,13 +215,22 @@ export default class PatientService extends Service {
             Logger.log("error", "Erreur lors de la synchronisation des patients supprimés");
             return false;
           }
-          const updatedPatientsSynced = await this.sendCreatedPatientsToServer();
-          console.log("Patients mis à jour synchronisés :", updatedPatientsSynced);
-          if (!updatedPatientsSynced) {
+          const sendCreatedPatientsToServer = await this.sendCreatedPatientsToServer();
+          console.log("Patients mis à jour synchronisés :", sendCreatedPatientsToServer);
+          if (!sendCreatedPatientsToServer) {
             console.error("Erreur lors de la synchronisation des patients mis à jour");
             Logger.log("error", "Erreur lors de la synchronisation des patients mis à jour");
             return false;
           }
+
+          const sendDataToCreatedConsultationsToServer = await this.sendCreatedConsultationsToServer();
+          console.log("Consultations créées synchronisées :", sendDataToCreatedConsultationsToServer);
+          if (!sendDataToCreatedConsultationsToServer) {
+            console.error("Erreur lors de la synchronisation des consultations créées");
+            Logger.log("error", "Erreur lors de la synchronisation des consultations créées");
+            return false;
+          }
+
 
           await setLastSyncDate(new Date().toISOString());
           
@@ -278,13 +291,10 @@ export default class PatientService extends Service {
       
 
       private async sendCreatedPatientsToServer(): Promise<boolean> {
-        console.log("sendCreatedPatientsToServer");
         try {
           const lastSyncDate = await getLastSyncDate();
-          console.log("lastSyncDate", lastSyncDate);
           const patients = await this.patientRepository.getAllPatientsUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate);
           const errors: PatientUpdatedSyncError[] = [];
-          console.log("patients", patients);
           const requests = patients.map(async (patient) => {
             const url = `${this.getBaseUrl()}/api/json/mobile/patients/synchro?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
             try {
@@ -324,6 +334,51 @@ export default class PatientService extends Service {
           return false;
         }
       }
+
+
+      private async sendCreatedConsultationsToServer() : Promise<boolean>{
+        try {
+          const lastSyncDate = await getLastSyncDate();
+          const consultations = await this.consultationRepository.getConsultationsGroupedByPatientOnLocalDB(lastSyncDate);
+          const errors: ConsultationSyncError[] = [];
+          const requests = Object.entries(consultations).map(async ([patientId, consultations]) => {
+          const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/medicaldata/synchro/submissions/batch?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patientId}&lat&lon`;
+            try {
+              const consultationsSyncData = consultations.map((consultation) => ConsultationMapper.toConsultationCreatedSyncData(consultation));
+              const response = await axios.post(url, { data: JSON.stringify(consultationsSyncData) });
+              if (response.status !== 201 && response.status !== 200) {
+                throw new Error(`Erreur HTTP: ${response.status}  : ${response.statusText}`);
+              }
+              this.consultationRepository.markToSynced(patientId);
+              Logger.info(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.data}`);
+              console.log(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.data}`);
+            } catch (error) {
+              const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+              Logger.error(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
+              console.log(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
+              errors.push({ consultationId: patientId, error: errorMsg });
+            }
+          });
+          await Promise.allSettled(requests);
+
+          if (errors.length > 0) {
+            console.warn("Consultations non synchronisées :", errors);
+            Logger.error("sendCreatedConsultationsToServer Failed :", errors);
+            sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED,SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED + " " + errors);
+            return false;
+          }
+          Logger.info("sendCreatedConsultationsToServer Success :", consultations);
+          sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS,SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS + " " + consultations);
+          return true;
+            
+        } catch (error) {
+            console.error("Erreur lors de la synchronisation des consultations créées :", error);
+            Logger.error("sendCreatedConsultationsToServer Failed :", {error} );
+            sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED,SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED + " " + error);
+            return false;
+        }
+      }
+      
 
       
       

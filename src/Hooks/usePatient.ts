@@ -143,9 +143,9 @@ export const usePatient = () : usePatientReturnType => {
         try {
             setIsLoading(true);
             const patientsService = await PatientService.create();
-            const patients = await patientsService.syncPatients();
+            const isSynced = await patientsService.syncPatients();
             setIsLoading(false);
-            return true;
+            return isSynced;
         } catch (error) {
             console.error('Erreur réseau :', error);
             Logger.log('error', 'Error syncing patient on the local db', { error });

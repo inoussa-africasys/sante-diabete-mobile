@@ -93,13 +93,14 @@ export class Migration {
     db.execSync(`
       CREATE TABLE IF NOT EXISTS consultations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid VARCHAR(80) NOT NULL,
         fileName VARCHAR(80) NOT NULL,
         data TEXT NOT NULL,
         id_patient VARCHAR(30) NULL,
         id_fiche VARCHAR(30) NOT NULL,
         type_diabete VARCHAR(10) NOT NULL,
-        longitude REAL,
-        latitude REAL,
+        longitude REAL NULL,
+        latitude REAL NULL,
         synced BOOLEAN NOT NULL DEFAULT false,
         createdBy VARCHAR(80),
         createdAt DATETIME NOT NULL,
