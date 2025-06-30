@@ -57,3 +57,28 @@ export interface ConsultationCreatedSyncData {
   uuid: string,
   content: string
 }
+
+export interface DataConsultationOfGetWithPatientGetAllServer {
+  date_consultation: string;
+  consultation_name: string;
+  formName: string;
+  uuid: string;
+  form_name: string;
+  content: string; 
+}
+
+export interface PatientSyncDataResponseOfGetAllServer {
+  dateBirthday: string;
+  identifier: string;
+  lastName: string;
+  firstName: string;
+  comments: string;
+  gender: string;
+  generationDate: string;
+  isModified: boolean;
+  contact: string;
+  dataConsultations: DataConsultationOfGetWithPatientGetAllServer[];
+  email: string;
+  traficUser: string;
+  status: string;
+}

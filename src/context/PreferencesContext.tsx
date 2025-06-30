@@ -1,38 +1,34 @@
-// src/context/PreferencesContext.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
-    createContext,
-    ReactNode,
-    useContext,
-    useEffect,
-    useState,
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
 } from 'react';
 import { USER_PREFERENCES_KEY } from '../Constants/App';
+import { PreferencesType } from '../types/app';
 import { Language, Theme } from '../types/enums';
   
-  type Preferences = {
-    theme: Theme;
-    language: Language;
-    notificationsEnabled: boolean;
-    autoSync: boolean;
-  };
+
   
   type PreferencesContextType = {
-    preferences: Preferences;
-    updatePreference: <K extends keyof Preferences>(key: K, value: Preferences[K]) => void;
+    preferences: PreferencesType;
+    updatePreference: <K extends keyof PreferencesType>(key: K, value: PreferencesType[K]) => void;
   };
   
-  const defaultPreferences: Preferences = {
+  const defaultPreferences: PreferencesType = {
     theme: Theme.LIGHT,
     language: Language.FR,
     notificationsEnabled: true,
     autoSync: true,
+    isPictureSyncEnabled: false,
   };
   
   const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
   
   export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
-    const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
+    const [preferences, setPreferences] = useState<PreferencesType>(defaultPreferences);
   
     useEffect(() => {
       const load = async () => {
@@ -46,7 +42,7 @@ import { Language, Theme } from '../types/enums';
       AsyncStorage.setItem(USER_PREFERENCES_KEY, JSON.stringify(preferences));
     }, [preferences]);
   
-    const updatePreference = <K extends keyof Preferences>(key: K, value: Preferences[K]) => {
+    const updatePreference = <K extends keyof PreferencesType>(key: K, value: PreferencesType[K]) => {
       setPreferences((prev) => ({ ...prev, [key]: value }));
     };
   

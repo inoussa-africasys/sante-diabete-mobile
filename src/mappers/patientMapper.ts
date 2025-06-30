@@ -1,5 +1,5 @@
 import Patient from "../models/Patient";
-import { PatientFormData, PatientSyncData } from "../types";
+import { PatientFormData, PatientSyncData, PatientSyncDataResponseOfGetAllServer } from "../types";
 
 export class PatientMapper {
     static toPatientFormData(patient: Patient): PatientFormData {
@@ -49,6 +49,22 @@ export class PatientMapper {
             end_date: new Date(),
             traficUser: patient.trafic_user,
         };
+    }
+
+
+    static syncResponseToPatient(patientSyncData: PatientSyncDataResponseOfGetAllServer): Patient {
+        const patient = new Patient();
+        patient.id_patient = patientSyncData.identifier;
+        patient.first_name = patientSyncData.firstName;
+        patient.last_name = patientSyncData.lastName;
+        patient.date_of_birth = patientSyncData.dateBirthday;
+        patient.genre = patientSyncData.gender;
+        patient.profession = "";
+        patient.phone = patientSyncData.contact;
+        patient.email = patientSyncData.email;
+        patient.comment = patientSyncData.comments;
+        patient.trafic_user = patientSyncData.traficUser;
+        return patient;
     }
 }
 

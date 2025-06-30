@@ -1,3 +1,4 @@
+import { SQLiteBindValue } from 'expo-sqlite';
 import { BATCH_SIZE } from '../Constants/App';
 import { DatabaseConnection } from '../core/database/database';
 import { QueryBuilder } from '../core/database/QueryBuilder';
@@ -30,7 +31,7 @@ export class GenericRepository<T extends BaseModel> {
     const values = fields.map(k => item[k as keyof T]);
 
     const query = `UPDATE ${this.tableName} SET ${assignments} WHERE id = ?`;
-    
+
     this.db.runSync(query, [...values, id]);
   }
 
@@ -43,17 +44,17 @@ export class GenericRepository<T extends BaseModel> {
     return result ? this.modelFactory(result) : null;
   }
 
- /*  findAll(): T[] {
-    const results = this.db.getAllSync(`SELECT * FROM ${this.tableName}`);
-    return results.map(this.modelFactory);
-  }
- */
+  /*  findAll(): T[] {
+     const results = this.db.getAllSync(`SELECT * FROM ${this.tableName}`);
+     return results.map(this.modelFactory);
+   }
+  */
 
   findAll(): T[] {
     const query = this.ignoreSoftDelete
       ? `SELECT * FROM ${this.tableName}`
       : `SELECT * FROM ${this.tableName} WHERE deletedAt IS NULL`;
-  
+
     const rows = this.db.getAllSync(query);
     return rows.map(this.modelFactory);
   }
@@ -61,7 +62,7 @@ export class GenericRepository<T extends BaseModel> {
   getAll(): T[] {
     return this.findAll();
   }
- 
+
 
   query(): QueryBuilder<T> {
     return new QueryBuilder(this.tableName, this.db, this.modelFactory);
@@ -69,34 +70,34 @@ export class GenericRepository<T extends BaseModel> {
 
   insertAllOptimizedBatch(items: T[]): void {
     if (items.length === 0) return;
-  
+
     const db = this.db;
-    
-  
+
+
     db.execSync('BEGIN TRANSACTION');
-  
+
     try {
       const firstItem = items[0];
       const fields = Object.keys(firstItem).filter(k => firstItem[k as keyof T] !== undefined);
       const baseQuery = `INSERT INTO ${this.tableName} (${fields.join(',')}) VALUES `;
-  
+
       for (let i = 0; i < items.length; i += BATCH_SIZE) {
         const batchItems = items.slice(i, i + BATCH_SIZE);
-  
+
         const placeholdersPerRow = '(' + fields.map(() => '?').join(',') + ')';
         const placeholders = Array(batchItems.length).fill(placeholdersPerRow).join(',');
-  
+
         const query = baseQuery + placeholders;
-  
+
         const allValues: any[] = [];
         for (const item of batchItems) {
           const values = fields.map(k => item[k as keyof T]);
           allValues.push(...values);
         }
-  
+
         db.runSync(query, allValues);
       }
-  
+
       db.execSync('COMMIT');
     } catch (err) {
       console.error("InsertAll Optimized Batch Error:", err);
@@ -104,7 +105,7 @@ export class GenericRepository<T extends BaseModel> {
       db.execSync('ROLLBACK');
     }
   }
-  
+
 
   insertAll(items: T[]): void {
     if (items.length === 0) return;
@@ -126,17 +127,17 @@ export class GenericRepository<T extends BaseModel> {
 
   clean(): void {
     const db = this.db;
-  
+
     db.execSync('BEGIN TRANSACTION');
     try {
       // Supprimer tous les enregistrements
       const deleteQuery = `DELETE FROM ${this.tableName}`;
       db.runSync(deleteQuery);
-  
+
       // Réinitialiser l'AUTOINCREMENT
       const resetSeqQuery = `DELETE FROM sqlite_sequence WHERE name = ?`;
       db.runSync(resetSeqQuery, [this.tableName]);
-  
+
       db.execSync('COMMIT');
     } catch (error) {
       console.error('Clean Error:', error);
@@ -149,12 +150,12 @@ export class GenericRepository<T extends BaseModel> {
   updatev2(id: number, item: Partial<T>): void {
     // Enlever les champs undefined et ne pas inclure 'id'
     const entries = Object.entries(item).filter(([key, value]) => key !== 'id' && value !== undefined);
-  
+
     const fields = entries.map(([key]) => `${key} = ?`);
     const values = entries.map(([_, value]) => value);
-  
+
     const query = `UPDATE ${this.tableName} SET ${fields.join(', ')} WHERE id = ?`;
-  
+
     this.db.runSync(query, [...values, id]);
   }
 
@@ -163,25 +164,25 @@ export class GenericRepository<T extends BaseModel> {
     const fields = Object.keys(item).filter(k => k !== 'id' && item[k as keyof T] !== undefined);
     const placeholders = fields.map(() => '?').join(',');
     const values = fields.map(k => item[k as keyof T]);
-  
+
     const insertQuery = `INSERT INTO ${this.tableName} (${fields.join(',')}) VALUES (${placeholders})`;
     this.db.runSync(insertQuery, values);
-  
+
     // SQLite retourne l'ID de la dernière insertion auto-incrémentée via cette fonction spéciale
     const result = this.db.getFirstSync(`SELECT last_insert_rowid() as id`);
     const insertedId = result?.id!;
-  
+
     if (!insertedId) return null;
-  
+
     const row = this.db.getFirstSync(`SELECT * FROM ${this.tableName} WHERE id = ?`, [insertedId]);
     return row ? this.modelFactory(row) : null;
   }
-  
-  
+
+
   async softDelete(id: string): Promise<void> {
     const query = `UPDATE ${this.tableName} SET deletedAt = ? WHERE id = ?`;
     const deletedAt = new Date().toISOString();
-  
+
     try {
       await this.db.runAsync(query, [deletedAt, id]);
       console.log(`🗑️ Soft delete OK sur ${this.tableName} pour ID=${id}`);
@@ -203,7 +204,35 @@ export class GenericRepository<T extends BaseModel> {
     console.log(`Force delete OK sur ${this.tableName} pour ID=${id}`);
     Logger.log('info', 'Force delete OK sur', { tableName: this.tableName, id });
   }
-  
 
-  
+
+  async createOrUpdate(item: T, uniqueKey: keyof T): Promise<void> {
+    try {
+      const keyValue = item[uniqueKey] as unknown as SQLiteBindValue;
+
+      const existing = await this.db.getFirstSync(
+        `SELECT * FROM ${this.tableName} WHERE ${String(uniqueKey)} = ?`,
+        [keyValue]
+      );
+
+      if (existing) {
+        const fields = Object.keys(item).filter(k => k !== 'id');
+        const setters = fields.map(k => `${k} = ?`).join(', ');
+        const values = fields.map(k => item[k as keyof T] as SQLiteBindValue);
+        values.push(keyValue);
+
+        const sql = `UPDATE ${this.tableName} SET ${setters} WHERE ${String(uniqueKey)} = ?`;
+        await this.db.runAsync(sql, values);
+      } else {
+        await this.insert(item);
+      }
+    } catch (error) {
+      console.error('Error creating or updating item:', error);
+      Logger.log('error', 'Error creating or updating item', { error });
+    }
+  }
+
+
+
+
 }

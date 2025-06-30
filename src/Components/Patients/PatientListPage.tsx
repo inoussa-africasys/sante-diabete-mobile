@@ -46,13 +46,14 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
         const p = await getAllOnTheLocalDbPatients();
         setPatients(p);
         setFilteredPatients(p); // Mettre à jour filteredPatients avec les données récupérées
+        console.log(p);
       } catch (error) {
         console.error('Erreur lors de la récupération des patients:', error);
       }
     };
     
     fetchPatients();
-  }, []); // Supprimer getAllOnTheLocalDbPatients des dépendances
+  }, []);
 
 
   const gotoPatientScanner = () => {

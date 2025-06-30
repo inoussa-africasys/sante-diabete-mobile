@@ -9,7 +9,9 @@ import { View } from "react-native";
 import "../assets/css/global.css";
 import FullScreenSplash from "../src/Components/FullScreenSplash";
 import { ToastProvider } from '../src/Components/Toast/ToastProvider';
+import { initConfig } from '../src/Config';
 import { DiabetesProvider } from '../src/context/DiabetesContext';
+import { PreferencesProvider } from '../src/context/PreferencesContext';
 
 const queryClient = new QueryClient();
 
@@ -24,14 +26,23 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function prepare() {
-      /* Migration.resetDatabase(); */
+      /* Migration.resetDatabase();  */
       // Simuler un chargement, ex: chargement de polices, données, etc.
-
-      await new Promise(resolve => {
-        setTimeout(resolve, 2000)
-        initDB();
-      });
-      setAppReady(true);
+      
+      try {
+        // Initialiser la configuration
+        await initConfig();
+        console.log('Configuration initialisée avec succès');
+        
+        await new Promise(resolve => {
+          setTimeout(resolve, 2000);
+          initDB();
+        });
+        
+        setAppReady(true);
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation de l\'application:', error);
+      }
     }
     
     prepare();
@@ -45,16 +56,18 @@ export default function RootLayout() {
       {showSplash && <FullScreenSplash onAnimationComplete={handleSplashComplete} />}
       {isAppReady &&
           <QueryClientProvider client={queryClient}>
-            <DiabetesProvider>
-              <AuthProvider>
-                <ToastProvider>
-                  <Stack screenOptions={{
-                    headerShown : false
-                  }} />
-                </ToastProvider>
-              </AuthProvider>
-            </DiabetesProvider>
-          </QueryClientProvider>
+            <PreferencesProvider>
+              <DiabetesProvider>
+                <AuthProvider>
+                  <ToastProvider>
+                    <Stack screenOptions={{
+                      headerShown : false
+                    }} />
+                  </ToastProvider>
+                </AuthProvider>
+              </DiabetesProvider>
+            </PreferencesProvider>
+            </QueryClientProvider>
       }
     </View>
   );
@@ -66,7 +79,7 @@ const initDB = () => {
   Migration.initialize();
 
     const repo = new PatientRepository();
-
+/* 
     const allPatients = repo.findAll();
-    console.log(allPatients);
+    console.log(allPatients); */
 }

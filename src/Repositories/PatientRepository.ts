@@ -1,5 +1,7 @@
 import { getDiabetesType } from '../functions';
+import { PatientMapper } from '../mappers/patientMapper';
 import Patient from '../models/Patient';
+import { PatientSyncDataResponseOfGetAllServer } from '../types';
 import Logger from '../utils/Logger';
 import { GenericRepository } from './GenericRepository';
 
@@ -104,6 +106,26 @@ export class PatientRepository extends GenericRepository<Patient> {
     } catch (error) {
       console.error('Error marking patient as synced:', error);
       Logger.log('error', 'Error marking patient as synced', { error });
+    }
+  }
+
+
+  public async createOrUpdateAll(items: PatientSyncDataResponseOfGetAllServer[]): Promise<void> {
+    try {
+      this.db.execSync('BEGIN TRANSACTION');
+      for (const item of items) {
+        const patient = PatientMapper.syncResponseToPatient(item);
+        patient.createdAt = new Date().toISOString();
+        patient.updatedAt = new Date().toISOString();
+        patient.type_diabete = await getDiabetesType();
+        patient.synced = true;
+        patient.isLocalCreated = false;
+        await this.createOrUpdate(patient, 'id_patient');
+      }
+      this.db.execSync('COMMIT');
+    } catch (error) {
+      console.error('Error creating or updating patients:', error);
+      Logger.log('error', 'Error creating or updating patients', { error });
     }
   }
 

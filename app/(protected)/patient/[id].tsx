@@ -56,8 +56,6 @@ export default function PatientDetailScreen() {
   };
 
   const handleConsultationPress = (consultation: Consultation) => {
-    // Naviguer vers la page de détail de la consultation
-    console.log("consultation id : ", consultation.id);
     router.push(`/patient/${patientId}/consultations/show?consultationId=${consultation.id}`);
   };
 
@@ -74,7 +72,6 @@ export default function PatientDetailScreen() {
   };
 
   const handleNewConsultation = () => {
-    // Rediriger vers la liste des fiches tout en conservant l'ID du patient
     router.push(`/liste-fiches?patientId=${patientId}&mode=remplir`);
     setShowOptions(false);
   };
@@ -112,7 +109,6 @@ export default function PatientDetailScreen() {
     router.replace('/liste-patient');
   };
 
-  // Formater la date pour l'affichage
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Date inconnue';
     const date = new Date(dateString);
@@ -122,7 +118,6 @@ export default function PatientDetailScreen() {
   return (
     <>
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -141,7 +136,6 @@ export default function PatientDetailScreen() {
           </View>
         </View>
 
-        {/* Consultations List */}
         <ScrollView style={styles.scrollContainer}>
           {isLoadingConsultations ? (
             <View style={styles.centerMessage}>
@@ -154,7 +148,6 @@ export default function PatientDetailScreen() {
           ) : consultations && Object.entries(consultations).length > 0 ? (
             Object.entries(consultations).map(([date, dateConsultations]) => (
               <View key={date} style={styles.folderSection}>
-                {/* Folder Header */}
                 <TouchableOpacity
                   style={styles.folderContainer}
                   onPress={() => toggleFolder(date)}
@@ -174,7 +167,6 @@ export default function PatientDetailScreen() {
                   </View>
                 </TouchableOpacity>
 
-                {/* Consultations in this folder */}
                 {expandedFolders[date] && (
                   <View style={styles.consultationsContainer}>
                     {dateConsultations.map((consultation, index) => (
@@ -200,7 +192,6 @@ export default function PatientDetailScreen() {
           )}
         </ScrollView>
 
-        {/* Add Button and Options */}
         <View style={styles.fabContainer}>
           {showOptions && (
             <View style={styles.optionsContainer}>
@@ -241,7 +232,6 @@ export default function PatientDetailScreen() {
         </View>
       </View>
 
-      {/* Modales */}
       <ConfirmModal
         isVisible={showConfirmModal}
         title="Confirmation"
