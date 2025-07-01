@@ -76,7 +76,7 @@ export default function PatientDetailScreen() {
   };
 
   const handleNewRecord = () => {
-    router.push(`/nouveau-dossier?patientId=${patientId}`);
+    /* router.push(`/nouveau-dossier?patientId=${patientId}`); */
     setShowOptions(false);
   };
 

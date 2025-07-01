@@ -96,4 +96,8 @@ export default class FicheService extends Service {
         return await this.ficheRepository.findById(id);
     }
 
+    async getByNameInLocalDB(ficheName : string): Promise<Fiche | null> {
+        return await this.ficheRepository.findByName(ficheName);
+    }
+
 }

@@ -15,12 +15,15 @@ export class ConsultationMapper {
         const consultation = new Consultation();
         consultation.data = consultationFormData.data;
         consultation.id_fiche = consultationFormData.id_fiche;
+        const ficheRepository = new FicheRepository();
+        const fiche = ficheRepository.findByName(consultationFormData.id_fiche);
+        consultation.ficheName = fiche?.name as string || '' ;
         return consultation;
     }
 
     static toConsultationCreatedSyncData(consultation: Consultation): ConsultationCreatedSyncData {
         return {
-            form_name: consultation.getFiche().name as string,
+            form_name: consultation.ficheName,
             consultation_name: generateConsultationFileName(consultation.fileName),
             uuid: consultation.uuid,
             content: consultation.data
@@ -46,6 +49,7 @@ export class ConsultationMapper {
         consultation.type_diabete = type_diabete;
         consultation.createdAt = new Date().toISOString();
         consultation.updatedAt = new Date().toISOString();
+        consultation.ficheName = dataConsultationOfGetWithPatientGetAllServer.form_name;
         return consultation;
     }
 }

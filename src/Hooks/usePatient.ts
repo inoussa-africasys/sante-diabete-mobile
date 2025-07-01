@@ -29,8 +29,6 @@ export const usePatient = () : usePatientReturnType => {
             setIsLoading(true);
             const patientsService = await PatientService.create();
             const patients = await patientsService.getAllOnTheLocalDb(diabetesType);
-            const count = await patientsService.countPatientsCreatedOrUpdatedSince(new Date().toISOString(),diabetesType);
-            console.log("count : ",count);
             setIsLoading(false);
             return patients;
         } catch (error) {

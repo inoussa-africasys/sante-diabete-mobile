@@ -99,6 +99,7 @@ export class Migration {
         data TEXT NOT NULL,
         id_patient VARCHAR(30) NULL,
         id_fiche VARCHAR(30) NOT NULL,
+        ficheName VARCHAR(80) NOT NULL,
         type_diabete VARCHAR(10) NOT NULL,
         longitude REAL NULL,
         latitude REAL NULL,

@@ -26,7 +26,7 @@ export default function EditConsultationScreen() {
 
   const { getConsultationById } = useConsultation();
   const { getPatientByIdOnTheLocalDb } = usePatient();
-  const { getFicheById } = useFiche();
+  const { getFicheByName } = useFiche();
   const { updateConsultationByIdOnLocalDB } = useConsultation();
 
   useEffect(() => {
@@ -40,9 +40,9 @@ export default function EditConsultationScreen() {
         setConsultation(consultationFetched);
         setPatient(patientFetched);
 
-        if (consultationFetched?.id_fiche) {
+        if (consultationFetched?.ficheName) {
             console.log("consultation : ",consultationFetched);
-          const ficheFetched = await getFicheById(consultationFetched.id_fiche);
+          const ficheFetched = await getFicheByName(consultationFetched.ficheName);
           setFiche(ficheFetched);
         }
 

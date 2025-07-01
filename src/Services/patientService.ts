@@ -275,6 +275,8 @@ export default class PatientService extends Service {
 
   private async syncDeletedPatients(): Promise<boolean> {
     try {
+      const totalDeletedPatients = 0;
+      let deletedPatientsSynced = 0;
       const lastSyncDate = await getLastSyncDate();
       const deletedPatients = await this.patientRepository.getDeletedPatientsOnLocalDB();
 
@@ -293,6 +295,7 @@ export default class PatientService extends Service {
           }
           this.patientRepository.forceDelete(patient.id);
           Logger.info(`${SYNCHRO_DELETE_LOCAL_PATIENTS} ${patient.id_patient}: ${response.data}`);
+          deletedPatientsSynced++;
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
           Logger.error(`${SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED} ${patient.id_patient}: ${errorMsg}`);
@@ -310,6 +313,8 @@ export default class PatientService extends Service {
       }
 
       Logger.info("syncDeletedPatients Success :", deletedPatients);
+      console.log("syncDeletedPatients Success :", deletedPatientsSynced + "/" + totalDeletedPatients);
+      
       sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS + " " + deletedPatients);
       return true;
 
@@ -323,10 +328,11 @@ export default class PatientService extends Service {
 
   private async sendCreatedOrUpdatedPatientsToServer(): Promise<boolean> {
     try {
+      let patientsSynced = 0;
       const lastSyncDate = await getLastSyncDate();
       const patients = await this.patientRepository.getAllPatientsUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate);
       const errors: PatientUpdatedSyncError[] = [];
-
+      const totalPatients = patients.length;
       const requests = patients.map(async (patient) => {
         const url = `${this.getBaseUrl()}/api/json/mobile/patients/synchro?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
         try {
@@ -334,12 +340,13 @@ export default class PatientService extends Service {
             throw new Error(` Patient avec l'ID ${patient.id_patient} non trouvé`);
           }
           const response = await axios.post(url, { data: JSON.stringify(patient) });
-          if (response.status !== 201) {
+          if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
           this.patientRepository.markToSynced(patient.id);
           Logger.info(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS} ${patient.id_patient}: ${response.status} : ${response.statusText}`);
           console.log(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS} ${patient.id_patient}: ${response.status} : ${response.statusText}`);
+          patientsSynced++;
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
           Logger.error(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED} ${patient.id_patient}: ${errorMsg}`);
@@ -358,6 +365,7 @@ export default class PatientService extends Service {
       }
 
       Logger.info("sendCreatedPatientsToServer Success :", patients);
+      console.log("sendCreatedPatientsToServer Success :", patientsSynced + "/" + totalPatients);
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS + " " + patients);
       return true;
 
@@ -370,9 +378,11 @@ export default class PatientService extends Service {
 
   private async sendCreatedConsultationsToServer(): Promise<boolean> {
     try {
+      let consultationsSynced = 0;
       const lastSyncDate = await getLastSyncDate();
       const consultations = await this.consultationRepository.getConsultationsGroupedByPatientOnLocalDB(lastSyncDate);
       const errors: ConsultationSyncError[] = [];
+      const totalConsultations = Object.values(consultations).flat().length;
       const requests = Object.entries(consultations).map(async ([patientId, consultations]) => {
         const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/medicaldata/synchro/submissions/batch?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patientId}&lat&lon`;
         try {
@@ -400,6 +410,7 @@ export default class PatientService extends Service {
         return false;
       }
       Logger.info("sendCreatedConsultationsToServer Success :", consultations);
+      console.log("sendCreatedConsultationsToServer Success :", consultationsSynced + "/" + totalConsultations);
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS + " " + consultations);
       return true;
 

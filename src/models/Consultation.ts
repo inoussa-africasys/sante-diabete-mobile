@@ -10,6 +10,7 @@ export class Consultation extends BaseModel {
     type_diabete: string;
     id_patient: string;
     id_fiche: string;
+    ficheName: string;
     longitude: number;
     latitude: number;
     createdBy: string;
@@ -26,6 +27,7 @@ export class Consultation extends BaseModel {
         this.type_diabete = data?.type_diabete || '';
         this.id_patient = data?.id_patient || '';
         this.id_fiche = data?.id_fiche || '';
+        this.ficheName = data?.ficheName || '';
         this.longitude = data?.longitude || 0;
         this.latitude = data?.latitude || 0;
         this.createdBy = data?.createdBy || '';

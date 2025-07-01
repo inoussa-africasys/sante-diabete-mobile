@@ -14,7 +14,7 @@ export class PatientRepository extends GenericRepository<Patient> {
 
   async findAllByTypeDiabete(type_diabete: string): Promise<Patient[]> {
     try {
-      const result = this.db.getAllSync(`SELECT * FROM ${this.tableName} WHERE type_diabete = ?`, [type_diabete]);
+      const result = this.db.getAllSync(`SELECT * FROM ${this.tableName} WHERE type_diabete = ? AND deletedAt IS NULL ORDER BY createdAt DESC`, [type_diabete]);
       return result.map((item) => this.modelFactory(item));
     } catch (error) {
       console.error('Error fetching patients by type diabete:', error);
@@ -66,7 +66,7 @@ export class PatientRepository extends GenericRepository<Patient> {
   public async getDeletedPatientsOnLocalDB(): Promise<Patient[]> {
     try {
       const diabetesType = await getDiabetesType();
-      const result = this.db.getAllSync(`SELECT * FROM ${this.tableName} WHERE deletedAt IS NOT NULL AND type_diabete = ?`, [diabetesType.toString()]);
+      const result = this.db.getAllSync(`SELECT * FROM ${this.tableName} WHERE deletedAt IS NOT NULL AND type_diabete = ? AND deletedAt IS NOT NULL ORDER BY createdAt DESC`, [diabetesType.toString()]);
 
       return result.map((item) => this.modelFactory(item));
     } catch (error) {
@@ -83,10 +83,10 @@ export class PatientRepository extends GenericRepository<Patient> {
       let query = "";
       let params: any[] = [];
       if (!lastSyncDate) {
-        query = "SELECT * FROM " + this.tableName + " WHERE type_diabete = ?";
+        query = "SELECT * FROM " + this.tableName + " WHERE type_diabete = ? AND deletedAt IS NULL ORDER BY createdAt DESC";
         params = [await getDiabetesType()];
       } else {
-        query = "SELECT * FROM " + this.tableName + " WHERE updatedAt >= ? AND type_diabete = ? AND deletedAt IS NULL";
+        query = "SELECT * FROM " + this.tableName + " WHERE updatedAt >= ? AND type_diabete = ? AND deletedAt IS NULL ORDER BY createdAt DESC";
         params = [lastSyncDate, await getDiabetesType()];
       }
       const result = this.db.getAllSync(query, params);
