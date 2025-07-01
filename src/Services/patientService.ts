@@ -10,7 +10,7 @@ import { setLastSyncDate } from '../functions/syncHelpers';
 import { ConsultationMapper } from '../mappers/consultationMapper';
 import { PatientMapper } from '../mappers/patientMapper';
 import Patient from "../models/Patient";
-import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllServer, PatientUpdatedSyncError } from "../types";
+import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError } from "../types";
 import Logger from '../utils/Logger';
 import { sendTraficAuditEvent } from '../utils/traficAudit';
 import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
@@ -216,9 +216,9 @@ export default class PatientService extends Service {
         Logger.log("error", "Erreur lors de la synchronisation des patients supprimés");
         return false;
       }
-      const sendCreatedPatientsToServer = await this.sendCreatedPatientsToServer();
-      console.log("Patients mis à jour synchronisés :", sendCreatedPatientsToServer);
-      if (!sendCreatedPatientsToServer) {
+      const sendCreatedOrUpdatedPatientsToServer = await this.sendCreatedOrUpdatedPatientsToServer();
+      console.log("Patients mis à jour synchronisés :", sendCreatedOrUpdatedPatientsToServer);
+      if (!sendCreatedOrUpdatedPatientsToServer) {
         console.error("Erreur lors de la synchronisation des patients mis à jour");
         Logger.log("error", "Erreur lors de la synchronisation des patients mis à jour");
         return false;
@@ -258,11 +258,11 @@ export default class PatientService extends Service {
         }
       }
 
-
       await setLastSyncDate(new Date().toISOString());
+
       Logger.log("info", "Patients synchronisés");
       console.log("Patients synchronisés");
-      
+
 
       return true;
     } catch (error) {
@@ -321,11 +321,12 @@ export default class PatientService extends Service {
   }
 
 
-  private async sendCreatedPatientsToServer(): Promise<boolean> {
+  private async sendCreatedOrUpdatedPatientsToServer(): Promise<boolean> {
     try {
       const lastSyncDate = await getLastSyncDate();
       const patients = await this.patientRepository.getAllPatientsUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate);
       const errors: PatientUpdatedSyncError[] = [];
+
       const requests = patients.map(async (patient) => {
         const url = `${this.getBaseUrl()}/api/json/mobile/patients/synchro?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
         try {
@@ -337,8 +338,8 @@ export default class PatientService extends Service {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
           this.patientRepository.markToSynced(patient.id);
-          Logger.info(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS} ${patient.id_patient}: ${response.data}`);
-          console.log(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS} ${patient.id_patient}: ${response.data}`);
+          Logger.info(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS} ${patient.id_patient}: ${response.status} : ${response.statusText}`);
+          console.log(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS} ${patient.id_patient}: ${response.status} : ${response.statusText}`);
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
           Logger.error(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED} ${patient.id_patient}: ${errorMsg}`);
@@ -381,8 +382,8 @@ export default class PatientService extends Service {
             throw new Error(`Erreur HTTP: ${response.status}  : ${response.statusText}`);
           }
           this.consultationRepository.markToSynced(patientId);
-          Logger.info(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.data}`);
-          console.log(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.data}`);
+          Logger.info(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.status} : ${response.statusText}`);
+          console.log(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.status} : ${response.statusText}`);
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
           Logger.error(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
@@ -424,14 +425,14 @@ export default class PatientService extends Service {
   private async getAllPatientOnServer(): Promise<boolean> {
     try {
       const lastSyncDate = await getLastSyncDate();
-      const url = `${this.getBaseUrl()}/api/json/mobile/patients/medicaldata/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
-      console.log("Get sync patients : ", url);
+      const url = `${this.getBaseUrl()}/api/v3/json/mobile/patients/medicaldata/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
       const response = await axios.get(url);
+      console.log("Get sync patients : ", url);
       if (response.status !== 200 && response.status !== 201) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      const patients = response.data as PatientSyncDataResponseOfGetAllServer[];
-      this.patientRepository.createOrUpdateAll(patients);
+      const patients = response.data as PatientSyncDataResponseOfGetAllMedicalDataServer[];
+      await this.patientRepository.createOrUpdateAll(patients);
 
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS);
       return true;
@@ -445,14 +446,14 @@ export default class PatientService extends Service {
   private async getAllDeletedPatientOnServer(): Promise<boolean> {
     try {
       const lastSyncDate = await getLastSyncDate();
-     /*  const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/deleted/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
-      const response = await axios.get(url);
-      console.log("Get sync deleted patients : ", url);
-      if (response.status !== 200 && response.status !== 201) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
-      } 
-      const deletedPatients = response.data;
-      console.log("Get sync deleted patients : ", deletedPatients);*/
+      /*  const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/deleted/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
+       const response = await axios.get(url);
+       console.log("Get sync deleted patients : ", url);
+       if (response.status !== 200 && response.status !== 201) {
+         throw new Error(`Erreur HTTP: ${response.status}`);
+       } 
+       const deletedPatients = response.data;
+       console.log("Get sync deleted patients : ", deletedPatients);*/
       sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS);
       return true;
     } catch (error) {
@@ -462,8 +463,9 @@ export default class PatientService extends Service {
     }
   }
 
-
-
+  countPatientsCreatedOrUpdatedSince = async (date: string, diabetesType: string): Promise<any> => {
+    return this.patientRepository.countPatientsCreatedOrUpdatedSince(date, diabetesType);
+  }
 
 }
 

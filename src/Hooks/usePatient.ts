@@ -14,6 +14,7 @@ type usePatientReturnType = {
     getPatientOnTheLocalDb : (patientId: string) => Promise<Patient | null>;
     getPatientByIdOnTheLocalDb : (patientId: string) => Promise<Patient | null>;
     syncPatients : () => Promise<boolean>;
+    countPatientsCreatedOrUpdatedSince : (date: string,diabetesType: string) => Promise<any>;
     isLoading : boolean;
     error : string | null;
 }
@@ -28,6 +29,8 @@ export const usePatient = () : usePatientReturnType => {
             setIsLoading(true);
             const patientsService = await PatientService.create();
             const patients = await patientsService.getAllOnTheLocalDb(diabetesType);
+            const count = await patientsService.countPatientsCreatedOrUpdatedSince(new Date().toISOString(),diabetesType);
+            console.log("count : ",count);
             setIsLoading(false);
             return patients;
         } catch (error) {
@@ -155,6 +158,24 @@ export const usePatient = () : usePatientReturnType => {
         }
     };
 
+    const countPatientsCreatedOrUpdatedSince = async (date: string,diabetesType: string): Promise<any> => {
+        try {
+            setIsLoading(true);
+            const patientsService = await PatientService.create();
+            const count = await patientsService.countPatientsCreatedOrUpdatedSince(date,diabetesType);
+            console.log("count : ",count);
+            
+            setIsLoading(false);
+            return count;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error counting patients created or updated since', { error });
+            setError(error as string);
+            setIsLoading(false);
+            return 0;
+        }
+    };
+
     return {
         getAllOnTheLocalDbPatients,
         getAllOnTheServerPatients,
@@ -164,6 +185,7 @@ export const usePatient = () : usePatientReturnType => {
         getPatientOnTheLocalDb,
         getPatientByIdOnTheLocalDb,
         syncPatients,
+        countPatientsCreatedOrUpdatedSince,
         isLoading,
         error
     };

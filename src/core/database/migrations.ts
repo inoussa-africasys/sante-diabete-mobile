@@ -1,3 +1,4 @@
+import { setLastSyncDate } from '@/src/functions/syncHelpers';
 import { DatabaseConnection } from './database';
 
 export class Migration {
@@ -128,6 +129,7 @@ export class Migration {
       console.log(`Table ${table.name} supprimée.`);
     }
 
+    setLastSyncDate("");
     console.log("✅ Toutes les tables supprimées.");
 
     // Ensuite, relancer la création des tables

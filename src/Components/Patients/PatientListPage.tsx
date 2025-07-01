@@ -1,9 +1,9 @@
 import { formatPatientDate } from '@/src/functions/helpers';
 import Patient from '@/src/models/Patient';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { usePatient } from '../../Hooks/usePatient';
 import { useDiabetes } from '../../context/DiabetesContext';
@@ -37,23 +37,26 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const [patients, setPatients] = useState<Patient[]>([]);
 
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  const { getAllOnTheLocalDbPatients, syncPatients } = usePatient();
+  const { getAllOnTheLocalDbPatients, syncPatients,countPatientsCreatedOrUpdatedSince } = usePatient();
 
 
-  useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        const p = await getAllOnTheLocalDbPatients();
-        setPatients(p);
-        setFilteredPatients(p); // Mettre à jour filteredPatients avec les données récupérées
-        console.log(p);
-      } catch (error) {
-        console.error('Erreur lors de la récupération des patients:', error);
-      }
-    };
-    
-    fetchPatients();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchPatients = async () => {
+        try {
+          const p = await getAllOnTheLocalDbPatients();
+          setPatients(p);
+          setFilteredPatients(p); // Mettre à jour filteredPatients avec les données récupérées
+          console.log(p);
+        } catch (error) {
+          console.error('Erreur lors de la récupération des patients:', error);
+        }
+      };
+      
+      fetchPatients();
+    }, [])
+  )
+ 
 
 
   const gotoPatientScanner = () => {
@@ -82,6 +85,8 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     // Simulate sync process
     await new Promise(resolve => setTimeout(resolve, 1000));
     await syncPatients();
+    const count = await countPatientsCreatedOrUpdatedSince(new Date().toISOString(),diabetesType);
+    console.log("count : ",count.count);
     setIsSyncing(false);
     setSyncSuccess(true);
   };

@@ -233,6 +233,40 @@ export class GenericRepository<T extends BaseModel> {
   }
 
 
+  async createOrUpdateAndReturnId(item: T, uniqueKey: keyof T): Promise<string | number | undefined> {
+    try {
+      const keyValue = item[uniqueKey] as unknown as SQLiteBindValue;
+  
+      const existing = await this.db.getFirstSync(
+        `SELECT * FROM ${this.tableName} WHERE ${String(uniqueKey)} = ?`,
+        [keyValue]
+      );
+  
+      if (existing) {
+        const fields = Object.keys(item).filter(k => k !== 'id');
+        const setters = fields.map(k => `${k} = ?`).join(', ');
+        const values = fields.map(k => item[k as keyof T] as SQLiteBindValue);
+        values.push(keyValue);
+  
+        const sql = `UPDATE ${this.tableName} SET ${setters} WHERE ${String(uniqueKey)} = ?`;
+        await this.db.runAsync(sql, values);
+  
+        // Retourne l'id existant
+        return existing.id;
+      } else {
+        // Insertion
+        const insertedId = await this.insert(item);
+        return insertedId; // `insert` doit retourner l'ID inséré
+      }
+    } catch (error) {
+      console.error('Error creating or updating item:', error);
+      Logger.log('error', 'Error creating or updating item', { error });
+      return undefined;
+    }
+  }
+  
+
+
 
 
 }

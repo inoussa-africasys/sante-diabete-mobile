@@ -1,8 +1,10 @@
 import { getDiabetesType } from '../functions';
+import { ConsultationMapper } from '../mappers/consultationMapper';
 import { PatientMapper } from '../mappers/patientMapper';
 import Patient from '../models/Patient';
-import { PatientSyncDataResponseOfGetAllServer } from '../types';
+import { PatientSyncDataResponseOfGetAllMedicalDataServer } from '../types';
 import Logger from '../utils/Logger';
+import { ConsultationRepository } from './ConsultationRepository';
 import { GenericRepository } from './GenericRepository';
 
 export class PatientRepository extends GenericRepository<Patient> {
@@ -72,23 +74,21 @@ export class PatientRepository extends GenericRepository<Patient> {
       Logger.log('error', 'Error fetching deleted patients', { error });
       return [];
     }
-  } 
+  }
 
 
   public async getAllPatientsUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate: string | null | undefined): Promise<Patient[]> {
     try {
-      
+
       let query = "";
       let params: any[] = [];
       if (!lastSyncDate) {
-         query = "SELECT * FROM " + this.tableName + " WHERE type_diabete = ?";
-         params = [await getDiabetesType()];
+        query = "SELECT * FROM " + this.tableName + " WHERE type_diabete = ?";
+        params = [await getDiabetesType()];
       } else {
-        query = "SELECT * FROM " + this.tableName + " WHERE updatedAt >= ? AND type_diabete = ?";
+        query = "SELECT * FROM " + this.tableName + " WHERE updatedAt >= ? AND type_diabete = ? AND deletedAt IS NULL";
         params = [lastSyncDate, await getDiabetesType()];
       }
-      console.log("query", query);
-      console.log("params", params);
       const result = this.db.getAllSync(query, params);
 
       return result.map((item) => this.modelFactory(item));
@@ -97,12 +97,12 @@ export class PatientRepository extends GenericRepository<Patient> {
       Logger.log('error', 'Error fetching updated patients', { error });
       return [];
     }
-  } 
+  }
 
 
   public async markToSynced(id: number): Promise<void> {
     try {
-      this.db.runSync(`UPDATE ${this.tableName} SET updatedAt = ? WHERE id = ?`, [new Date().toISOString(), id]);
+      this.db.runSync(`UPDATE ${this.tableName} SET updatedAt = ?,   synced = ? WHERE id = ? AND deletedAt IS NULL`, [new Date().toISOString(), true, id]);
     } catch (error) {
       console.error('Error marking patient as synced:', error);
       Logger.log('error', 'Error marking patient as synced', { error });
@@ -110,9 +110,12 @@ export class PatientRepository extends GenericRepository<Patient> {
   }
 
 
-  public async createOrUpdateAll(items: PatientSyncDataResponseOfGetAllServer[]): Promise<void> {
+  public async createOrUpdateAll(items: PatientSyncDataResponseOfGetAllMedicalDataServer[]): Promise<void> {
+    const totalPatients = items.length;
+    let countPatientsSyncedSuccess = 0;
+    let countConsultationsSyncedSuccess = 0;
+    let totalConsultations = 0;
     try {
-      this.db.execSync('BEGIN TRANSACTION');
       for (const item of items) {
         const patient = PatientMapper.syncResponseToPatient(item);
         patient.createdAt = new Date().toISOString();
@@ -121,12 +124,31 @@ export class PatientRepository extends GenericRepository<Patient> {
         patient.synced = true;
         patient.isLocalCreated = false;
         await this.createOrUpdate(patient, 'id_patient');
+
+        const consultationRepository = new ConsultationRepository();
+        consultationRepository.insertAll(
+          item.dataConsultations.map(
+            (consultation) => {
+              countConsultationsSyncedSuccess++;
+              return ConsultationMapper.DataConsultationOfGetWithPatientGetAllMedicalDataToConsultation(consultation,patient.id_patient, patient.type_diabete )
+            }
+          )
+        );
+
+        totalConsultations += item.dataConsultations.length;
+        countPatientsSyncedSuccess++;
       }
-      this.db.execSync('COMMIT');
     } catch (error) {
       console.error('Error creating or updating patients:', error);
       Logger.log('error', 'Error creating or updating patients', { error });
     }
+    console.log(`Patients created or updated: ${countPatientsSyncedSuccess}/${totalPatients}`);
+    console.log(`Consultations created or updated: ${countConsultationsSyncedSuccess}/${totalConsultations}`);
+  }
+
+
+  public async countPatientsCreatedOrUpdatedSince(date: string, diabetesType: string): Promise<any> {
+    return this.db.getFirstSync(`SELECT COUNT(*) as count FROM ${this.tableName} WHERE updatedAt >= ? AND type_diabete = ? AND deletedAt IS NULL `, [date, diabetesType]);
   }
 
 

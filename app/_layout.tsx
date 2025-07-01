@@ -26,7 +26,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function prepare() {
-      /* Migration.resetDatabase();  */
+      Migration.resetDatabase(); 
       // Simuler un chargement, ex: chargement de polices, données, etc.
       
       try {

@@ -29,7 +29,6 @@ export default function PatientDetailScreen() {
         const consultationsData = await getConsultations(patientId);
         console.log("consultations : ", consultationsData);
 
-
         if (consultationsData) {
           Object.entries(consultationsData).forEach(([date, dateConsultations]) => {
             console.log("consultation : ", date);
