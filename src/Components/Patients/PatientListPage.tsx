@@ -34,6 +34,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [patients, setPatients] = useState<Patient[]>([]);
 
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
@@ -43,6 +44,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   useFocusEffect(
     useCallback(() => {
       const fetchPatients = async () => {
+        setIsLoading(true);
         try {
           const p = await getAllOnTheLocalDbPatients();
           setPatients(p);
@@ -50,6 +52,8 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
           console.log(p);
         } catch (error) {
           console.error('Erreur lors de la récupération des patients:', error);
+        } finally {
+          setIsLoading(false);
         }
       };
       
@@ -82,13 +86,10 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
   const handleSync = async () => {
     setIsSyncing(true);
-    // Simulate sync process
-    await new Promise(resolve => setTimeout(resolve, 1000));
     await syncPatients();
-    const count = await countPatientsCreatedOrUpdatedSince(new Date().toISOString(),diabetesType);
-    console.log("count : ",count.count);
     setIsSyncing(false);
     setSyncSuccess(true);
+    router.reload();
   };
 
 
@@ -191,14 +192,20 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       </View>
 
       {/* Patient List */}
-      <FlatList
-        data={filteredPatients}
-        renderItem={renderPatientItem}
-        keyExtractor={item => item.id_patient}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={<Empty message="Aucun patient trouvé" icon={<Ionicons name="archive" size={76} color="#BDBDBD" />} />}
-
-      />
+      {isLoading ? (
+        <View style={styles.loaderContainer}>
+          <SyncLoader isSyncing={true} />
+          <Text style={styles.loadingText}>Chargement des patients...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredPatients}
+          renderItem={renderPatientItem}
+          keyExtractor={item => item.id_patient}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={<Empty message="Aucun patient trouvé" icon={<Ionicons name="archive" size={76} color="#BDBDBD" />} />}
+        />
+      )}
 
 
       {/* Success Modal */}
@@ -217,6 +224,18 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 };
 
 const styles = StyleSheet.create({
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#757575',
+    fontWeight: '500',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
