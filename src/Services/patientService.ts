@@ -210,14 +210,14 @@ export default class PatientService extends Service {
   async syncPatients(): Promise<boolean> {
     try {
       const deletedPatientsSynced = await this.syncDeletedPatients();
-      console.log("Patients supprimés synchronisés :", deletedPatientsSynced);
+      console.log("Patients supprimés synchronisés in local db:", deletedPatientsSynced);
       if (!deletedPatientsSynced) {
         console.error("Erreur lors de la synchronisation des patients supprimés");
         Logger.log("error", "Erreur lors de la synchronisation des patients supprimés");
         return false;
       }
       const sendCreatedOrUpdatedPatientsToServer = await this.sendCreatedOrUpdatedPatientsToServer();
-      console.log("Patients mis à jour synchronisés :", sendCreatedOrUpdatedPatientsToServer);
+      console.log("Patients mis à jour synchronisés in local db:", sendCreatedOrUpdatedPatientsToServer);
       if (!sendCreatedOrUpdatedPatientsToServer) {
         console.error("Erreur lors de la synchronisation des patients mis à jour");
         Logger.log("error", "Erreur lors de la synchronisation des patients mis à jour");
@@ -225,7 +225,7 @@ export default class PatientService extends Service {
       }
 
       const sendDataToCreatedConsultationsToServer = await this.sendCreatedConsultationsToServer();
-      console.log("Consultations créées synchronisées :", sendDataToCreatedConsultationsToServer);
+      console.log("Consultations créées synchronisées in local db:", sendDataToCreatedConsultationsToServer);
       if (!sendDataToCreatedConsultationsToServer) {
         console.error("Erreur lors de la synchronisation des consultations créées");
         Logger.log("error", "Erreur lors de la synchronisation des consultations créées");
@@ -233,7 +233,7 @@ export default class PatientService extends Service {
       }
 
       const getAllPatientOnServer = await this.getAllPatientOnServer();
-      console.log("Patients synchronisés :", getAllPatientOnServer);
+      console.log("Patients synchronisés get Medical Data:", getAllPatientOnServer);
       if (!getAllPatientOnServer) {
         console.error("Erreur lors de la synchronisation des patients");
         Logger.log("error", "Erreur lors de la synchronisation des patients");
@@ -241,7 +241,7 @@ export default class PatientService extends Service {
       }
 
       const getAllDeletedPatientOnServer = await this.getAllDeletedPatientOnServer();
-      console.log("Patients supprimés synchronisés :", getAllDeletedPatientOnServer);
+      console.log("Patients supprimés synchronisés on the server:", getAllDeletedPatientOnServer);
       if (!getAllDeletedPatientOnServer) {
         console.error("Erreur lors de la synchronisation des patients supprimés");
         Logger.log("error", "Erreur lors de la synchronisation des patients supprimés");
@@ -250,7 +250,7 @@ export default class PatientService extends Service {
 
       if (config.isPictureSyncEnabled) {
         const syncPictures = await this.syncPictures();
-        console.log("Images synchronisées :", syncPictures);
+        console.log("Images synchronisées on the server:", syncPictures);
         if (!syncPictures) {
           console.error("Erreur lors de la synchronisation des images");
           Logger.log("error", "Erreur lors de la synchronisation des images");
@@ -385,6 +385,7 @@ export default class PatientService extends Service {
       const totalConsultations = Object.values(consultations).flat().length;
       const requests = Object.entries(consultations).map(async ([patientId, consultations]) => {
         const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/medicaldata/synchro/submissions/batch?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patientId}&lat&lon`;
+        console.log(`URL: ${url}`);
         try {
           const consultationsSyncData = consultations.map((consultation) => ConsultationMapper.toConsultationCreatedSyncData(consultation));
           const response = await axios.post(url, { data: JSON.stringify(consultationsSyncData) });
@@ -398,7 +399,7 @@ export default class PatientService extends Service {
           const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
           Logger.error(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
           console.log(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
-          errors.push({ consultationId: patientId, error: errorMsg });
+          errors.push({ consultationId: "Patient id : " +patientId, error: errorMsg });
         }
       });
       await Promise.allSettled(requests);

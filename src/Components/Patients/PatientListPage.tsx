@@ -4,7 +4,7 @@ import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
-import { FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { usePatient } from '../../Hooks/usePatient';
 import { useDiabetes } from '../../context/DiabetesContext';
 import Empty from '../Empty';
@@ -34,26 +34,26 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSyncError, setIsSyncError] = useState(false);
+  const [isLoadingFetch, setIsLoadingFetch] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
 
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  const { getAllOnTheLocalDbPatients, syncPatients,countPatientsCreatedOrUpdatedSince } = usePatient();
+  const { getAllOnTheLocalDbPatients, syncPatients } = usePatient();
 
 
   useFocusEffect(
     useCallback(() => {
       const fetchPatients = async () => {
-        setIsLoading(true);
+        setIsLoadingFetch(true);
         try {
           const p = await getAllOnTheLocalDbPatients();
           setPatients(p);
           setFilteredPatients(p); // Mettre à jour filteredPatients avec les données récupérées
-          console.log(p);
         } catch (error) {
           console.error('Erreur lors de la récupération des patients:', error);
         } finally {
-          setIsLoading(false);
+          setIsLoadingFetch(false);
         }
       };
       
@@ -86,10 +86,14 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
   const handleSync = async () => {
     setIsSyncing(true);
-    await syncPatients();
+    const syncSuccess = await syncPatients();
     setIsSyncing(false);
-    setSyncSuccess(true);
-    router.reload();
+    if (syncSuccess) {
+      setSyncSuccess(true);
+      router.reload();
+    } else {
+      setIsSyncError(true);
+    }
   };
 
 
@@ -192,9 +196,9 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       </View>
 
       {/* Patient List */}
-      {isLoading ? (
+      {isLoadingFetch ? (
         <View style={styles.loaderContainer}>
-          <SyncLoader isSyncing={true} />
+          <ActivityIndicator size="large" color="#6200ee" />
           <Text style={styles.loadingText}>Chargement des patients...</Text>
         </View>
       ) : (

@@ -83,3 +83,29 @@ export interface DataConsultationOfGetWithPatientGetAllServer {
   form_name: string
   content: string
 }
+
+
+export interface SyncPatientReturnType {
+    success: boolean;
+    message: string;
+    errors?: string[];
+    statistics: {
+      getAllMedicalData: SyncStatistics;
+      
+      getAllPatients: SyncStatistics;
+      getAllConsultations: SyncStatistics;
+    };
+}
+
+export interface SyncOnlyOnTraitementReturnType {
+    success: boolean;
+    message: string;
+    errors?: string[];
+    statistics: SyncStatistics;
+}
+
+export interface SyncStatistics {
+  total: number;
+  success: number;
+  failed: number;
+}
