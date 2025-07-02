@@ -57,7 +57,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     setIsLoading(true);
     logout({ diabetesType: diabetesType as DiabeteType });
     setIsLoading(false);
-    router.replace('/'+diabetesType.toLowerCase());
+    router.replace('/' + diabetesType.toLowerCase());
     showToast('Deconnexion reussie', 'success', 3000);
   };
 
@@ -68,20 +68,20 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 
   return (
     <>
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="red" />
-      
-      {/* Slide-out Menu */}
-      <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }] }]}>
-        <View style={styles.menuHeader}>
-          <Text style={styles.menuTitle}> {userNameValue ?? 'Menu'} - {diabetesType}</Text>
-          <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
-            <Entypo name="cross" size={28} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        <View style={{
-          width: '100%',
-          height: '15%',
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="red" />
+
+        {/* Slide-out Menu */}
+        <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }] }]}>
+          <View style={styles.menuHeader}>
+            <Text style={styles.menuTitle}> {userNameValue ?? 'Menu'} - {diabetesType}</Text>
+            <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
+              <Entypo name="cross" size={28} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          <View style={{
+            width: '100%',
+            height: '15%',
             backgroundColor: 'red',
             alignItems: 'center',
             justifyContent: 'center',
@@ -95,134 +95,139 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
               contentFit="contain"
             />
 
+          </View>
+          <TouchableOpacity style={styles.menuItem}
+            onPress={() => router.push('/scanner')}>
+            <Text style={styles.menuItemText}>CONFIG QR CODE</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}
+            onPress={() => router.push('/utilisateur')}
+          >
+            <Text style={styles.menuItemText}>UTILISATEUR</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}
+            onPress={() => router.push('/trafic-assistant')}
+          >
+            <Text style={styles.menuItemText}>TRAFIC ASSISTANT</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/administration')}>
+            <Text style={styles.menuItemText}>ADMINISTRATION</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => setLogoutModalVisible(true)}>
+            <Text style={styles.menuItemText} >DECONNEXION</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Header avec dégradé */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.headerButton} onPress={toggleMenu}>
+            <Entypo name="menu" size={28} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Accueil</Text>
+          <TouchableOpacity style={styles.headerButton} onPress={handleScannerPress}>
+            <FontAwesome5 name="qrcode" size={28} color="#fff" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>CONFIG QR CODE</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>UTILISATEUR</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>TRAFIC ASSISTANT</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>ADMINISTRATION</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => setLogoutModalVisible(true)}>
-          <Text style={styles.menuItemText} >DECONNEXION</Text>
-        </TouchableOpacity>
-      </Animated.View>
+        <View style={styles.allContent}>
 
-      {/* Header avec dégradé */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.headerButton} onPress={toggleMenu}>
-          <Entypo name="menu" size={28} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Accueil</Text>
-        <TouchableOpacity style={styles.headerButton} onPress={handleScannerPress}>
-          <FontAwesome5 name="qrcode" size={28} color="#fff" />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.allContent}>
+          <View style={styles.gridContainer}>
 
-      <View style={styles.gridContainer}>
-
-      <TouchableOpacity 
-            style={[styles.mediumButton]}
-            onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
-          >
-           <Feather 
-              name="edit" 
-              size={32} 
-              color="#2196F3" 
-            />
-            <Text style={styles.buttonText}>Remplir{"\n"}une fiche</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.mediumButton}
-            onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=editer`)}
-          >
-            <MaterialIcons 
-              name="edit" 
-              size={32} 
-              color="#FFA000" 
-            />
-            <Text style={[styles.buttonText, styles.amberText]}>Editer{"\n"}une fiche</Text>
-          </TouchableOpacity>
-      </View>
-
-        
-        {/* Gros boutons */}
-        <View style={styles.bigButtonsContainer}>
-          <TouchableOpacity 
-            style={styles.bigButton}
-            onPress={handlePatientPress}
-          >
-            <View style={styles.buttonContent}>
-              <FontAwesome5 name="user-injured" size={40} color="#2196F3" />
-              <Text style={styles.bigButtonText}>Patients</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.bigButton}
-            onPress={() => router.push('/sync')}
-          >
-            <View style={styles.buttonContent}>
-              <Ionicons 
-                name="sync" 
-                size={40} 
-                color="#2196F3" 
+            <TouchableOpacity
+              style={[styles.mediumButton]}
+              onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
+            >
+              <Feather
+                name="edit"
+                size={32}
+                color="#2196F3"
               />
-              <Text style={styles.bigButtonText}>Synchroniser</Text>
-            </View>
-          </TouchableOpacity>
-          
-        </View>
-        {/* Grille de petits boutons */}
-        <View style={styles.gridContainer}>
-          <TouchableOpacity 
-            style={styles.mediumButton}
-            onPress={() => {
-              return router.push(`/download-fiche`)
-              /* return router.push(`/liste-fiches?dt=${diabetesType}&mode=vierge`) */
-            }}
-          >
-            <Entypo 
-              name="download" 
-              size={32} 
-              color="#2196F3" 
-            />
-            <Text style={styles.buttonText}>Fiche vierge</Text>
-          </TouchableOpacity>
+              <Text style={styles.buttonText}>Remplir{"\n"}une fiche</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.mediumButton}
+              onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=editer`)}
+            >
+              <MaterialIcons
+                name="edit"
+                size={32}
+                color="#FFA000"
+              />
+              <Text style={[styles.buttonText, styles.amberText]}>Editer{"\n"}une fiche</Text>
+            </TouchableOpacity>
+          </View>
 
 
-          <TouchableOpacity 
-            style={[styles.mediumButton, styles.deleteButton]}
-            onPress={() => console.log('Stock consommables - à implémenter')}
-          >
-            <MaterialIcons 
-              name="delete" 
-              size={32} 
-              color="#D32F2F" 
-            />
-            <Text style={[styles.buttonText, styles.redText]}>Supprimer{"\n"}une fiche</Text>
-          </TouchableOpacity>
-          
+          {/* Gros boutons */}
+          <View style={styles.bigButtonsContainer}>
+            <TouchableOpacity
+              style={styles.bigButton}
+              onPress={handlePatientPress}
+            >
+              <View style={styles.buttonContent}>
+                <FontAwesome5 name="user-injured" size={40} color="#2196F3" />
+                <Text style={styles.bigButtonText}>Patients</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.bigButton}
+              onPress={() => router.push('/sync')}
+            >
+              <View style={styles.buttonContent}>
+                <Ionicons
+                  name="sync"
+                  size={40}
+                  color="#2196F3"
+                />
+                <Text style={styles.bigButtonText}>Synchroniser</Text>
+              </View>
+            </TouchableOpacity>
+
+          </View>
+          {/* Grille de petits boutons */}
+          <View style={styles.gridContainer}>
+            <TouchableOpacity
+              style={styles.mediumButton}
+              onPress={() => {
+                return router.push(`/download-fiche`)
+                /* return router.push(`/liste-fiches?dt=${diabetesType}&mode=vierge`) */
+              }}
+            >
+              <Entypo
+                name="download"
+                size={32}
+                color="#2196F3"
+              />
+              <Text style={styles.buttonText}>Fiche vierge</Text>
+            </TouchableOpacity>
+
+
+            <TouchableOpacity
+              style={[styles.mediumButton, styles.deleteButton]}
+              onPress={() => console.log('Stock consommables - à implémenter')}
+            >
+              <MaterialIcons
+                name="delete"
+                size={32}
+                color="#D32F2F"
+              />
+              <Text style={[styles.buttonText, styles.redText]}>Supprimer{"\n"}une fiche</Text>
+            </TouchableOpacity>
+
+          </View>
         </View>
       </View>
-    </View>
 
-    <ConfirmModal 
-      type="danger"
-      onConfirm={handleLogout}
-      isVisible={logoutModalVisible} 
-      onClose={handleCloseLogoutModal}
-      title="Deconnexion reussie" 
-      message="Vous avez ete deconnecte" 
-      confirmText="OK"
-    />
+      <ConfirmModal
+        type="danger"
+        onConfirm={handleLogout}
+        isVisible={logoutModalVisible}
+        onClose={handleCloseLogoutModal}
+        title="Deconnexion reussie"
+        message="Vous avez ete deconnecte"
+        confirmText="OK"
+      />
     </>
   );
 };

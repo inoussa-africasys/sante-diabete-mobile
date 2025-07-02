@@ -84,6 +84,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         mutationFn: async ({diabetesType}: LogoutParams) => {
             await SecureStore.deleteItemAsync(getAuthTokenKey(diabetesType));
             await SecureStore.deleteItemAsync(AUTH_BASE_URL_KEY);
+            await SecureStore.deleteItemAsync(getUserNameKey(diabetesType));
+            await SecureStore.deleteItemAsync(ACTIVE_DIABETE_TYPE_KEY); 
             console.log('Token et URL supprimés');
             return true;
         },

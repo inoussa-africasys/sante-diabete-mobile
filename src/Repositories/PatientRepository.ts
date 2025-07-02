@@ -151,5 +151,11 @@ export class PatientRepository extends GenericRepository<Patient> {
     return this.db.getFirstSync(`SELECT COUNT(*) as count FROM ${this.tableName} WHERE updatedAt >= ? AND type_diabete = ? AND deletedAt IS NULL `, [date, diabetesType]);
   }
 
+  async deleteAll(ids: string[]): Promise<void> {
+    const listIds = ids.map(() => '?').join(',');
+    const query = `DELETE FROM ${this.tableName} WHERE id_patient IN (${listIds})`;
+    await this.db.runAsync(query, ids);
+  }
+
 
 }
