@@ -1,3 +1,4 @@
+import PatientScanner from '@/app/(protected)/patient/scanner';
 import { formatPatientDate } from '@/src/functions/helpers';
 import Patient from '@/src/models/Patient';
 import { SyncPatientReturnType } from '@/src/types/patient';
@@ -40,7 +41,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const [patients, setPatients] = useState<Patient[]>([]);
   const [syncStats, setSyncStats] = useState<SyncPatientReturnType | null>(null);
   const [showSyncStats, setShowSyncStats] = useState(false);
-
+  const [showPatientScanner, setShowPatientScanner] = useState(false);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const { getAllOnTheLocalDbPatients, syncPatients } = usePatient();
 
@@ -53,23 +54,34 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
           const p = await getAllOnTheLocalDbPatients();
           setPatients(p);
           setFilteredPatients(p); // Mettre à jour filteredPatients avec les données récupérées
+          if (searchQuery !== '') {
+            handleSearch(searchQuery);
+            setShowSearchbar(true);
+          }
         } catch (error) {
           console.error('Erreur lors de la récupération des patients:', error);
         } finally {
           setIsLoadingFetch(false);
         }
       };
-      
+
       fetchPatients();
     }, [])
   )
- 
 
 
-  const gotoPatientScanner = () => {
-    router.push('/patient/scanner');
+  const handleScan = (data: string) => {
+    setSearchQuery(data);
+    setShowPatientScanner(false);
+    setShowSearchbar(true);
+    handleSearch(data);
+    
   };
-  
+
+  const openPatientScanner = () => {
+    setShowPatientScanner(true);
+  };
+
   const gotoNewPatient = () => {
     router.push('/nouveau-patient');
   };
@@ -81,7 +93,10 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       setSearchQuery('')
       return;
     }
-    const filteredPs = patients.filter((patient) => patient.id_patient.toLowerCase().includes(text.toLowerCase()));
+    const filteredPs = patients.filter((patient) => {
+      const name = patient.id_patient.toLowerCase() + ' ' + patient.last_name.toLowerCase() + ' ' + patient.first_name.toLowerCase();
+      return name.includes(text.toLowerCase());
+    });
     setSearchQuery(text);
     setFilteredPatients(filteredPs);
   };
@@ -93,7 +108,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       const syncResult = await syncPatients();
       setIsSyncing(false);
       setSyncStats(syncResult);
-      
+
       if (syncResult.success) {
         setSyncSuccess(true);
         setShowSyncStats(true);
@@ -142,200 +157,208 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" hidden={false} />
+      <StatusBar style="light" hidden={false} />
 
+      <>
+        {showPatientScanner ? <PatientScanner onScan={handleScan} /> : null}
 
-      {/* Header */}
-      <View style={styles.header}>
+        {/* Header */}
+        <View style={styles.header}>
 
-        {showSearchbar ? (
-          <View style={styles.searchContainer}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setShowSearchbar(false)}
-            >
-              <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Rechercher un patient..."
-              placeholderTextColor="white"
-              
-              value={searchQuery}
-              onChangeText={handleSearch}
-            />
+          {showSearchbar ? (
+            <View style={styles.searchContainer}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  setShowSearchbar(false);
+                  setSearchQuery('');
+                  handleSearch('');
+                  }}
+              >
+                <Ionicons name="arrow-back" size={24} color="white" />
+              </TouchableOpacity>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Rechercher un patient..."
+                placeholderTextColor="white"
 
+                value={searchQuery}
+                onChangeText={handleSearch}
+              />
+
+            </View>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={onBackPress}
+              >
+                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>Patients - Usagers</Text>
+              <View style={styles.headerActions}>
+                <TouchableOpacity
+                  style={styles.headerButton}
+                  onPress={openPatientScanner}
+                >
+                  <FontAwesome5 name="qrcode" size={20} color="#CCC" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.headerButton} onPress={() => setShowSearchbar(true)}>
+                  <Ionicons name="search" size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+
+        </View>
+
+        {/* Type de diabète */}
+        <View style={styles.diabetesTypeContainer}>
+          <Text style={styles.diabetesTypeText}>Type: {diabetesType}</Text>
+        </View>
+
+        {/* Actions Bar */}
+        <View style={styles.actionsBar}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/liste-fiches?mode=vierge&dt=${diabetesType}`)}>
+            <FontAwesome5 name="download" size={20} color="#4CAF50" />
+          </TouchableOpacity>
+          <View style={styles.actionDivider} />
+          <TouchableOpacity style={styles.actionButton} onPress={handleSync}>
+            <FontAwesome5 name="sync-alt" size={20} color="#4CAF50" />
+          </TouchableOpacity>
+          <View style={styles.actionDivider} />
+          <TouchableOpacity style={styles.actionButton}>
+            <FontAwesome5 name="trash" size={20} color="#E91E63" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Patient List */}
+        {isLoadingFetch ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#6200ee" />
+            <Text style={styles.loadingText}>Chargement des patients...</Text>
           </View>
         ) : (
-          <>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={onBackPress}
-            >
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Patients - Usagers</Text>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={gotoPatientScanner}
-              >
-                <FontAwesome5 name="qrcode" size={20} color="#CCC" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.headerButton} onPress={() => setShowSearchbar(true)}>
-                <Ionicons name="search" size={24} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          </>
+          <FlatList
+            data={filteredPatients}
+            renderItem={renderPatientItem}
+            keyExtractor={item => item.id_patient}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={<Empty message="Aucun patient trouvé" icon={<Ionicons name="archive" size={76} color="#BDBDBD" />} />}
+          />
         )}
 
-      </View>
 
-      {/* Type de diabète */}
-      <View style={styles.diabetesTypeContainer}>
-        <Text style={styles.diabetesTypeText}>Type: {diabetesType}</Text>
-      </View>
+        {/* Modals */}
+        <SyncLoader isSyncing={isSyncing} />
+        <SynchSucces isSyncingSuccess={syncSuccess} setIsSyncingSuccess={setSyncSuccess} />
 
-      {/* Actions Bar */}
-      <View style={styles.actionsBar}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/liste-fiches?mode=vierge&dt=${diabetesType}`)}>
-          <FontAwesome5 name="download" size={20} color="#4CAF50" />
-        </TouchableOpacity>
-        <View style={styles.actionDivider} />
-        <TouchableOpacity style={styles.actionButton} onPress={handleSync}>
-          <FontAwesome5 name="sync-alt" size={20} color="#4CAF50" />
-        </TouchableOpacity>
-        <View style={styles.actionDivider} />
-        <TouchableOpacity style={styles.actionButton}>
-          <FontAwesome5 name="trash" size={20} color="#E91E63" />
-        </TouchableOpacity>
-      </View>
+        {/* Sync Stats Modal */}
+        <Modal
+          visible={showSyncStats}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowSyncStats(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
+                {syncStats?.success ? "Synchronisation réussie" : "Synchronisation terminée avec des erreurs"}
+              </Text>
 
-      {/* Patient List */}
-      {isLoadingFetch ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#6200ee" />
-          <Text style={styles.loadingText}>Chargement des patients...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredPatients}
-          renderItem={renderPatientItem}
-          keyExtractor={item => item.id_patient}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={<Empty message="Aucun patient trouvé" icon={<Ionicons name="archive" size={76} color="#BDBDBD" />} />}
-        />
-      )}
+              <ScrollView style={styles.statsScrollView}>
+                {/* Message global */}
+                <Text style={styles.modalMessage}>{syncStats?.message}</Text>
 
+                {/* Statistiques globales */}
+                <View style={styles.statsSection}>
+                  <Text style={styles.statsSectionTitle}>Résumé de la synchronisation</Text>
 
-      {/* Modals */}
-      <SyncLoader isSyncing={isSyncing} />
-      <SynchSucces isSyncingSuccess={syncSuccess} setIsSyncingSuccess={setSyncSuccess} />
-      
-      {/* Sync Stats Modal */}
-      <Modal
-        visible={showSyncStats}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowSyncStats(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {syncStats?.success ? "Synchronisation réussie" : "Synchronisation terminée avec des erreurs"}
-            </Text>
-            
-            <ScrollView style={styles.statsScrollView}>
-              {/* Message global */}
-              <Text style={styles.modalMessage}>{syncStats?.message}</Text>
-              
-              {/* Statistiques globales */}
-              <View style={styles.statsSection}>
-                <Text style={styles.statsSectionTitle}>Résumé de la synchronisation</Text>
-                
-                {syncStats?.statistics?.syncDeletedPatients && (
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Patients supprimés:</Text>
-                    <Text style={styles.statValue}>
-                      {syncStats.statistics.syncDeletedPatients.success}/{syncStats.statistics.syncDeletedPatients.total}
-                    </Text>
-                  </View>
-                )}
-                
-                {syncStats?.statistics?.sendCreatedOrUpdatedPatientsToServer && (
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Patients créés/mis à jour:</Text>
-                    <Text style={styles.statValue}>
-                      {syncStats.statistics.sendCreatedOrUpdatedPatientsToServer.success}/{syncStats.statistics.sendCreatedOrUpdatedPatientsToServer.total}
-                    </Text>
-                  </View>
-                )}
-                
-                {syncStats?.statistics?.sendCreatedConsultationsToServer && (
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Consultations synchronisées:</Text>
-                    <Text style={styles.statValue}>
-                      {syncStats.statistics.sendCreatedConsultationsToServer.success}/{syncStats.statistics.sendCreatedConsultationsToServer.total}
-                    </Text>
-                  </View>
-                )}
-                
-                {syncStats?.statistics?.getAllPatientOnServer && (
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Patients récupérés du serveur:</Text>
-                    <Text style={styles.statValue}>
-                      {syncStats.statistics.getAllPatientOnServer.success}/{syncStats.statistics.getAllPatientOnServer.total}
-                    </Text>
-                  </View>
-                )}
-                
-                {syncStats?.statistics?.getAllDeletedPatientOnServer && (
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Patients supprimés récupérés:</Text>
-                    <Text style={styles.statValue}>
-                      {syncStats.statistics.getAllDeletedPatientOnServer.success}/{syncStats.statistics.getAllDeletedPatientOnServer.total}
-                    </Text>
-                  </View>
-                )}
-                
-                {syncStats?.statistics?.syncPictures && (
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Images synchronisées:</Text>
-                    <Text style={styles.statValue}>
-                      {syncStats.statistics.syncPictures.success}/{syncStats.statistics.syncPictures.total}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              
-              {/* Erreurs */}
-              {syncStats?.errors && syncStats.errors.length > 0 && (
-                <View style={styles.errorsSection}>
-                  <Text style={styles.errorsSectionTitle}>Erreurs rencontrées</Text>
-                  {syncStats.errors.map((error, index) => (
-                    <Text key={index} style={styles.errorItem}>• {error}</Text>
-                  ))}
+                  {syncStats?.statistics?.syncDeletedPatients && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Patients supprimés:</Text>
+                      <Text style={styles.statValue}>
+                        {syncStats.statistics.syncDeletedPatients.success}/{syncStats.statistics.syncDeletedPatients.total}
+                      </Text>
+                    </View>
+                  )}
+
+                  {syncStats?.statistics?.sendCreatedOrUpdatedPatientsToServer && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Patients créés/mis à jour:</Text>
+                      <Text style={styles.statValue}>
+                        {syncStats.statistics.sendCreatedOrUpdatedPatientsToServer.success}/{syncStats.statistics.sendCreatedOrUpdatedPatientsToServer.total}
+                      </Text>
+                    </View>
+                  )}
+
+                  {syncStats?.statistics?.sendCreatedConsultationsToServer && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Consultations synchronisées:</Text>
+                      <Text style={styles.statValue}>
+                        {syncStats.statistics.sendCreatedConsultationsToServer.success}/{syncStats.statistics.sendCreatedConsultationsToServer.total}
+                      </Text>
+                    </View>
+                  )}
+
+                  {syncStats?.statistics?.getAllPatientOnServer && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Patients récupérés du serveur:</Text>
+                      <Text style={styles.statValue}>
+                        {syncStats.statistics.getAllPatientOnServer.success}/{syncStats.statistics.getAllPatientOnServer.total}
+                      </Text>
+                    </View>
+                  )}
+
+                  {syncStats?.statistics?.getAllDeletedPatientOnServer && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Patients supprimés récupérés:</Text>
+                      <Text style={styles.statValue}>
+                        {syncStats.statistics.getAllDeletedPatientOnServer.success}/{syncStats.statistics.getAllDeletedPatientOnServer.total}
+                      </Text>
+                    </View>
+                  )}
+
+                  {syncStats?.statistics?.syncPictures && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Images synchronisées:</Text>
+                      <Text style={styles.statValue}>
+                        {syncStats.statistics.syncPictures.success}/{syncStats.statistics.syncPictures.total}
+                      </Text>
+                    </View>
+                  )}
                 </View>
-              )}
-            </ScrollView>
-            
-            <TouchableOpacity 
-              style={styles.closeButton} 
-              onPress={() => setShowSyncStats(false)}
-            >
-              <Text style={styles.closeButtonText}>Fermer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
-      {/* Add Button */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={gotoNewPatient}        
-      >
-        <Ionicons name="add" size={30} color="#FFFFFF" />
-      </TouchableOpacity>
+                {/* Erreurs */}
+                {syncStats?.errors && syncStats.errors.length > 0 && (
+                  <View style={styles.errorsSection}>
+                    <Text style={styles.errorsSectionTitle}>Erreurs rencontrées</Text>
+                    {syncStats.errors.map((error, index) => (
+                      <Text key={index} style={styles.errorItem}>• {error}</Text>
+                    ))}
+                  </View>
+                )}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowSyncStats(false)}
+              >
+                <Text style={styles.closeButtonText}>Fermer</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Add Button */}
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={gotoNewPatient}
+        >
+          <Ionicons name="add" size={30} color="#FFFFFF" />
+        </TouchableOpacity>
+      </>
+
     </SafeAreaView>
   );
 };

@@ -28,6 +28,7 @@ const SyncPage = () => {
     let isMounted = true;
     if (isMounted) {
       loadData();
+      console.log('Data loaded : ', JSON.stringify(folders));
     }
     return () => { isMounted = false; };
   }, []);
@@ -109,7 +110,7 @@ const SyncPage = () => {
         ) : (
           // File List View
           <>
-            <Text style={styles.sectionTitle}>Consultations locales</Text>
+            <Text style={styles.sectionTitle}>Fiches remplis</Text>
             {selectedFolderData && selectedFolderData.files && selectedFolderData.files.length > 0 ? (
               <FlatList
                 data={selectedFolderData.files}
@@ -141,7 +142,7 @@ const SyncPage = () => {
             ) : (
               <View style={styles.emptyContainer}>
                 <MaterialIcons name="description" size={64} color="#ccc" />
-                <Text style={styles.emptyText}>Aucune consultation locale</Text>
+                <Text style={styles.emptyText}>Aucune fiche remplie</Text>
               </View>
             )}
           </>
@@ -222,12 +223,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    textAlign: 'center',
     padding: 20,
   },
   emptyText: {
-    fontSize: 20,
+    fontSize: 22,
     color: '#666',
     marginTop: 16,
+    fontWeight: 'bold',
   },
   sectionTitle: {
     fontSize: 18,

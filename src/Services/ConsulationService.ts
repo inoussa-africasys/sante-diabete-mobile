@@ -111,7 +111,8 @@ export default class ConsultationService extends Service {
       // Utiliser la méthode query du repository pour construire une requête personnalisée
       const consultations = this.consultationRepository.query()
         .where('id_fiche = ?', [ficheIdValue])
-        .where('isLocalCreated = ?', [1]) // isLocalCreated est stocké comme 1 en SQLite
+        .where('isLocalCreated = ?', [1]) // isLocalCreated est stocké comme 1 en SQLite 
+        .where('id_patient = ?', [""]) // isLocalCreated est stocké comme 1 en SQLite 
         .where('deletedAt IS NULL')
         .all();
       
@@ -200,6 +201,34 @@ async deleteConsultationFile(fileName: string): Promise<void> {
   }
 }
 
+async createdDataInConsultationTableOnLocalDBAndCreateJson(consultation: ConsultationFormData, coordinates: Coordinates): Promise<Consultation> {
+  try {
+    const consultationToCreate = ConsultationMapper.toConsultation(consultation);
+    consultationToCreate.type_diabete = this.getTypeDiabete();
+    consultationToCreate.synced = false;
+    consultationToCreate.longitude = coordinates.longitude;
+    consultationToCreate.latitude = coordinates.latitude;
+    consultationToCreate.uuid = generateUUID();
+    consultationToCreate.createdBy = this.getConnectedUsername();
+    consultationToCreate.createdAt = new Date().toISOString();
+    consultationToCreate.updatedAt = new Date().toISOString();
+    const consultationCreated = this.consultationRepository.insertAndReturn(consultationToCreate);
+    if (!consultationCreated) {
+      throw new Error('La consultation locale n\'a pas pu etre creer');
+    }
+    const fileName = await this.saveConsultationAsJson(consultationCreated);
+    consultationCreated.fileName = fileName;
+    if (!consultationCreated.id) {
+      throw new Error('L\'id de la consultation locale n\'a pas pu etre recupere');
+    }
+    await this.consultationRepository.update(consultationCreated.id,consultationCreated);
+
+    return consultationCreated;
+  } catch (error) {
+    console.error('Erreur de creation de la consultation locale :', error);
+    throw error;
+  }
+}
 
 
 

@@ -14,6 +14,7 @@ type useConsultationReturnType = {
     getPatientByConsultationId: (patientId: string) => Promise<Patient | null>;
     deleteConsultationOnTheLocalDb: (consultationId: string) => Promise<boolean>;
     updateConsultationByIdOnLocalDB: (consultationId: string,consultation: ConsultationFormData) => Promise<boolean>;
+    createdDataInConsultationTableOnLocalDB: (consultation: ConsultationFormData,coordinates:Coordinates) => Promise<Consultation | null>;
 }
 
 export default function useConsultation(): useConsultationReturnType {
@@ -137,6 +138,36 @@ export default function useConsultation(): useConsultationReturnType {
         }
     };
 
+    const createdDataInConsultationTableOnLocalDB = async (consultation: ConsultationFormData,coordinates:Coordinates): Promise<Consultation | null> => {
+        try {
+            setIsLoading(true);
+            const consultationService = await ConsultationService.create();
+            const consultationCreated = await consultationService.createdDataInConsultationTableOnLocalDBAndCreateJson(consultation,coordinates);
+            setConsultations((prevConsultations) => {
+                if (prevConsultations) {
+                    const consultationDate = consultation.date;
+                    const existingConsultations = prevConsultations[consultationDate] || [];
+                    return {
+                        ...prevConsultations,
+                        [consultationDate]: [...existingConsultations, consultationCreated]
+                    };
+                }
+                return {
+                    [consultation.date]: [consultationCreated]
+                };
+            });
+            return consultationCreated;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error creating consultation on the local db', { error });
+            setError(error as string);
+            setIsLoading(false);
+            return null;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
 
 
     return {
@@ -147,6 +178,7 @@ export default function useConsultation(): useConsultationReturnType {
         getConsultationById,
         getPatientByConsultationId,
         deleteConsultationOnTheLocalDb,
-        updateConsultationByIdOnLocalDB
+        updateConsultationByIdOnLocalDB,
+        createdDataInConsultationTableOnLocalDB
     };
 }
