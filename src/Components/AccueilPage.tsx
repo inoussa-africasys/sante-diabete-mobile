@@ -101,11 +101,6 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
             <Text style={styles.menuItemText}>CONFIG QR CODE</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem}
-            onPress={() => router.push('/utilisateur')}
-          >
-            <Text style={styles.menuItemText}>UTILISATEUR</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}
             onPress={() => router.push('/trafic-assistant')}
           >
             <Text style={styles.menuItemText}>TRAFIC ASSISTANT</Text>

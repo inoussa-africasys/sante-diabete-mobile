@@ -1,7 +1,8 @@
-import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import useConfigStore from '../../core/zustand/configStore';
 
 // Composant pour l'en-tête de section
 const SectionHeader = ({ title }: { title: string }) => (
@@ -11,17 +12,17 @@ const SectionHeader = ({ title }: { title: string }) => (
 );
 
 // Composant pour les éléments de menu avec icône
-const MenuItem = ({ 
-  icon, 
-  title, 
-  onPress, 
-  hasToggle = false, 
+const MenuItem = ({
+  icon,
+  title,
+  onPress,
+  hasToggle = false,
   isActive = false,
-  rightText = ''
-}: { 
-  icon: React.ReactNode, 
-  title: string, 
-  onPress: () => void, 
+  rightText = '',
+}: {
+  icon: React.ReactNode,
+  title: string,
+  onPress: () => void,
   hasToggle?: boolean,
   isActive?: boolean,
   rightText?: string
@@ -34,7 +35,10 @@ const MenuItem = ({
       <Text style={styles.menuItemText}>{title}</Text>
     </View>
     <View style={styles.menuItemRight}>
-      {rightText ? <Text style={styles.menuItemRightText}>{rightText}</Text> : null}
+    {rightText ? 
+        <Text style={styles.menuItemRightText}>{rightText}</Text>
+        : null}
+
       {hasToggle ? (
         <Switch
           trackColor={{ false: '#767577', true: '#81b0ff' }}
@@ -51,17 +55,21 @@ const MenuItem = ({
 );
 
 const AdministrationPage = () => {
-  // États pour les toggles
-  const [autoSync, setAutoSync] = useState(true);
-  const [debugMode, setDebugMode] = useState(false);
-  const [syncPhotos, setSyncPhotos] = useState(false);
-  const [fingerprint, setFingerprint] = useState(true);
-  const [pinAtStartup, setPinAtStartup] = useState(false);
-  const [inclusiveMode, setInclusiveMode] = useState(false);
+
+  const [showCodePinModal, setShowCodePinModal] = useState(false);
+  const [showCodePinModalChangeSuccess, setShowCodePinModalChangeSuccess] = useState(false);
+
+  const [currentPin, setCurrentPin] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [confirmNewPin, setConfirmNewPin] = useState('');
+
+
+  const configStore = useConfigStore();
 
   // Fonction pour naviguer vers la page de modification du code PIN
   const handleModifyPin = () => {
     console.log('Modifier le code PIN');
+    setShowCodePinModal(true);
     // router.push('/pin-modification');
   };
 
@@ -77,7 +85,22 @@ const AdministrationPage = () => {
 
   // Fonction pour gérer les autres options de menu
   const handleMenuOption = (option: string) => {
-    console.log(`Option sélectionnée: ${option}`);
+    switch (option) {
+      case 'timer1':
+        console.log('Timer synchro step 1 (en seconde)');
+        break;
+      case 'timer2':
+        console.log('Timer synchro step 2 (en seconde)');
+        break;
+      case 'timer3':
+        console.log('Timer synchro step 3 (en seconde)');
+        break;
+      case 'shortcuts':
+        console.log('Gestion des raccourcis');
+        break;
+      default:
+        console.log(`Option sélectionnée: ${option}`);
+    }
     // Implémentation à venir
   };
 
@@ -87,8 +110,16 @@ const AdministrationPage = () => {
     // Implémentation du modal à venir
   };
 
+  function handleValidateModifyPin(): void {
+    if (currentPin === '1234' && newPin === confirmNewPin) {
+      setShowCodePinModalChangeSuccess(true);
+      setShowCodePinModal(false);
+    }
+    
+  }
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       {/* En-tête avec avatar et titre */}
       <View style={styles.header}>
         <View style={styles.profileContainer}>
@@ -97,147 +128,182 @@ const AdministrationPage = () => {
           </View>
           <Text style={styles.profileTitle}>Administrateur</Text>
         </View>
-        
+
         {/* Boutons d'action */}
         <TouchableOpacity style={styles.pinButton} onPress={handleModifyPin}>
           <Text style={styles.pinButtonText}>MODIFIER LE CODE PIN</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.mainMenuButton} onPress={handleMainMenu}>
           <Text style={styles.mainMenuButtonText}>MENU PRINCIPAL</Text>
         </TouchableOpacity>
       </View>
 
       {/* Contenu principal avec scroll */}
-      <ScrollView style={styles.content}>
+      <View style={styles.content}>
         {/* Section Gestion des interfaces */}
         <SectionHeader title="Gestions des interfaces" />
-        
+
         <View style={styles.menuSection}>
-          <MenuItem 
-            icon={<FontAwesome5 name="user-shield" size={24} color="white" />}
-            title="Police/Gendarmerie"
-            onPress={() => handleMenuOption('police')}
-          />
-          
-          <MenuItem 
-            icon={<FontAwesome5 name="fire-extinguisher" size={24} color="white" />}
-            title="Pompiers"
-            onPress={() => handleMenuOption('pompiers')}
-          />
-          
-          <MenuItem 
-            icon={<FontAwesome5 name="hospital" size={24} color="white" />}
-            title="Hopitaux"
-            onPress={() => handleMenuOption('hopitaux')}
-          />
-          
-          <MenuItem 
+
+          <MenuItem
             icon={<MaterialIcons name="groups" size={24} color="white" />}
             title="ONG/Associations"
             onPress={handleOngAssociations}
           />
-          
-          <MenuItem 
-            icon={<MaterialIcons name="search" size={24} color="white" />}
-            title="Enquêtes/Recherche"
-            onPress={() => handleMenuOption('enquetes')}
-          />
+
         </View>
 
         {/* Section Autres */}
         <SectionHeader title="Autres" />
-        
+
         <View style={styles.menuSection}>
-          <MenuItem 
+          <MenuItem
             icon={<MaterialIcons name="sync" size={24} color="#4CAF50" />}
             title="Auto Synchronisation"
-            onPress={() => setAutoSync(!autoSync)}
+            onPress={() => configStore.toggle('autoSync')}
             hasToggle={true}
-            isActive={autoSync}
-            rightText="(Activé)"
+            isActive={configStore.getValue('autoSync')}
+            rightText={configStore.getValue('autoSync') ? 'Activé' : 'Désactivé'}
           />
-          
-          <MenuItem 
+
+          <MenuItem
             icon={<MaterialCommunityIcons name="bug" size={24} color="#673AB7" />}
             title="Mode debug"
-            onPress={() => setDebugMode(!debugMode)}
+            onPress={() => configStore.toggle('debugMode')}
             hasToggle={true}
-            isActive={debugMode}
-            rightText="(Désactivé)"
+            isActive={configStore.getValue('debugMode')}
+            rightText={configStore.getValue('debugMode') ? 'Activé' : 'Désactivé'}
           />
-          
-          <MenuItem 
+
+          <MenuItem
             icon={<MaterialIcons name="photo-library" size={24} color="#9C27B0" />}
-            title="Synchroniser les Photos Patients"
-            onPress={() => setSyncPhotos(!syncPhotos)}
+            title={`Synchroniser les Photos \n Patients`}
+            onPress={() => configStore.toggle('syncPhotos')}
             hasToggle={true}
-            isActive={syncPhotos}
-            rightText="(Désactivé)"
+            isActive={configStore.getValue('syncPhotos')}
+            rightText={configStore.getValue('syncPhotos') ? 'Activé' : 'Désactivé'}
           />
-          
-          <MenuItem 
+
+          <MenuItem
             icon={<MaterialIcons name="fingerprint" size={24} color="#00BCD4" />}
             title="Empreinte Digitale"
-            onPress={() => setFingerprint(!fingerprint)}
+            onPress={() => configStore.toggle('fingerprint')}
             hasToggle={true}
-            isActive={fingerprint}
-            rightText="(Activé)"
+            isActive={configStore.getValue('fingerprint')}
+            rightText={configStore.getValue('fingerprint') ? 'Activé' : 'Désactivé'}
           />
-          
-          <MenuItem 
+
+          <MenuItem
             icon={<MaterialIcons name="screen-lock-portrait" size={24} color="#4CAF50" />}
-            title="Demander code PIN à l'ouverture de l'application"
-            onPress={() => setPinAtStartup(!pinAtStartup)}
+            title={`Demander code PIN à \nl'ouverture de l'application`}
+            onPress={() => configStore.toggle('pinAtStartup')}
             hasToggle={true}
-            isActive={pinAtStartup}
-            rightText="(Désactivé)"
+            isActive={configStore.getValue('pinAtStartup')}
+            rightText={configStore.getValue('pinAtStartup') ? 'Activé' : 'Désactivé'}
           />
-          
-          <MenuItem 
+
+          <MenuItem
             icon={<MaterialIcons name="event" size={24} color="#9C27B0" />}
-            title="Période de Synchronisation: les NON SYNCHRONISÉ"
+            title={`Période de Synchronisation: \nles NON SYNCHRONISÉ`}
             onPress={handleSyncPeriod}
           />
-          
-          <MenuItem 
+
+          <MenuItem
             icon={<MaterialIcons name="timer" size={24} color="#4CAF50" />}
             title="Timer synchro step 1 (en seconde)"
             onPress={() => handleMenuOption('timer1')}
             rightText="30"
           />
-          
-          <MenuItem 
+
+          <MenuItem
             icon={<MaterialIcons name="timer" size={24} color="#4CAF50" />}
             title="Timer synchro step 2 (en seconde)"
             onPress={() => handleMenuOption('timer2')}
             rightText="60"
           />
-          
-          <MenuItem 
+
+          <MenuItem
             icon={<MaterialIcons name="timer" size={24} color="#4CAF50" />}
             title="Timer synchro step 3 (en seconde)"
             onPress={() => handleMenuOption('timer3')}
             rightText="90"
           />
-          
-          <MenuItem 
-            icon={<MaterialIcons name="link" size={24} color="#E91E63" />}
+
+          <MenuItem
+            icon={<MaterialIcons name="link" size={24} color="#2196F3" />}
             title="Gestion des raccourcis"
             onPress={() => handleMenuOption('shortcuts')}
           />
-          
-          <MenuItem 
+
+          <MenuItem
             icon={<Feather name="globe" size={24} color="#2196F3" />}
             title="Mode Inclusif"
-            onPress={() => setInclusiveMode(!inclusiveMode)}
+            onPress={() => configStore.toggle('inclusiveMode')}
             hasToggle={true}
-            isActive={inclusiveMode}
-            rightText="(Désactivé)"
+            isActive={configStore.getValue('inclusiveMode')}
+            rightText={configStore.getValue('inclusiveMode') ? 'Activé' : 'Désactivé'}
           />
         </View>
-      </ScrollView>
-    </View>
+      </View>
+
+      <Modal
+        visible={showCodePinModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCodePinModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Modifier le code PIN</Text>
+
+            <View style={styles.modalIconContainer}>
+            <Ionicons name="lock-closed" size={100} color="black" />
+            </View>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Code PIN actuel"
+              value={currentPin}
+              onChangeText={setCurrentPin}
+              secureTextEntry
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Nouveau code PIN"
+              value={newPin}
+              onChangeText={setNewPin}
+              secureTextEntry
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Confirmer le nouveau code PIN"
+              value={confirmNewPin}
+              onChangeText={setConfirmNewPin}
+              secureTextEntry
+            />
+            <TouchableOpacity style={styles.modalButton} onPress={handleValidateModifyPin}>
+              <Text style={styles.modalButtonText}>Valider</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showCodePinModalChangeSuccess}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCodePinModalChangeSuccess(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Code PIN modifié avec succès</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={() => setShowCodePinModalChangeSuccess(false)}>
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </ScrollView>
   );
 };
 
@@ -341,7 +407,8 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   menuItemRight: {
     flexDirection: 'row',
@@ -349,7 +416,49 @@ const styles = StyleSheet.create({
   },
   menuItemRightText: {
     color: '#888',
-    marginRight: 10,
+    marginRight: 1,
+    fontSize: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalInput: {
+    width: '100%',
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  modalButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  modalIconContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
   },
 });
 

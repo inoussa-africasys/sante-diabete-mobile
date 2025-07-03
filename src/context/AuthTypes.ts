@@ -28,8 +28,16 @@ export interface AuthContextType {
     
     // Récupération du token
     getToken: () => Promise<string | null>;
+    user: User | null;
 }
 
 export interface AuthProviderProps {
     children: React.ReactNode;
 }
+
+
+export interface User {
+    name: string | null;
+    type: DiabeteType;
+}
+    

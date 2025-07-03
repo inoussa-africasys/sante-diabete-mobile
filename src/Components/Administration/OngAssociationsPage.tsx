@@ -1,7 +1,8 @@
 import { FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import useConfigStore from '../../core/zustand/configStore';
 
 // Composant pour les éléments de menu avec icône et switch
 const MenuItem = ({ 
@@ -30,20 +31,14 @@ const MenuItem = ({
         onValueChange={onPress}
         value={isActive}
       />
-      {/* <Text style={styles.switchLabel}>Afficher</Text> */}
+      <Text style={styles.switchLabel}>{isActive ? "Afficher" : "Cacher"}</Text>
     </View>
   </TouchableOpacity>
 );
 
 const OngAssociationsPage = () => {
-  // États pour les toggles
-  const [showPosition, setShowPosition] = useState(false);
-  const [showDownload, setShowDownload] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
-  const [showPatients, setShowPatients] = useState(false);
-  const [showStock, setShowStock] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [showMedication, setShowMedication] = useState(false);
+  
+  const configStore = useConfigStore();
 
   // Fonction pour retourner à la page précédente
   const handleBack = () => {
@@ -58,7 +53,7 @@ const OngAssociationsPage = () => {
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>ONG/Associations</Text>
-        <View style={{ width: 24 }} /> {/* Espace pour équilibrer l'en-tête */}
+        <View style={{ width: 24 }} />
       </View>
 
       {/* Contenu principal avec scroll */}
@@ -67,50 +62,50 @@ const OngAssociationsPage = () => {
           <MenuItem 
             icon={<MaterialIcons name="location-on" size={24} color="white" />}
             title="Marquer cette Position"
-            onPress={() => setShowPosition(!showPosition)}
-            isActive={showPosition}
+            onPress={() => configStore.toggle('showPosition')}
+            isActive={configStore.getValue('showPosition')}
           />
           
           <MenuItem 
             icon={<MaterialIcons name="cloud-download" size={24} color="white" />}
             title="Télécharger nouvelle fiche vierge"
-            onPress={() => setShowDownload(!showDownload)}
-            isActive={showDownload}
+            onPress={() => configStore.toggle('showDownload')}
+            isActive={configStore.getValue('showDownload')}
           />
           
           <MenuItem 
             icon={<MaterialIcons name="delete" size={24} color="white" />}
             title="Supprimer une fiche enregistrée"
-            onPress={() => setShowDelete(!showDelete)}
-            isActive={showDelete}
+            onPress={() => configStore.toggle('showDelete')}
+            isActive={configStore.getValue('showDelete')}
           />
           
           <MenuItem 
             icon={<FontAwesome5 name="user-nurse" size={24} color="white" />}
             title="Patients"
-            onPress={() => setShowPatients(!showPatients)}
-            isActive={showPatients}
+            onPress={() => configStore.toggle('showPatients')}
+            isActive={configStore.getValue('showPatients')}
           />
           
           <MenuItem 
             icon={<MaterialIcons name="inventory" size={24} color="white" />}
             title="Gestion de Stock"
-            onPress={() => setShowStock(!showStock)}
-            isActive={showStock}
+            onPress={() => configStore.toggle('showStock')}
+            isActive={configStore.getValue('showStock')}
           />
           
           <MenuItem 
             icon={<MaterialIcons name="search" size={24} color="white" />}
             title="Recherche"
-            onPress={() => setShowSearch(!showSearch)}
-            isActive={showSearch}
+            onPress={() => configStore.toggle('showSearch')}
+            isActive={configStore.getValue('showSearch')}
           />
           
           <MenuItem 
             icon={<MaterialCommunityIcons name="pill" size={24} color="white" />}
             title="Stock médicaments"
-            onPress={() => setShowMedication(!showMedication)}
-            isActive={showMedication}
+            onPress={() => configStore.toggle('showMedication')}
+            isActive={configStore.getValue('showMedication')}
           />
         </View>
       </ScrollView>
@@ -154,8 +149,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 15,
     paddingHorizontal: 15,
+    paddingVertical: 5,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
@@ -174,16 +169,20 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   menuItemRight: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
   },
   switchLabel: {
     color: '#888',
     marginLeft: 5,
-    fontSize: 12,
+    fontSize: 10,
+    marginTop: -10,
+    marginBottom: 5,
+
   }
 });
 
