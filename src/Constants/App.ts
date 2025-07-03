@@ -19,6 +19,8 @@ export const API_HEADER = {
 export const PATH_OF_PATIENTS_DIR_ON_THE_LOCAL = "Trafic/patients/instances";
 export const PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL = "Trafic/consultations/instances";
 export const LOG_FILE_PATH = `Trafic/`;
+export const PATH_OF_TRAFIC_DIR_ON_THE_LOCAL = `Trafic/`;
+export const NAME_OF_TRAFIC_ZIP_FILE = `trafic_archive.zip`;
 export const LAST_SYNC_DATE_KEY = 'last_sync_date';
 
 

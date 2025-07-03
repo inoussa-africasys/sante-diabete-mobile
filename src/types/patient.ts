@@ -90,10 +90,12 @@ export interface SyncPatientReturnType {
     message: string;
     errors?: string[];
     statistics: {
-      getAllMedicalData: SyncStatistics;
-      
-      getAllPatients: SyncStatistics;
-      getAllConsultations: SyncStatistics;
+      syncDeletedPatients: SyncStatistics;
+      sendCreatedOrUpdatedPatientsToServer: SyncStatistics;
+      sendCreatedConsultationsToServer: SyncStatistics;
+      getAllPatientOnServer: SyncStatistics;
+      getAllDeletedPatientOnServer: SyncStatistics;
+      syncPictures: SyncStatistics;
     };
 }
 

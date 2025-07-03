@@ -10,7 +10,7 @@ import { setLastSyncDate } from '../functions/syncHelpers';
 import { ConsultationMapper } from '../mappers/consultationMapper';
 import { PatientMapper } from '../mappers/patientMapper';
 import Patient from "../models/Patient";
-import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError } from "../types";
+import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError, SyncOnlyOnTraitementReturnType, SyncPatientReturnType } from "../types";
 import Logger from '../utils/Logger';
 import { sendTraficAuditEvent } from '../utils/traficAudit';
 import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
@@ -207,54 +207,81 @@ export default class PatientService extends Service {
   }
 
 
-  async syncPatients(): Promise<boolean> {
+  async syncPatients(): Promise<SyncPatientReturnType> {
     try {
-      const deletedPatientsSynced = await this.syncDeletedPatients();
-      console.log("Patients supprimés synchronisés in local db:", deletedPatientsSynced);
-      if (!deletedPatientsSynced) {
+      const errors: string[] = [];
+      
+      // Synchroniser les patients supprimés
+      const syncDeletedPatientsResult = await this.syncDeletedPatients();
+      console.log("Patients supprimés synchronisés in local db:", syncDeletedPatientsResult.success);
+      if (!syncDeletedPatientsResult.success) {
         console.error("Erreur lors de la synchronisation des patients supprimés");
         Logger.log("error", "Erreur lors de la synchronisation des patients supprimés");
-        return false;
+        if (syncDeletedPatientsResult.errors) {
+          errors.push(...syncDeletedPatientsResult.errors);
+        }
       }
-      const sendCreatedOrUpdatedPatientsToServer = await this.sendCreatedOrUpdatedPatientsToServer();
-      console.log("Patients mis à jour synchronisés in local db:", sendCreatedOrUpdatedPatientsToServer);
-      if (!sendCreatedOrUpdatedPatientsToServer) {
+      
+      // Envoyer les patients créés ou mis à jour au serveur
+      const sendCreatedOrUpdatedPatientsResult = await this.sendCreatedOrUpdatedPatientsToServer();
+      console.log("Patients mis à jour synchronisés in local db:", sendCreatedOrUpdatedPatientsResult.success);
+      if (!sendCreatedOrUpdatedPatientsResult.success) {
         console.error("Erreur lors de la synchronisation des patients mis à jour");
         Logger.log("error", "Erreur lors de la synchronisation des patients mis à jour");
-        return false;
+        if (sendCreatedOrUpdatedPatientsResult.errors) {
+          errors.push(...sendCreatedOrUpdatedPatientsResult.errors);
+        }
       }
 
-      const sendDataToCreatedConsultationsToServer = await this.sendCreatedConsultationsToServer();
-      console.log("Consultations créées synchronisées in local db:", sendDataToCreatedConsultationsToServer);
-      if (!sendDataToCreatedConsultationsToServer) {
+      // Envoyer les consultations créées au serveur
+      const sendCreatedConsultationsResult = await this.sendCreatedConsultationsToServer();
+      console.log("Consultations créées synchronisées in local db:", sendCreatedConsultationsResult.success);
+      if (!sendCreatedConsultationsResult.success) {
         console.error("Erreur lors de la synchronisation des consultations créées");
         Logger.log("error", "Erreur lors de la synchronisation des consultations créées");
-        return false;
+        if (sendCreatedConsultationsResult.errors) {
+          errors.push(...sendCreatedConsultationsResult.errors);
+        }
       }
 
-      const getAllPatientOnServer = await this.getAllPatientOnServer();
-      console.log("Patients synchronisés get Medical Data:", getAllPatientOnServer);
-      if (!getAllPatientOnServer) {
+      // Récupérer tous les patients du serveur
+      const getAllPatientResult = await this.getAllPatientOnServer();
+      console.log("Patients synchronisés get Medical Data:", getAllPatientResult.success);
+      if (!getAllPatientResult.success) {
         console.error("Erreur lors de la synchronisation des patients");
         Logger.log("error", "Erreur lors de la synchronisation des patients");
-        return false;
+        if (getAllPatientResult.errors) {
+          errors.push(...getAllPatientResult.errors);
+        }
       }
 
-      const getAllDeletedPatientOnServer = await this.getAllDeletedPatientOnServer();
-      console.log("Patients supprimés synchronisés on the server:", getAllDeletedPatientOnServer);
-      if (!getAllDeletedPatientOnServer) {
+      // Récupérer tous les patients supprimés du serveur
+      const getAllDeletedPatientResult = await this.getAllDeletedPatientOnServer();
+      console.log("Patients supprimés synchronisés on the server:", getAllDeletedPatientResult.success);
+      if (!getAllDeletedPatientResult.success) {
         console.error("Erreur lors de la synchronisation des patients supprimés");
         Logger.log("error", "Erreur lors de la synchronisation des patients supprimés");
-        return false;
+        if (getAllDeletedPatientResult.errors) {
+          errors.push(...getAllDeletedPatientResult.errors);
+        }
       }
 
+      // Synchroniser les images si activé
+      let syncPicturesResult: SyncOnlyOnTraitementReturnType = {
+        success: true,
+        message: "Synchronisation des images ignorée (désactivée)",
+        statistics: { total: 0, success: 0, failed: 0 }
+      };
+      
       if (config.isPictureSyncEnabled) {
-        const syncPictures = await this.syncPictures();
-        console.log("Images synchronisées on the server:", syncPictures);
-        if (!syncPictures) {
+        syncPicturesResult = await this.syncPictures();
+        console.log("Images synchronisées on the server:", syncPicturesResult.success);
+        if (!syncPicturesResult.success) {
           console.error("Erreur lors de la synchronisation des images");
           Logger.log("error", "Erreur lors de la synchronisation des images");
-          return false;
+          if (syncPicturesResult.errors) {
+            errors.push(...syncPicturesResult.errors);
+          }
         }
       }
 
@@ -263,24 +290,52 @@ export default class PatientService extends Service {
       Logger.log("info", "Patients synchronisés");
       console.log("Patients synchronisés");
 
+      // Créer l'objet de retour avec toutes les statistiques
+      const result: SyncPatientReturnType = {
+        success: errors.length === 0,
+        message: errors.length === 0 ? "Synchronisation effectuée avec succès" : "Synchronisation terminée avec des erreurs",
+        errors: errors.length > 0 ? errors : undefined,
+        statistics: {
+          syncDeletedPatients: syncDeletedPatientsResult.statistics,
+          sendCreatedOrUpdatedPatientsToServer: sendCreatedOrUpdatedPatientsResult.statistics,
+          sendCreatedConsultationsToServer: sendCreatedConsultationsResult.statistics,
+          getAllPatientOnServer: getAllPatientResult.statistics,
+          getAllDeletedPatientOnServer: getAllDeletedPatientResult.statistics,
+          syncPictures: syncPicturesResult.statistics
+        }
+      };
 
-      return true;
+      return result;
     } catch (error) {
       console.error("Erreur lors de la synchronisation des patients :", error);
       Logger.log("error", "Erreur lors de la synchronisation des patients", { error });
-      return false;
+      
+      return {
+        success: false,
+        message: "Erreur lors de la synchronisation des patients",
+        errors: [error instanceof Error ? error.message : JSON.stringify(error)],
+        statistics: {
+          syncDeletedPatients: { total: 0, success: 0, failed: 0 },
+          sendCreatedOrUpdatedPatientsToServer: { total: 0, success: 0, failed: 0 },
+          sendCreatedConsultationsToServer: { total: 0, success: 0, failed: 0 },
+          getAllPatientOnServer: { total: 0, success: 0, failed: 0 },
+          getAllDeletedPatientOnServer: { total: 0, success: 0, failed: 0 },
+          syncPictures: { total: 0, success: 0, failed: 0 }
+        }
+      };
     }
   }
 
 
-  private async syncDeletedPatients(): Promise<boolean> {
+  private async syncDeletedPatients(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
-      const totalDeletedPatients = 0;
+      const deletedPatients = await this.patientRepository.getDeletedPatientsOnLocalDB();
+      const totalDeletedPatients = deletedPatients.length;
       let deletedPatientsSynced = 0;
       const lastSyncDate = await getLastSyncDate();
-      const deletedPatients = await this.patientRepository.getDeletedPatientsOnLocalDB();
 
       const errors: PatientDeletedSyncError[] = [];
+      const errorMessages: string[] = [];
 
       const requests = deletedPatients.map(async (patient) => {
         const url = `${this.getBaseUrl()}/api/v2/json/mobile/trafic/events/${SYNCHRO_DELETE_LOCAL_PATIENTS}?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patient.id_patient}`;
@@ -300,39 +355,62 @@ export default class PatientService extends Service {
           const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
           Logger.error(`${SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED} ${patient.id_patient}: ${errorMsg}`);
           errors.push({ patientId: patient.id_patient, error: errorMsg });
+          errorMessages.push(`Erreur pour le patient ${patient.id_patient}: ${errorMsg}`);
         }
       });
 
       await Promise.allSettled(requests);
 
-      if (errors.length > 0) {
+      const success = errors.length === 0;
+      
+      if (!success) {
         console.warn("Patients non synchronisés :", errors);
         Logger.error("syncDeletedPatients Failed :", errors);
         sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED + " " + errors);
-        return false;
+      } else {
+        Logger.info("syncDeletedPatients Success :", deletedPatients);
+        console.log("syncDeletedPatients Success :", deletedPatientsSynced + "/" + totalDeletedPatients);
+        sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS + " " + deletedPatients);
       }
-
-      Logger.info("syncDeletedPatients Success :", deletedPatients);
-      console.log("syncDeletedPatients Success :", deletedPatientsSynced + "/" + totalDeletedPatients);
       
-      sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS + " " + deletedPatients);
-      return true;
+      return {
+        success,
+        message: success ? "Synchronisation des patients supprimés réussie" : "Erreur lors de la synchronisation des patients supprimés",
+        errors: errorMessages.length > 0 ? errorMessages : undefined,
+        statistics: {
+          total: totalDeletedPatients,
+          success: deletedPatientsSynced,
+          failed: totalDeletedPatients - deletedPatientsSynced
+        }
+      };
 
     } catch (error) {
       console.error("Erreur globale dans syncDeletedPatients :", error);
       sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED + " " + error);
-      return false;
+      
+      return {
+        success: false,
+        message: "Erreur lors de la synchronisation des patients supprimés",
+        errors: [error instanceof Error ? error.message : JSON.stringify(error)],
+        statistics: {
+          total: 0,
+          success: 0,
+          failed: 0
+        }
+      };
     }
   }
 
 
-  private async sendCreatedOrUpdatedPatientsToServer(): Promise<boolean> {
+  private async sendCreatedOrUpdatedPatientsToServer(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       let patientsSynced = 0;
       const lastSyncDate = await getLastSyncDate();
       const patients = await this.patientRepository.getAllPatientsUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate);
       const errors: PatientUpdatedSyncError[] = [];
+      const errorMessages: string[] = [];
       const totalPatients = patients.length;
+      
       const requests = patients.map(async (patient) => {
         const url = `${this.getBaseUrl()}/api/json/mobile/patients/synchro?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
         try {
@@ -352,37 +430,61 @@ export default class PatientService extends Service {
           Logger.error(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED} ${patient.id_patient}: ${errorMsg}`);
           console.log(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED} ${patient.id_patient}: ${errorMsg}`);
           errors.push({ patientId: patient.id_patient, error: errorMsg });
+          errorMessages.push(`Erreur pour le patient ${patient.id_patient}: ${errorMsg}`);
         }
       });
 
       await Promise.allSettled(requests);
 
-      if (errors.length > 0) {
+      const success = errors.length === 0;
+      
+      if (!success) {
         console.warn("Patients non synchronisés :", errors);
         Logger.error("sendCreatedPatientsToServer Failed :", errors);
         sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED + " " + errors);
-        return false;
+      } else {
+        Logger.info("sendCreatedPatientsToServer Success :", patients);
+        console.log("sendCreatedPatientsToServer Success :", patientsSynced + "/" + totalPatients);
+        sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS + " " + patients);
       }
-
-      Logger.info("sendCreatedPatientsToServer Success :", patients);
-      console.log("sendCreatedPatientsToServer Success :", patientsSynced + "/" + totalPatients);
-      sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS + " " + patients);
-      return true;
+      
+      return {
+        success,
+        message: success ? "Synchronisation des patients créés/mis à jour réussie" : "Erreur lors de la synchronisation des patients créés/mis à jour",
+        errors: errorMessages.length > 0 ? errorMessages : undefined,
+        statistics: {
+          total: totalPatients,
+          success: patientsSynced,
+          failed: totalPatients - patientsSynced
+        }
+      };
 
     } catch (error) {
       console.error("Erreur lors de la synchronisation des patients mis à jour :", error);
-      return false;
+      
+      return {
+        success: false,
+        message: "Erreur lors de la synchronisation des patients créés/mis à jour",
+        errors: [error instanceof Error ? error.message : JSON.stringify(error)],
+        statistics: {
+          total: 0,
+          success: 0,
+          failed: 0
+        }
+      };
     }
   }
 
 
-  private async sendCreatedConsultationsToServer(): Promise<boolean> {
+  private async sendCreatedConsultationsToServer(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       let consultationsSynced = 0;
       const lastSyncDate = await getLastSyncDate();
       const consultations = await this.consultationRepository.getConsultationsGroupedByPatientOnLocalDB(lastSyncDate);
       const errors: ConsultationSyncError[] = [];
+      const errorMessages: string[] = [];
       const totalConsultations = Object.values(consultations).flat().length;
+      
       const requests = Object.entries(consultations).map(async ([patientId, consultations]) => {
         const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/medicaldata/synchro/submissions/batch?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patientId}&lat&lon`;
         console.log(`URL: ${url}`);
@@ -395,83 +497,186 @@ export default class PatientService extends Service {
           this.consultationRepository.markToSynced(patientId);
           Logger.info(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.status} : ${response.statusText}`);
           console.log(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.status} : ${response.statusText}`);
+          consultationsSynced += consultations.length;
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
           Logger.error(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
           console.log(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
           errors.push({ consultationId: "Patient id : " +patientId, error: errorMsg });
+          errorMessages.push(`Erreur pour les consultations du patient ${patientId}: ${errorMsg}`);
         }
       });
       await Promise.allSettled(requests);
 
-      if (errors.length > 0) {
+      const success = errors.length === 0;
+      
+      if (!success) {
         console.warn("Consultations non synchronisées :", errors);
         Logger.error("sendCreatedConsultationsToServer Failed :", errors);
         sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED + " " + errors);
-        return false;
+      } else {
+        Logger.info("sendCreatedConsultationsToServer Success :", consultations);
+        console.log("sendCreatedConsultationsToServer Success :", consultationsSynced + "/" + totalConsultations);
+        sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS + " " + consultations);
       }
-      Logger.info("sendCreatedConsultationsToServer Success :", consultations);
-      console.log("sendCreatedConsultationsToServer Success :", consultationsSynced + "/" + totalConsultations);
-      sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS + " " + consultations);
-      return true;
+      
+      return {
+        success,
+        message: success ? "Synchronisation des consultations réussie" : "Erreur lors de la synchronisation des consultations",
+        errors: errorMessages.length > 0 ? errorMessages : undefined,
+        statistics: {
+          total: totalConsultations,
+          success: consultationsSynced,
+          failed: totalConsultations - consultationsSynced
+        }
+      };
 
     } catch (error) {
       console.error("Erreur lors de la synchronisation des consultations créées :", error);
       Logger.error("sendCreatedConsultationsToServer Failed :", { error });
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED + " " + error);
-      return false;
+      
+      return {
+        success: false,
+        message: "Erreur lors de la synchronisation des consultations",
+        errors: [error instanceof Error ? error.message : JSON.stringify(error)],
+        statistics: {
+          total: 0,
+          success: 0,
+          failed: 0
+        }
+      };
     }
   }
 
 
-  private async syncPictures(): Promise<boolean> {
+  private async syncPictures(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       console.log(`Syncing pictures en cours : `);
-      return true;
+      
+      // Si la synchronisation des images est désactivée, on retourne un succès sans statistiques
+      if (!config.isPictureSyncEnabled) {
+        return {
+          success: true,
+          message: "Synchronisation des images désactivée",
+          statistics: {
+            total: 0,
+            success: 0,
+            failed: 0
+          }
+        };
+      }
+      
+      // TODO: Implement actual picture synchronization logic here
+      
+      // Return successful synchronization result
+      return {
+        success: true,
+        message: "Synchronisation des images réussie",
+        statistics: {
+          total: 0,  // Update with actual counts when implementing
+          success: 0,
+          failed: 0
+        }
+      };
     } catch (error) {
       console.error("Erreur lors de la synchronisation des images :", error);
-      return false;
+      
+      return {
+        success: false,
+        message: "Erreur lors de la synchronisation des images",
+        errors: [error instanceof Error ? error.message : JSON.stringify(error)],
+        statistics: {
+          total: 0,
+          success: 0,
+          failed: 0
+        }
+      };
     }
   }
 
-  private async getAllPatientOnServer(): Promise<boolean> {
+  private async getAllPatientOnServer(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       const lastSyncDate = await getLastSyncDate();
       const url = `${this.getBaseUrl()}/api/v3/json/mobile/patients/medicaldata/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
       const response = await axios.get(url);
       console.log("Get sync patients : ", url);
+      
       if (response.status !== 200 && response.status !== 201) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
+      
       const patients = response.data as PatientSyncDataResponseOfGetAllMedicalDataServer[];
       await this.patientRepository.createOrUpdateAll(patients);
+      const totalPatients = patients.length;
 
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS);
-      return true;
+      
+      return {
+        success: true,
+        message: "Récupération des patients du serveur réussie",
+        statistics: {
+          total: totalPatients,
+          success: totalPatients,
+          failed: 0
+        }
+      };
     } catch (error) {
       console.error("Erreur lors de la synchronisation des patients :", error);
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED);
-      return false;
+      
+      return {
+        success: false,
+        message: "Erreur lors de la récupération des patients du serveur",
+        errors: [error instanceof Error ? error.message : JSON.stringify(error)],
+        statistics: {
+          total: 0,
+          success: 0,
+          failed: 0
+        }
+      };
     }
   }
 
-  private async getAllDeletedPatientOnServer(): Promise<boolean> {
+  private async getAllDeletedPatientOnServer(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       const lastSyncDate = await getLastSyncDate();
-      /*  const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/deleted/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
-       const response = await axios.get(url);
-       console.log("Get sync deleted patients : ", url);
-       if (response.status !== 200 && response.status !== 201) {
-         throw new Error(`Erreur HTTP: ${response.status}`);
-       } 
-       const deletedPatients = response.data;
-       console.log("Get sync deleted patients : ", deletedPatients);*/
+      const url = `${this.getBaseUrl()}/api/v3/json/mobile/patients/medicaldata/deleted?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
+      const response = await axios.get(url);
+      
+      if (response.status !== 200 && response.status !== 201) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+      
+      const patients = response.data as PatientSyncDataResponseOfGetAllMedicalDataServer[];
+      await this.patientRepository.deleteAll(patients.map(p => p.identifier));
+      const totalPatients = patients.length;
+
       sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS);
-      return true;
+      
+      return {
+        success: true,
+        message: "Récupération des patients supprimés du serveur réussie",
+        statistics: {
+          total: totalPatients,
+          success: totalPatients,
+          failed: 0
+        }
+      };
     } catch (error) {
       console.error("Erreur lors de la synchronisation des patients supprimés :", error);
       sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED);
-      return false;
+      
+      return {
+        success: false,
+        message: "Erreur lors de la récupération des patients supprimés du serveur",
+        errors: [error instanceof Error ? error.message : JSON.stringify(error)],
+        statistics: {
+          total: 0,
+          success: 0,
+          failed: 0
+        }
+      };
     }
   }
 

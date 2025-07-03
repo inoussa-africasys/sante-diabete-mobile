@@ -3,6 +3,7 @@ import { useDiabetes } from "../context/DiabetesContext";
 import Patient from "../models/Patient";
 import PatientService from "../Services/patientService";
 import { PatientFormData } from "../types";
+import { SyncPatientReturnType } from "../types/patient";
 import Logger from "../utils/Logger";
 
 type usePatientReturnType = {
@@ -13,7 +14,7 @@ type usePatientReturnType = {
     deletePatientOnTheLocalDb : (patientId: string) => Promise<boolean>;
     getPatientOnTheLocalDb : (patientId: string) => Promise<Patient | null>;
     getPatientByIdOnTheLocalDb : (patientId: string) => Promise<Patient | null>;
-    syncPatients : () => Promise<boolean>;
+    syncPatients : () => Promise<SyncPatientReturnType>;
     countPatientsCreatedOrUpdatedSince : (date: string,diabetesType: string) => Promise<any>;
     isLoading : boolean;
     error : string | null;
@@ -140,19 +141,31 @@ export const usePatient = () : usePatientReturnType => {
         }
     };
 
-    const syncPatients = async (): Promise<boolean> => {
+    const syncPatients = async (): Promise<SyncPatientReturnType> => {
         try {
             setIsLoading(true);
             const patientsService = await PatientService.create();
-            const isSynced = await patientsService.syncPatients();
+            const syncResult = await patientsService.syncPatients();
             setIsLoading(false);
-            return isSynced;
+            return syncResult;
         } catch (error) {
             console.error('Erreur réseau :', error);
             Logger.log('error', 'Error syncing patient on the local db', { error });
             setError(error as string);
             setIsLoading(false);
-            return false;
+            return {
+                success: false,
+                message: "Erreur lors de la synchronisation",
+                errors: [error instanceof Error ? error.message : JSON.stringify(error)],
+                statistics: {
+                    syncDeletedPatients: { total: 0, success: 0, failed: 0 },
+                    sendCreatedOrUpdatedPatientsToServer: { total: 0, success: 0, failed: 0 },
+                    sendCreatedConsultationsToServer: { total: 0, success: 0, failed: 0 },
+                    getAllPatientOnServer: { total: 0, success: 0, failed: 0 },
+                    getAllDeletedPatientOnServer: { total: 0, success: 0, failed: 0 },
+                    syncPictures: { total: 0, success: 0, failed: 0 }
+                }
+            };
         }
     };
 

@@ -1,10 +1,11 @@
 import { formatPatientDate } from '@/src/functions/helpers';
 import Patient from '@/src/models/Patient';
+import { SyncPatientReturnType } from '@/src/types/patient';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { usePatient } from '../../Hooks/usePatient';
 import { useDiabetes } from '../../context/DiabetesContext';
 import Empty from '../Empty';
@@ -37,6 +38,8 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const [isSyncError, setIsSyncError] = useState(false);
   const [isLoadingFetch, setIsLoadingFetch] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [syncStats, setSyncStats] = useState<SyncPatientReturnType | null>(null);
+  const [showSyncStats, setShowSyncStats] = useState(false);
 
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const { getAllOnTheLocalDbPatients, syncPatients } = usePatient();
@@ -86,13 +89,26 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
   const handleSync = async () => {
     setIsSyncing(true);
-    const syncSuccess = await syncPatients();
-    setIsSyncing(false);
-    if (syncSuccess) {
-      setSyncSuccess(true);
-      router.reload();
-    } else {
+    try {
+      const syncResult = await syncPatients();
+      setIsSyncing(false);
+      setSyncStats(syncResult);
+      
+      if (syncResult.success) {
+        setSyncSuccess(true);
+        setShowSyncStats(true);
+        // Recharger la liste des patients après une synchronisation réussie
+        const p = await getAllOnTheLocalDbPatients();
+        setPatients(p);
+        setFilteredPatients(p);
+      } else {
+        setIsSyncError(true);
+        setShowSyncStats(true);
+      }
+    } catch (error) {
+      setIsSyncing(false);
       setIsSyncError(true);
+      console.error('Erreur lors de la synchronisation:', error);
     }
   };
 
@@ -212,9 +228,106 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       )}
 
 
-      {/* Success Modal */}
+      {/* Modals */}
       <SyncLoader isSyncing={isSyncing} />
       <SynchSucces isSyncingSuccess={syncSuccess} setIsSyncingSuccess={setSyncSuccess} />
+      
+      {/* Sync Stats Modal */}
+      <Modal
+        visible={showSyncStats}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSyncStats(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {syncStats?.success ? "Synchronisation réussie" : "Synchronisation terminée avec des erreurs"}
+            </Text>
+            
+            <ScrollView style={styles.statsScrollView}>
+              {/* Message global */}
+              <Text style={styles.modalMessage}>{syncStats?.message}</Text>
+              
+              {/* Statistiques globales */}
+              <View style={styles.statsSection}>
+                <Text style={styles.statsSectionTitle}>Résumé de la synchronisation</Text>
+                
+                {syncStats?.statistics?.syncDeletedPatients && (
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Patients supprimés:</Text>
+                    <Text style={styles.statValue}>
+                      {syncStats.statistics.syncDeletedPatients.success}/{syncStats.statistics.syncDeletedPatients.total}
+                    </Text>
+                  </View>
+                )}
+                
+                {syncStats?.statistics?.sendCreatedOrUpdatedPatientsToServer && (
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Patients créés/mis à jour:</Text>
+                    <Text style={styles.statValue}>
+                      {syncStats.statistics.sendCreatedOrUpdatedPatientsToServer.success}/{syncStats.statistics.sendCreatedOrUpdatedPatientsToServer.total}
+                    </Text>
+                  </View>
+                )}
+                
+                {syncStats?.statistics?.sendCreatedConsultationsToServer && (
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Consultations synchronisées:</Text>
+                    <Text style={styles.statValue}>
+                      {syncStats.statistics.sendCreatedConsultationsToServer.success}/{syncStats.statistics.sendCreatedConsultationsToServer.total}
+                    </Text>
+                  </View>
+                )}
+                
+                {syncStats?.statistics?.getAllPatientOnServer && (
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Patients récupérés du serveur:</Text>
+                    <Text style={styles.statValue}>
+                      {syncStats.statistics.getAllPatientOnServer.success}/{syncStats.statistics.getAllPatientOnServer.total}
+                    </Text>
+                  </View>
+                )}
+                
+                {syncStats?.statistics?.getAllDeletedPatientOnServer && (
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Patients supprimés récupérés:</Text>
+                    <Text style={styles.statValue}>
+                      {syncStats.statistics.getAllDeletedPatientOnServer.success}/{syncStats.statistics.getAllDeletedPatientOnServer.total}
+                    </Text>
+                  </View>
+                )}
+                
+                {syncStats?.statistics?.syncPictures && (
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Images synchronisées:</Text>
+                    <Text style={styles.statValue}>
+                      {syncStats.statistics.syncPictures.success}/{syncStats.statistics.syncPictures.total}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              
+              {/* Erreurs */}
+              {syncStats?.errors && syncStats.errors.length > 0 && (
+                <View style={styles.errorsSection}>
+                  <Text style={styles.errorsSectionTitle}>Erreurs rencontrées</Text>
+                  {syncStats.errors.map((error, index) => (
+                    <Text key={index} style={styles.errorItem}>• {error}</Text>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+            
+            <TouchableOpacity 
+              style={styles.closeButton} 
+              onPress={() => setShowSyncStats(false)}
+            >
+              <Text style={styles.closeButtonText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Add Button */}
       <TouchableOpacity
@@ -239,6 +352,98 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#757575',
     fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  statsScrollView: {
+    maxHeight: 400,
+  },
+  statsSection: {
+    marginBottom: 20,
+    backgroundColor: '#F5F5F5',
+    padding: 15,
+    borderRadius: 8,
+  },
+  statsSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  statItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#555',
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  errorsSection: {
+    marginTop: 10,
+    backgroundColor: '#FFEBEE',
+    padding: 15,
+    borderRadius: 8,
+  },
+  errorsSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#D32F2F',
+    marginBottom: 10,
+  },
+  errorItem: {
+    fontSize: 14,
+    color: '#D32F2F',
+    marginBottom: 5,
+  },
+  closeButton: {
+    backgroundColor: '#4CAF50',
+    padding: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   container: {
     flex: 1,

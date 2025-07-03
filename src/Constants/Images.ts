@@ -4,6 +4,7 @@ export const Images = {
     goutteSangBlanc : require('@/assets/images/goutte-sang-blanc.png'),
     MaliMap : require('@/assets/images/mali-carte.webp'),
     userIcon : require('@/assets/images/user-icon.png'),
+    traficAssistant : require('@/assets/images/trafic-assistant.png'),
     
 
 }
