@@ -1,4 +1,4 @@
-import { Feather, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -35,7 +35,7 @@ const MenuItem = ({
       <Text style={styles.menuItemText}>{title}</Text>
     </View>
     <View style={styles.menuItemRight}>
-    {rightText ? 
+      {rightText ?
         <Text style={styles.menuItemRightText}>{rightText}</Text>
         : null}
 
@@ -115,7 +115,7 @@ const AdministrationPage = () => {
       setShowCodePinModalChangeSuccess(true);
       setShowCodePinModal(false);
     }
-    
+
   }
 
   return (
@@ -146,10 +146,59 @@ const AdministrationPage = () => {
 
         <View style={styles.menuSection}>
 
-          <MenuItem
+          {/* <MenuItem
             icon={<MaterialIcons name="groups" size={24} color="white" />}
             title="ONG/Associations"
             onPress={handleOngAssociations}
+          /> */}
+
+          <MenuOngAssociationsItem
+            icon={<MaterialIcons name="location-on" size={24} color="white" />}
+            title="Marquer cette Position"
+            onPress={() => configStore.toggle('showPosition')}
+            isActive={configStore.getValue('showPosition')}
+          />
+
+          <MenuOngAssociationsItem
+            icon={<MaterialIcons name="cloud-download" size={24} color="white" />}
+            title={`Télécharger nouvelle \n fiche vierge`}
+            onPress={() => configStore.toggle('showDownload')}
+            isActive={configStore.getValue('showDownload')}
+          />
+
+          <MenuOngAssociationsItem
+            icon={<MaterialIcons name="delete" size={24} color="white" />}
+            title={`Supprimer une fiche \n enregistrée`}
+            onPress={() => configStore.toggle('showDelete')}
+            isActive={configStore.getValue('showDelete')}
+          />
+
+          <MenuOngAssociationsItem
+            icon={<FontAwesome5 name="user-nurse" size={24} color="white" />}
+            title="Patients"
+            onPress={() => configStore.toggle('showPatients')}
+            isActive={configStore.getValue('showPatients')}
+          />
+
+          <MenuOngAssociationsItem
+            icon={<MaterialIcons name="inventory" size={24} color="white" />}
+            title="Gestion de Stock"
+            onPress={() => configStore.toggle('showStock')}
+            isActive={configStore.getValue('showStock')}
+          />
+
+          <MenuOngAssociationsItem
+            icon={<MaterialIcons name="search" size={24} color="white" />}
+            title="Recherche"
+            onPress={() => configStore.toggle('showSearch')}
+            isActive={configStore.getValue('showSearch')}
+          />
+
+          <MenuOngAssociationsItem
+            icon={<MaterialCommunityIcons name="pill" size={24} color="white" />}
+            title="Stock médicaments"
+            onPress={() => configStore.toggle('showMedication')}
+            isActive={configStore.getValue('showMedication')}
           />
 
         </View>
@@ -258,7 +307,7 @@ const AdministrationPage = () => {
             <Text style={styles.modalTitle}>Modifier le code PIN</Text>
 
             <View style={styles.modalIconContainer}>
-            <Ionicons name="lock-closed" size={100} color="black" />
+              <Ionicons name="lock-closed" size={100} color="black" />
             </View>
             <TextInput
               style={styles.modalInput}
@@ -306,6 +355,40 @@ const AdministrationPage = () => {
     </ScrollView>
   );
 };
+
+
+const MenuOngAssociationsItem = ({
+  icon,
+  title,
+  onPress,
+  isActive = false
+}: {
+  icon: React.ReactNode,
+  title: string,
+  onPress: () => void,
+  isActive?: boolean
+}) => (
+  <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+    <View style={styles.menuItemContent}>
+      <View style={styles.menuItemIcon}>
+        {icon}
+      </View>
+      <Text style={styles.menuItemText}>{title}</Text>
+    </View>
+    <View style={styles.menuItemRight}>
+      <Switch
+        trackColor={{ false: '#767577', true: '#81b0ff' }}
+        thumbColor={isActive ? '#f5dd4b' : '#f4f3f4'}
+        ios_backgroundColor="#3e3e3e"
+        onValueChange={onPress}
+        value={isActive}
+      />
+      <Text style={styles.switchLabel}>{isActive ? "Afficher" : "Cacher"}</Text>
+    </View>
+  </TouchableOpacity>
+);
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -460,6 +543,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  switchLabel: {
+    color: '#888',
+    marginLeft: 5,
+    fontSize: 10,
+    marginTop: -10,
+    marginBottom: 5,
+
+  }
 });
 
 export default AdministrationPage;

@@ -2,15 +2,13 @@ import QRCodeScannerView from '@/src/Components/Scanner/QRCodeScannerView';
 import { useRouter } from 'expo-router';
 import React from 'react';
 
+interface PatientScannerProps {
+  onScan: (data: string) => void;
+}
 
-export default function PatientScanner() {
+export default function PatientScanner({ onScan }: PatientScannerProps) {
   const router = useRouter();
 
-  const handleScan = (data: string) => {
-    console.log('QR Code scanné:', data);
-    // Ici on peut ajouter la logique pour traiter le QR code
-    router.back();
-  };
 
   const handleClose = () => {
     router.back();
@@ -19,7 +17,7 @@ export default function PatientScanner() {
   return (
     <QRCodeScannerView
       type="patient"
-      onScan={handleScan}
+      onScan={onScan}
       onClose={handleClose}
     />
   );

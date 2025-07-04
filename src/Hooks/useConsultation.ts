@@ -1,9 +1,11 @@
 import { useState } from "react";
 import ConsultationService from "../Services/ConsulationService";
+import useConfigStore from "../core/zustand/configStore";
 import { Consultation } from "../models/Consultation";
 import Patient from "../models/Patient";
 import { ConsultationFormData, Coordinates } from "../types";
 import Logger from "../utils/Logger";
+import { useIsOnline } from "./useIsOnline";
 
 type useConsultationReturnType = {
     isLoading: boolean;
@@ -14,12 +16,15 @@ type useConsultationReturnType = {
     getPatientByConsultationId: (patientId: string) => Promise<Patient | null>;
     deleteConsultationOnTheLocalDb: (consultationId: string) => Promise<boolean>;
     updateConsultationByIdOnLocalDB: (consultationId: string,consultation: ConsultationFormData) => Promise<boolean>;
+    createdDataInConsultationTableOnLocalDB: (consultation: ConsultationFormData,coordinates:Coordinates) => Promise<Consultation | null>;
 }
 
 export default function useConsultation(): useConsultationReturnType {
     const [consultations, setConsultations] = useState<Record<string, Consultation[]> | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const isOnline = useIsOnline();
+    const isAutoSyncActive = useConfigStore((state) => state.getValue('autoSync'));
 
     const getConsultations = async (patientId: string): Promise<Record<string, Consultation[]> | null> => {
         try {
@@ -137,6 +142,36 @@ export default function useConsultation(): useConsultationReturnType {
         }
     };
 
+    const createdDataInConsultationTableOnLocalDB = async (consultation: ConsultationFormData,coordinates:Coordinates): Promise<Consultation | null> => {
+        try {
+            setIsLoading(true);
+            const consultationService = await ConsultationService.create();
+            const consultationCreated = await consultationService.createdDataInConsultationTableOnLocalDBAndCreateJson(consultation,coordinates);
+            setConsultations((prevConsultations) => {
+                if (prevConsultations) {
+                    const consultationDate = consultation.date;
+                    const existingConsultations = prevConsultations[consultationDate] || [];
+                    return {
+                        ...prevConsultations,
+                        [consultationDate]: [...existingConsultations, consultationCreated]
+                    };
+                }
+                return {
+                    [consultation.date]: [consultationCreated]
+                };
+            });
+            return consultationCreated;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error creating consultation on the local db', { error });
+            setError(error as string);
+            setIsLoading(false);
+            return null;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
 
 
     return {
@@ -147,6 +182,7 @@ export default function useConsultation(): useConsultationReturnType {
         getConsultationById,
         getPatientByConsultationId,
         deleteConsultationOnTheLocalDb,
-        updateConsultationByIdOnLocalDB
+        updateConsultationByIdOnLocalDB,
+        createdDataInConsultationTableOnLocalDB
     };
 }

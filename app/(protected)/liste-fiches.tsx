@@ -61,7 +61,7 @@ export default function ListeFichesScreen() {
         router.push(`/patient/${patientId}/consultations/edit?mode=edit&ficheId=${fiche.id}`);
         break;
       case Action.Fill:
-        router.push(`/patient/${patientId}/consultations/create?mode=fill&ficheId=${fiche.id}`);
+        router.push(`/remplire-fiche?mode=fill&ficheId=${fiche.id}`);
         break;
       case Action.Empty:
         router.push(`/patient/${patientId}/consultations/create?mode=empty&ficheId=${fiche.id}`);

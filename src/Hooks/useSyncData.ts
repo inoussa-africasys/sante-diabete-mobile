@@ -1,18 +1,16 @@
-import { useState, useCallback, useRef } from 'react';
-import { useFiche } from './useFiche';
-import useConsultation from './useConsultation';
-import { Consultation } from '../models/Consultation';
-import Fiche from '../models/Fiche';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import ConsultationService from '../Services/ConsulationService';
+import { useCallback, useRef, useState } from 'react';
+import { FormFill } from '../models/FormFill';
+import FormFillService from '../Services/formFillService';
 import Logger from '../utils/Logger';
+import { useFiche } from './useFiche';
 
 export interface SyncFileData {
   name: string;
   date: string;
   id: string;
-  consultation: Consultation;
+  formFill: FormFill;
 }
 
 export interface SyncFolderData {
@@ -29,7 +27,6 @@ export const useSyncData = () => {
   const [syncSuccess, setSyncSuccess] = useState<boolean>(false);
 
   const { getAllFicheDownloaded } = useFiche();
-  const consultationHook = useConsultation();
 
   const formatDate = (dateString: string): string => {
     try {
@@ -40,12 +37,12 @@ export const useSyncData = () => {
     }
   };
 
-  const getAllLocalConsultationsForFiche = async (ficheId: string): Promise<Consultation[]> => {
+  const getAllLocalFormFillForFiche = async (ficheId: string): Promise<FormFill[]> => {
     try {
       // Utiliser la méthode dédiée du service pour obtenir les consultations locales par fiche
-      const consultationService = await ConsultationService.create();
-      const consultations = await consultationService.getLocalConsultationsByFicheId(ficheId);
-      return consultations;
+      const formFillService = await FormFillService.create();
+      const formFill = await formFillService.getAllFormFillByFicheName(ficheId);
+      return formFill;
     } catch (error) {
       console.error('Erreur lors de la récupération des consultations locales:', error);
       Logger.log('error', 'Error fetching local consultations for fiche', { error, ficheId });
@@ -70,26 +67,27 @@ export const useSyncData = () => {
       
       // Récupérer toutes les fiches téléchargées
       const fiches = await getAllFicheDownloaded();
-      console.log(`${fiches.length} fiches téléchargées`);
       
       const folderData: SyncFolderData[] = [];
       
       // Pour chaque fiche, récupérer les consultations locales associées
       for (const fiche of fiches) {
         const ficheId = fiche.id?.toString() || '';
-        const consultations = await getAllLocalConsultationsForFiche(ficheId);
+        const formFillService = await FormFillService.create();
+        const formFill = await formFillService.getAllFormFillByFicheName(fiche.name?.toString() || '');
         
+        console.log('formFill : ', formFill);
         // Ajouter la fiche seulement si elle a des consultations
-        if (consultations && consultations.length > 0) {
+        if (formFill && formFill.length > 0) {
           // Créer un objet SyncFolderData pour cette fiche
           const folder: SyncFolderData = {
             name: fiche.name?.toString() || '',
             id: fiche.id,
-            files: consultations.map(consultation => ({
+            files: formFill.map(formFill => ({
               name: fiche.name?.toString() || '',
-              date: formatDate(consultation.createdAt || ''),
-              id: `TF-${consultation.id?.toString().padStart(8, '0')}`,
-              consultation: consultation
+              date: formatDate(formFill.createdAt || ''),
+              id: `TF-${formFill.id?.toString().padStart(8, '0')}`,
+              formFill: formFill
             }))
           };
           

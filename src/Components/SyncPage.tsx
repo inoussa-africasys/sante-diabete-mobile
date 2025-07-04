@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSyncData } from '../Hooks/useSyncData';
-
 // Utilisation de l'interface SyncFolderData du hook useSyncData
 
 const SyncPage = () => {
@@ -22,11 +21,15 @@ const SyncPage = () => {
     resetSyncSuccess 
   } = useSyncData();
 
+
   // Charger les données au montage du composant uniquement
   useEffect(() => {
     // Utiliser un flag pour éviter les chargements multiples
     let isMounted = true;
     if (isMounted) {
+      /* getFicheListWithFormFill().then((fiches) => {
+        console.log('Data loaded : ', fiches);
+      }); */
       loadData();
     }
     return () => { isMounted = false; };
@@ -109,7 +112,7 @@ const SyncPage = () => {
         ) : (
           // File List View
           <>
-            <Text style={styles.sectionTitle}>Consultations locales</Text>
+            <Text style={styles.sectionTitle}>Fiches remplis</Text>
             {selectedFolderData && selectedFolderData.files && selectedFolderData.files.length > 0 ? (
               <FlatList
                 data={selectedFolderData.files}
@@ -141,7 +144,7 @@ const SyncPage = () => {
             ) : (
               <View style={styles.emptyContainer}>
                 <MaterialIcons name="description" size={64} color="#ccc" />
-                <Text style={styles.emptyText}>Aucune consultation locale</Text>
+                <Text style={styles.emptyText}>Aucune fiche remplie</Text>
               </View>
             )}
           </>
@@ -222,12 +225,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    textAlign: 'center',
     padding: 20,
   },
   emptyText: {
-    fontSize: 20,
+    fontSize: 22,
     color: '#666',
     marginTop: 16,
+    fontWeight: 'bold',
   },
   sectionTitle: {
     fontSize: 18,

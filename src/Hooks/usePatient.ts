@@ -25,6 +25,7 @@ export const usePatient = () : usePatientReturnType => {
     const [error, setError] = useState<string | null>(null);
     const {diabetesType} = useDiabetes();
     
+    
     const getAllOnTheLocalDbPatients = async () => {
         try {
             setIsLoading(true);
@@ -186,6 +187,7 @@ export const usePatient = () : usePatientReturnType => {
             return 0;
         }
     };
+
 
     return {
         getAllOnTheLocalDbPatients,
