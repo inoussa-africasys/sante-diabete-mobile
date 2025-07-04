@@ -124,6 +124,7 @@ export default class PatientService extends Service {
       patientToUpdate.trafic_user = this.getConnectedUsername();
       patientToUpdate.type_diabete = this.getTypeDiabete();
       patientToUpdate.createdAt = oldPatient.createdAt;
+      patientToUpdate.isModified = true;  
       this.patientRepository.updatev2(id, patientToUpdate);
       this.updatePatientJson(patientId, patientToUpdate);
       console.log(`Patient mis à jour : ${patientId}`);
@@ -338,14 +339,15 @@ export default class PatientService extends Service {
       const errorMessages: string[] = [];
 
       const requests = deletedPatients.map(async (patient) => {
-        const url = `${this.getBaseUrl()}/api/v2/json/mobile/trafic/events/${SYNCHRO_DELETE_LOCAL_PATIENTS}?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patient.id_patient}`;
+        const url = `${this.getBaseUrl()}/api/json/mobile/patients?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patient.id_patient}`;
 
         try {
           if (!patient.id) {
             throw new Error(` Patient avec l'ID ${patient.id_patient} non trouvé`);
           }
+          console.log("Sync deleted patients : ", url);
           const response = await axios.post(url);
-          if (response.status !== 200) {
+          if (response.status !== 200 && response.status !== 201) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
           this.patientRepository.forceDelete(patient.id);
@@ -413,24 +415,26 @@ export default class PatientService extends Service {
       
       const requests = patients.map(async (patient) => {
         const url = `${this.getBaseUrl()}/api/json/mobile/patients/synchro?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
+        console.log("Send created or updated patients to server : ", url);
         try {
-          if (!patient.id) {
-            throw new Error(` Patient avec l'ID ${patient.id_patient} non trouvé`);
+          if (!patient.identifier) {
+            throw new Error(` Patient avec l'ID ${patient.identifier} non trouvé`);
           }
-          const response = await axios.post(url, { data: JSON.stringify(patient) });
+          const response = await axios.post(url, patient );
+          console.log("Send created or updated patients to server : ", JSON.stringify(patient));
           if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
-          this.patientRepository.markToSynced(patient.id);
-          Logger.info(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS} ${patient.id_patient}: ${response.status} : ${response.statusText}`);
-          console.log(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS} ${patient.id_patient}: ${response.status} : ${response.statusText}`);
+          //this.patientRepository.markToSyncedByIdPatient(patient.identifier);
+          Logger.info(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS} ${patient.identifier}: ${response.status} : ${response.data}`);
+          console.info(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS} ${patient.identifier}: ${response.status} : ${JSON.stringify(response.data)}`);
           patientsSynced++;
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
-          Logger.error(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED} ${patient.id_patient}: ${errorMsg}`);
-          console.log(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED} ${patient.id_patient}: ${errorMsg}`);
-          errors.push({ patientId: patient.id_patient, error: errorMsg });
-          errorMessages.push(`Erreur pour le patient ${patient.id_patient}: ${errorMsg}`);
+          Logger.error(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED} ${patient.identifier}: ${errorMsg}`);
+          console.error(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED} ${patient.identifier}: ${errorMsg}`);
+          errors.push({ patientId: patient.identifier, error: errorMsg });
+          errorMessages.push(`Erreur pour le patient ${patient.identifier}: ${errorMsg}`);
         }
       });
 
@@ -444,7 +448,7 @@ export default class PatientService extends Service {
         sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED + " " + errors);
       } else {
         Logger.info("sendCreatedPatientsToServer Success :", patients);
-        console.log("sendCreatedPatientsToServer Success :", patientsSynced + "/" + totalPatients);
+        console.info("sendCreatedPatientsToServer Success :", patientsSynced + "/" + totalPatients);
         sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS + " " + patients);
       }
       
@@ -496,12 +500,12 @@ export default class PatientService extends Service {
           }
           this.consultationRepository.markToSynced(patientId);
           Logger.info(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.status} : ${response.statusText}`);
-          console.log(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.status} : ${response.statusText}`);
+          console.info(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS} ${patientId}: ${response.status} : ${response.statusText}`);
           consultationsSynced += consultations.length;
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
           Logger.error(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
-          console.log(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
+          console.error(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
           errors.push({ consultationId: "Patient id : " +patientId, error: errorMsg });
           errorMessages.push(`Erreur pour les consultations du patient ${patientId}: ${errorMsg}`);
         }
@@ -641,8 +645,9 @@ export default class PatientService extends Service {
   private async getAllDeletedPatientOnServer(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       const lastSyncDate = await getLastSyncDate();
-      const url = `${this.getBaseUrl()}/api/v3/json/mobile/patients/medicaldata/deleted?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
+      const url = `${this.getBaseUrl()}/api/v3/json/mobile/patients/deleted/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
       const response = await axios.get(url);
+      console.log("Get all deleted patient on server : ", url);
       
       if (response.status !== 200 && response.status !== 201) {
         throw new Error(`Erreur HTTP: ${response.status}`);
@@ -683,6 +688,19 @@ export default class PatientService extends Service {
   countPatientsCreatedOrUpdatedSince = async (date: string, diabetesType: string): Promise<any> => {
     return this.patientRepository.countPatientsCreatedOrUpdatedSince(date, diabetesType);
   }
+
+  sendToCreateOrUpdatedOnlyOnePatient = async (patient : PatientFormData) : Promise<boolean> => {
+    try {
+        const response = await axios.post(this.getFullUrl('/api/json/mobile/patient'), patient, {
+            headers: API_HEADER
+        });
+        return true;
+    } catch (error) {
+        console.error('Erreur réseau :', error);
+        Logger.log('error', 'Error sending patient to create or updated only one patient on the server', { error });
+        return false;
+    }
+};
 
 }
 

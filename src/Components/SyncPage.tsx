@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSyncData } from '../Hooks/useSyncData';
-
 // Utilisation de l'interface SyncFolderData du hook useSyncData
 
 const SyncPage = () => {
@@ -22,13 +21,16 @@ const SyncPage = () => {
     resetSyncSuccess 
   } = useSyncData();
 
+
   // Charger les données au montage du composant uniquement
   useEffect(() => {
     // Utiliser un flag pour éviter les chargements multiples
     let isMounted = true;
     if (isMounted) {
+      /* getFicheListWithFormFill().then((fiches) => {
+        console.log('Data loaded : ', fiches);
+      }); */
       loadData();
-      console.log('Data loaded : ', JSON.stringify(folders));
     }
     return () => { isMounted = false; };
   }, []);

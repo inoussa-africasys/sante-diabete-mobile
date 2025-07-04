@@ -5,9 +5,10 @@ import { Consultation } from "../models/Consultation";
 import Patient from '../models/Patient';
 import { ConsultationRepository } from "../Repositories/ConsultationRepository";
 import { PatientRepository } from '../Repositories/PatientRepository';
-import { ConsultationFormData, Coordinates } from "../types";
+import { Coordinates } from "../types";
 import { generateConsultationName, generateUUID } from '../utils/consultation';
 import Logger from '../utils/Logger';
+import { ConsultationFormData } from './../types/patient';
 import Service from "./core/Service";
 
 export default class ConsultationService extends Service {
@@ -46,7 +47,7 @@ export default class ConsultationService extends Service {
       if (!consultationCreated.id) {
         throw new Error('L\'id de la consultation locale n\'a pas pu etre recupere');
       }
-      await this.consultationRepository.update(consultationCreated.id,consultationCreated);
+      await this.consultationRepository.update(consultationCreated.id, consultationCreated);
       return consultationCreated;
     } catch (error) {
       console.error('Erreur de creation de la consultation locale :', error);
@@ -107,7 +108,7 @@ export default class ConsultationService extends Service {
     try {
       // Convertir ficheId en chaîne pour assurer la compatibilité
       const ficheIdValue = ficheId.toString();
-      
+
       // Utiliser la méthode query du repository pour construire une requête personnalisée
       const consultations = this.consultationRepository.query()
         .where('id_fiche = ?', [ficheIdValue])
@@ -115,12 +116,12 @@ export default class ConsultationService extends Service {
         .where('id_patient = ?', [""]) // isLocalCreated est stocké comme 1 en SQLite 
         .where('deletedAt IS NULL')
         .all();
-      
+
       // Log minimal pour éviter les boucles de rendu
       if (consultations.length > 0) {
         console.log(`Trouvé ${consultations.length} consultation(s) pour la fiche ${ficheIdValue}`);
       }
-      
+
       return consultations;
     } catch (error) {
       console.error('Erreur lors de la récupération des consultations locales par fiche:', error);
@@ -132,7 +133,7 @@ export default class ConsultationService extends Service {
   async deleteConsultationOnTheLocalDb(consultationId: number): Promise<boolean> {
     try {
       const consultation = await this.consultationRepository.findById(consultationId);
-      if(!consultation){
+      if (!consultation) {
         throw new Error('La consultation locale n\'a pas pu etre recupere');
       }
       await this.consultationRepository.softDelete(consultationId.toString());
@@ -145,18 +146,18 @@ export default class ConsultationService extends Service {
     }
   }
 
-  async updateConsultationByIdOnLocalDB(consultationId: number,consultation: ConsultationFormData): Promise<boolean> {
+  async updateConsultationByIdOnLocalDB(consultationId: number, consultation: ConsultationFormData): Promise<boolean> {
     try {
       const consultationToCreate = await this.consultationRepository.findById(consultationId);
-      if(!consultationToCreate){
+      if (!consultationToCreate) {
         throw new Error('La consultation locale n\'a pas pu etre recupere');
       }
       consultationToCreate.data = consultation.data;
       consultationToCreate.updatedAt = new Date().toISOString();
       consultationToCreate.synced = false;
 
-      await this.consultationRepository.update(consultationId,consultationToCreate);
-      await this.updateConsultationFile(consultationToCreate.fileName,consultationToCreate.toJson());
+      await this.consultationRepository.update(consultationId, consultationToCreate);
+      await this.updateConsultationFile(consultationToCreate.fileName, consultationToCreate.toJson());
       return true;
     } catch (error) {
       console.error('Erreur de mise à jour de la consultation :', error);
@@ -166,70 +167,69 @@ export default class ConsultationService extends Service {
   }
 
 
-  
- async updateConsultationFile(fileName: string, updatedData: any) {
-  const folderUri = `${FileSystem.documentDirectory}${PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL}/`;
-  const fileUri = `${folderUri}${fileName}`;
 
-  try {
-    const folderInfo = await FileSystem.getInfoAsync(folderUri);
-    if (!folderInfo.exists) {
-      await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
+  async updateConsultationFile(fileName: string, updatedData: any) {
+    const folderUri = `${FileSystem.documentDirectory}${PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL}/`;
+    const fileUri = `${folderUri}${fileName}`;
+
+    try {
+      const folderInfo = await FileSystem.getInfoAsync(folderUri);
+      if (!folderInfo.exists) {
+        await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
+      }
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(updatedData, null, 2));
+      console.log("✅ Fichier consultation mis à jour :", fileUri);
+    } catch (err) {
+      console.error("❌ Erreur mise à jour consultation file :", err);
     }
-    await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(updatedData, null, 2));
-    console.log("✅ Fichier consultation mis à jour :", fileUri);
-  } catch (err) {
-    console.error("❌ Erreur mise à jour consultation file :", err);
   }
-}
 
 
-async deleteConsultationFile(fileName: string): Promise<void> {
-  const folderUri = `${FileSystem.documentDirectory}${PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL}/`;
-  const fileUri = `${folderUri}${fileName}`;
+  async deleteConsultationFile(fileName: string): Promise<void> {
+    const folderUri = `${FileSystem.documentDirectory}${PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL}/`;
+    const fileUri = `${folderUri}${fileName}`;
 
-  try {
-    const fileInfo = await FileSystem.getInfoAsync(fileUri);
-    if (fileInfo.exists) {
-      await FileSystem.deleteAsync(fileUri);
-      console.log("🗑️ Fichier supprimé avec succès :", fileUri);
-    } else {
-      console.warn("⚠️ Le fichier n'existe pas :", fileUri);
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      if (fileInfo.exists) {
+        await FileSystem.deleteAsync(fileUri);
+        console.log("🗑️ Fichier supprimé avec succès :", fileUri);
+      } else {
+        console.warn("⚠️ Le fichier n'existe pas :", fileUri);
+      }
+    } catch (err) {
+      console.error("❌ Erreur lors de la suppression du fichier :", err);
     }
-  } catch (err) {
-    console.error("❌ Erreur lors de la suppression du fichier :", err);
   }
-}
 
-async createdDataInConsultationTableOnLocalDBAndCreateJson(consultation: ConsultationFormData, coordinates: Coordinates): Promise<Consultation> {
-  try {
-    const consultationToCreate = ConsultationMapper.toConsultation(consultation);
-    consultationToCreate.type_diabete = this.getTypeDiabete();
-    consultationToCreate.synced = false;
-    consultationToCreate.longitude = coordinates.longitude;
-    consultationToCreate.latitude = coordinates.latitude;
-    consultationToCreate.uuid = generateUUID();
-    consultationToCreate.createdBy = this.getConnectedUsername();
-    consultationToCreate.createdAt = new Date().toISOString();
-    consultationToCreate.updatedAt = new Date().toISOString();
-    const consultationCreated = this.consultationRepository.insertAndReturn(consultationToCreate);
-    if (!consultationCreated) {
-      throw new Error('La consultation locale n\'a pas pu etre creer');
-    }
-    const fileName = await this.saveConsultationAsJson(consultationCreated);
-    consultationCreated.fileName = fileName;
-    if (!consultationCreated.id) {
-      throw new Error('L\'id de la consultation locale n\'a pas pu etre recupere');
-    }
-    await this.consultationRepository.update(consultationCreated.id,consultationCreated);
+  async createdDataInConsultationTableOnLocalDBAndCreateJson(consultation: ConsultationFormData, coordinates: Coordinates): Promise<Consultation> {
+    try {
+      const consultationToCreate = ConsultationMapper.toConsultation(consultation);
+      consultationToCreate.type_diabete = this.getTypeDiabete();
+      consultationToCreate.synced = false;
+      consultationToCreate.longitude = coordinates.longitude;
+      consultationToCreate.latitude = coordinates.latitude;
+      consultationToCreate.uuid = generateUUID();
+      consultationToCreate.createdBy = this.getConnectedUsername();
+      consultationToCreate.createdAt = new Date().toISOString();
+      consultationToCreate.updatedAt = new Date().toISOString();
+      const consultationCreated = this.consultationRepository.insertAndReturn(consultationToCreate);
+      if (!consultationCreated) {
+        throw new Error('La consultation locale n\'a pas pu etre creer');
+      }
+      const fileName = await this.saveConsultationAsJson(consultationCreated);
+      consultationCreated.fileName = fileName;
+      if (!consultationCreated.id) {
+        throw new Error('L\'id de la consultation locale n\'a pas pu etre recupere');
+      }
+      await this.consultationRepository.update(consultationCreated.id, consultationCreated);
 
-    return consultationCreated;
-  } catch (error) {
-    console.error('Erreur de creation de la consultation locale :', error);
-    throw error;
+      return consultationCreated;
+    } catch (error) {
+      console.error('Erreur de creation de la consultation locale :', error);
+      throw error;
+    }
   }
-}
-
 
 
 }

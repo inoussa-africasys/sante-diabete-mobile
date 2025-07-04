@@ -11,7 +11,6 @@ import { usePatient } from '../../Hooks/usePatient';
 import { useDiabetes } from '../../context/DiabetesContext';
 import Empty from '../Empty';
 import SyncLoader from '../SyncLoader';
-import SynchSucces from '../synchSucces';
 
 interface PatientListPageProps {
   onPatientPress: (patientId: string) => void;
@@ -251,7 +250,6 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
         {/* Modals */}
         <SyncLoader isSyncing={isSyncing} />
-        <SynchSucces isSyncingSuccess={syncSuccess} setIsSyncingSuccess={setSyncSuccess} />
 
         {/* Sync Stats Modal */}
         <Modal

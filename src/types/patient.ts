@@ -32,10 +32,11 @@ export interface PatientSyncData {
   comments: string;
   emergencyPeople: string;
   emergencyContact: string;
-  isModified: boolean; 
+  isModified: string; 
   end_date: Date; 
   traficUser: string;
 }
+
 
 
 export interface PatientDeletedSyncError {

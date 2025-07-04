@@ -87,7 +87,8 @@ export class Migration {
         createdAt DATETIME NOT NULL,
         updatedAt DATETIME NOT NULL,
         deletedAt DATETIME NULL,
-        isLocalCreated BOOLEAN NOT NULL DEFAULT true
+        isLocalCreated BOOLEAN NOT NULL DEFAULT true,
+        isModified BOOLEAN NOT NULL DEFAULT false
       )
     `);
 
@@ -109,6 +110,25 @@ export class Migration {
         updatedAt DATETIME NOT NULL,
         deletedAt DATETIME NULL,
         isLocalCreated BOOLEAN NOT NULL DEFAULT true
+
+      )
+    `);
+
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS form_fill (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid VARCHAR(80) NOT NULL,
+        fileName VARCHAR(80) NOT NULL,
+        data TEXT NOT NULL,
+        ficheName VARCHAR(80) NOT NULL,
+        type_diabete VARCHAR(10) NOT NULL,
+        longitude REAL NULL,
+        latitude REAL NULL,
+        synced BOOLEAN NOT NULL DEFAULT false,
+        createdBy VARCHAR(80),
+        createdAt DATETIME NOT NULL,
+        updatedAt DATETIME NOT NULL,
+        deletedAt DATETIME NULL
 
       )
     `);

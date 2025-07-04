@@ -1,12 +1,13 @@
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
-import useConsultation from "@/src/Hooks/useConsultation";
 import { useFiche } from "@/src/Hooks/useFiche";
-import { ConsultationFormData } from "@/src/types";
+import { useFormFill } from "@/src/Hooks/useFormFill";
+import FormFillForm from "@/src/types/formFill";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
 
 export default function RemplireFiche() {
   const params = useLocalSearchParams<{ ficheId?: string }>();
@@ -15,11 +16,11 @@ export default function RemplireFiche() {
   const [loading, setLoading] = useState<boolean>(false);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  
+  const [ficheName, setFicheName] = useState<string>('');
 
 
   const { getFicheById } = useFiche();
-  const { createdDataInConsultationTableOnLocalDB } = useConsultation();
+  const { createFormFillOnLocalDB } = useFormFill();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,6 +29,7 @@ export default function RemplireFiche() {
         const ficheFetched = await getFicheById(ficheId);
         if (ficheFetched?.data) {
           setSurveyJson(ficheFetched.data);
+          setFicheName(ficheFetched.name);
         }
       } catch (e) {
         console.error('Erreur lors du chargement des données :', e);
@@ -56,14 +58,17 @@ export default function RemplireFiche() {
 
 
   const handleCompletSurveyForm = async (data: any) => {
-    if (!location) {
+    const formFill : FormFillForm = {
+      data : JSON.stringify(data),  
+      ficheName : ficheName,
+      coordinates : location?.coords || {latitude: 0, longitude: 0},
+    }
+    const result = await createFormFillOnLocalDB(formFill);
+    if (!result) {
+      console.error('Erreur lors de la création de la formFill');
+      setErrorMsg('Erreur lors de la création de la formFill');
       return;
     }
-    const consultation : ConsultationFormData = {
-      data : JSON.stringify(data),  
-      id_fiche : ficheId,
-    }
-    await createdDataInConsultationTableOnLocalDB(consultation,location.coords);
     router.push(`/liste-fiches`);
   };
 

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import ConsultationService from "../Services/ConsulationService";
+import useConfigStore from "../core/zustand/configStore";
 import { Consultation } from "../models/Consultation";
 import Patient from "../models/Patient";
 import { ConsultationFormData, Coordinates } from "../types";
 import Logger from "../utils/Logger";
+import { useIsOnline } from "./useIsOnline";
 
 type useConsultationReturnType = {
     isLoading: boolean;
@@ -21,6 +23,8 @@ export default function useConsultation(): useConsultationReturnType {
     const [consultations, setConsultations] = useState<Record<string, Consultation[]> | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const isOnline = useIsOnline();
+    const isAutoSyncActive = useConfigStore((state) => state.getValue('autoSync'));
 
     const getConsultations = async (patientId: string): Promise<Record<string, Consultation[]> | null> => {
         try {

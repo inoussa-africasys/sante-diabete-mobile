@@ -2,7 +2,7 @@ import { getDiabetesType } from '../functions';
 import { ConsultationMapper } from '../mappers/consultationMapper';
 import { PatientMapper } from '../mappers/patientMapper';
 import Patient from '../models/Patient';
-import { PatientSyncDataResponseOfGetAllMedicalDataServer } from '../types';
+import { PatientSyncData, PatientSyncDataResponseOfGetAllMedicalDataServer } from '../types';
 import Logger from '../utils/Logger';
 import { ConsultationRepository } from './ConsultationRepository';
 import { GenericRepository } from './GenericRepository';
@@ -77,7 +77,7 @@ export class PatientRepository extends GenericRepository<Patient> {
   }
 
 
-  public async getAllPatientsUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate: string | null | undefined): Promise<Patient[]> {
+  public async getAllPatientsUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate: string | null | undefined): Promise<PatientSyncData[]> {
     try {
 
       let query = "";
@@ -90,8 +90,13 @@ export class PatientRepository extends GenericRepository<Patient> {
         params = [lastSyncDate, await getDiabetesType()];
       }
       const result = this.db.getAllSync(query, params);
+      const patients = result.map((item) => {
+        const patient = this.modelFactory(item);
+        return PatientMapper.toPatientSyncData(patient);
+      })
 
-      return result.map((item) => this.modelFactory(item));
+
+      return patients;
     } catch (error) {
       console.error('Error fetching updated patients:', error);
       Logger.log('error', 'Error fetching updated patients', { error });
@@ -103,6 +108,15 @@ export class PatientRepository extends GenericRepository<Patient> {
   public async markToSynced(id: number): Promise<void> {
     try {
       this.db.runSync(`UPDATE ${this.tableName} SET updatedAt = ?,   synced = ? WHERE id = ? AND deletedAt IS NULL`, [new Date().toISOString(), true, id]);
+    } catch (error) {
+      console.error('Error marking patient as synced:', error);
+      Logger.log('error', 'Error marking patient as synced', { error });
+    }
+  }
+
+  public async markToSyncedByIdPatient(id_patient: string): Promise<void> {
+    try {
+      this.db.runSync(`UPDATE ${this.tableName} SET updatedAt = ?,   synced = ? WHERE id_patient = ? AND deletedAt IS NULL`, [new Date().toISOString(), true, id_patient]);
     } catch (error) {
       console.error('Error marking patient as synced:', error);
       Logger.log('error', 'Error marking patient as synced', { error });

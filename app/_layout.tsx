@@ -1,6 +1,5 @@
 import { AuthProvider } from '@/src/context/AuthContext';
 import { Migration } from '@/src/core/database/migrations';
-import { PatientRepository } from '@/src/Repositories/PatientRepository';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -26,7 +25,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function prepare() {
-      /* Migration.resetDatabase();  */
+      // Migration.resetDatabase();  
       // Simuler un chargement, ex: chargement de polices, données, etc.
       
       try {
@@ -77,9 +76,4 @@ export default function RootLayout() {
 
 const initDB = () => {
   Migration.initialize();
-
-    const repo = new PatientRepository();
-/* 
-    const allPatients = repo.findAll();
-    console.log(allPatients); */
 }

@@ -45,9 +45,9 @@ export class PatientMapper {
             comments: patient.comment,
             emergencyPeople: "",
             emergencyContact: "",
-            isModified: false,
+            isModified: patient.isModified ? 'true' : 'false',
             end_date: new Date(),
-            traficUser: patient.trafic_user,
+            traficUser: patient.createdBy,
         };
     }
 
@@ -63,7 +63,8 @@ export class PatientMapper {
         patient.phone = patientSyncData.contact;
         patient.email = patientSyncData.email;
         patient.comment = patientSyncData.comments;
-        patient.trafic_user = patientSyncData.traficUser;
+        patient.createdBy = patientSyncData.traficUser;
+        patient.isModified = patientSyncData.isModified === 'true';
         return patient;
     }
 }
