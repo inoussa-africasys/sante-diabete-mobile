@@ -1,5 +1,6 @@
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { v4 } from "react-native-uuid/dist/v4";
-
 
 export const formatPatientDate = (date: string) => {
     const parsedDate = new Date(date);
@@ -42,3 +43,13 @@ export function generateFormfillId() {
     const id = cleaned.substring(0, 8).toUpperCase();
     return `TF-${id}`;
 }
+
+
+export const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      return format(date, 'dd-MM-yyyy_HH\'h\'mm\'min\'', { locale: fr });
+    } catch (error) {
+      return dateString;
+    }
+  };

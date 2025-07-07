@@ -1,7 +1,5 @@
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { useCallback, useRef, useState } from 'react';
-import { generateFormfillId } from '../functions/helpers';
+import { formatDate, generateFormfillId } from '../functions/helpers';
 import { FormFill } from '../models/FormFill';
 import FormFillService from '../Services/formFillService';
 import Logger from '../utils/Logger';
@@ -44,14 +42,6 @@ export const useSyncData = () => {
 
   const { getAllFicheDownloaded } = useFiche();
 
-  const formatDate = (dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      return format(date, 'dd-MM-yyyy_HH\'h\'mm\'min\'', { locale: fr });
-    } catch (error) {
-      return dateString;
-    }
-  };
 
   const getAllLocalFormFillForFiche = async (ficheId: string): Promise<FormFill[]> => {
     try {

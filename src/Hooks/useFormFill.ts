@@ -9,18 +9,23 @@ type useFormFillType = {
     createFormFillOnLocalDB: (formFill: FormFillForm) => Promise<boolean>;
     isLoading: boolean;
     error: string | null;
+    formFills: FormFill[];
+    loadFormFills: () => Promise<void>;
+    getFormFillById: (id: string) => Promise<FormFill | null>;
 }
 export const useFormFill = (): useFormFillType => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const isOnline = useIsOnline();
     const isAutoSyncActive = useConfigStore((state) => state.getValue('autoSync'));
+    const [formFills,setFormFills] = useState<FormFill[]>([])
 
     const getFicheListWithFormFill = async (): Promise<Map<string, FormFill>> => {
         try {
             setIsLoading(true);
             const formFillService = await FormFillService.create();
             const fiches = await formFillService.getAllFicheWhereFormFillIsNotNull();
+            
             return fiches;
         } catch (error) {
             console.error('Erreur réseau :', error);
@@ -53,12 +58,46 @@ export const useFormFill = (): useFormFillType => {
         }
     };
 
+    const loadFormFills = async () => {
+        try {
+            setIsLoading(true);
+            const formFillService = await FormFillService.create();
+            const fiches = await formFillService.getAllFormFill();
+            setFormFills(fiches);
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            setError(error as string);
+            setIsLoading(false);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const getFormFillById = async (id: string): Promise<FormFill | null> => {
+        try {
+            setIsLoading(true);
+            const formFillService = await FormFillService.create();
+            const formFill = await formFillService.getFormFillById(parseInt(id));
+            console.log('formFill', id);
+            return formFill;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            setError(error as string);
+            setIsLoading(false);
+            return null;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return {
         getFicheListWithFormFill,
         createFormFillOnLocalDB,
         isLoading,
         error,
-
+        formFills,
+        loadFormFills,
+        getFormFillById   
     };
 
 
