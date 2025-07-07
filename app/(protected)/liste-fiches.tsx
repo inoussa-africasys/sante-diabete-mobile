@@ -11,7 +11,8 @@ enum Action {
   None = '',
   Edit = 'edit',
   Fill = 'fill',
-  Empty = 'empty'
+  Empty = 'empty',
+  EditFormFill = 'editFormFill'
 }
 
 export default function ListeFichesScreen() {
@@ -21,7 +22,7 @@ export default function ListeFichesScreen() {
   const { getAllFicheDownloaded, isLoading, error } = useFiche();
   const [fiches, setFiches] = React.useState<Fiche[]>([]);
 
-  const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge'].includes(params.mode)) ? params.mode : 'remplir';
+  const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge', 'editFormFill'].includes(params.mode)) ? params.mode : 'remplir';
   const patientId = params.patientId as string;
 
  useEffect(() => {
@@ -49,6 +50,8 @@ export default function ListeFichesScreen() {
       }
       case 'vierge':
         return `Téléchargement de fiche `;
+      case 'editFormFill':
+        return `Éditer une fiche `;
       default:
         return `Liste des fiches `;
     }
@@ -56,6 +59,7 @@ export default function ListeFichesScreen() {
 
 
   const handleMakeAction = (action: Action, fiche: Fiche) => {
+    console.log('action', action);
     switch (action) {
       case Action.Edit:
         router.push(`/patient/${patientId}/consultations/edit?mode=edit&ficheId=${fiche.id}`);
@@ -65,6 +69,9 @@ export default function ListeFichesScreen() {
         break;
       case Action.Empty:
         router.push(`/patient/${patientId}/consultations/create?mode=empty&ficheId=${fiche.id}`);
+        break;
+      case Action.EditFormFill:
+        router.push(`/edit-fiche?mode=editFormFill&ficheId=${fiche.id}`);
         break;
     }
   };
@@ -83,6 +90,9 @@ export default function ListeFichesScreen() {
             break;
           case 'vierge':
             action = Action.Empty;
+            break;
+          case 'editFormFill':
+            action = Action.EditFormFill;
             break;
         }
         handleMakeAction(action, item);

@@ -183,6 +183,17 @@ export default class FormFillService extends Service {
         }
     };
 
+    async getFormFillById(id: number): Promise<FormFill | null> {
+        try {
+            const formFill = this.formFillRepository.findById(id);
+            return formFill;
+        } catch (error) {
+            console.error('Error getting form fill:', error);
+            Logger.log('error', 'Error getting form fill:', { error });
+            return null;
+        }
+    }
+
 
 
 

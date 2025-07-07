@@ -141,7 +141,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 
             <TouchableOpacity
               style={styles.mediumButton}
-              onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=editer`)}
+              onPress={() => router.push(`/liste-fiche-edition`)}
             >
               <MaterialIcons
                 name="edit"
