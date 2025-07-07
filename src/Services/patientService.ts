@@ -74,15 +74,12 @@ export default class PatientService extends Service {
     }
   }
 
-
   private generatePatientId(): string {
     const rawUuid = uuid.v4() as string; // Génère un UUID (ex: 'ba13f9a6-...')
     const cleaned = rawUuid.replace(/-/g, '');
     const id = cleaned.substring(0, 8).toUpperCase();
     return `P-${id}`;
   }
-
-
 
   async savePatientAsJson(patient: Patient): Promise<void> {
     try {
@@ -124,7 +121,7 @@ export default class PatientService extends Service {
       patientToUpdate.trafic_user = this.getConnectedUsername();
       patientToUpdate.type_diabete = this.getTypeDiabete();
       patientToUpdate.createdAt = oldPatient.createdAt;
-      patientToUpdate.isModified = true;  
+      patientToUpdate.isModified = true;
       this.patientRepository.updatev2(id, patientToUpdate);
       this.updatePatientJson(patientId, patientToUpdate);
       console.log(`Patient mis à jour : ${patientId}`);
@@ -153,7 +150,11 @@ export default class PatientService extends Service {
 
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
       if (!fileInfo.exists) {
-        console.error("Le fichier patient n'existe pas :", fileUri);
+        console.warn("Le fichier patient n'existe pas :", fileUri);
+        Logger.warn("Le fichier patient n'existe pas :", { fileUri });
+        const patient = await this.patientRepository.findAllByPatientId(id_patient);
+        if (!patient) { throw new Error(` Patient avec l'ID ${id_patient} non trouvé`); }
+        this.savePatientAsJson(patient);
         return;
       }
 
@@ -211,7 +212,7 @@ export default class PatientService extends Service {
   async syncPatients(): Promise<SyncPatientReturnType> {
     try {
       const errors: string[] = [];
-      
+
       // Synchroniser les patients supprimés
       const syncDeletedPatientsResult = await this.syncDeletedPatients();
       console.log("Patients supprimés synchronisés in local db:", syncDeletedPatientsResult.success);
@@ -222,7 +223,7 @@ export default class PatientService extends Service {
           errors.push(...syncDeletedPatientsResult.errors);
         }
       }
-      
+
       // Envoyer les patients créés ou mis à jour au serveur
       const sendCreatedOrUpdatedPatientsResult = await this.sendCreatedOrUpdatedPatientsToServer();
       console.log("Patients mis à jour synchronisés in local db:", sendCreatedOrUpdatedPatientsResult.success);
@@ -273,7 +274,7 @@ export default class PatientService extends Service {
         message: "Synchronisation des images ignorée (désactivée)",
         statistics: { total: 0, success: 0, failed: 0 }
       };
-      
+
       if (config.isPictureSyncEnabled) {
         syncPicturesResult = await this.syncPictures();
         console.log("Images synchronisées on the server:", syncPicturesResult.success);
@@ -310,7 +311,7 @@ export default class PatientService extends Service {
     } catch (error) {
       console.error("Erreur lors de la synchronisation des patients :", error);
       Logger.log("error", "Erreur lors de la synchronisation des patients", { error });
-      
+
       return {
         success: false,
         message: "Erreur lors de la synchronisation des patients",
@@ -326,7 +327,6 @@ export default class PatientService extends Service {
       };
     }
   }
-
 
   private async syncDeletedPatients(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
@@ -364,7 +364,7 @@ export default class PatientService extends Service {
       await Promise.allSettled(requests);
 
       const success = errors.length === 0;
-      
+
       if (!success) {
         console.warn("Patients non synchronisés :", errors);
         Logger.error("syncDeletedPatients Failed :", errors);
@@ -374,7 +374,7 @@ export default class PatientService extends Service {
         console.log("syncDeletedPatients Success :", deletedPatientsSynced + "/" + totalDeletedPatients);
         sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS + " " + deletedPatients);
       }
-      
+
       return {
         success,
         message: success ? "Synchronisation des patients supprimés réussie" : "Erreur lors de la synchronisation des patients supprimés",
@@ -389,7 +389,7 @@ export default class PatientService extends Service {
     } catch (error) {
       console.error("Erreur globale dans syncDeletedPatients :", error);
       sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED + " " + error);
-      
+
       return {
         success: false,
         message: "Erreur lors de la synchronisation des patients supprimés",
@@ -403,7 +403,6 @@ export default class PatientService extends Service {
     }
   }
 
-
   private async sendCreatedOrUpdatedPatientsToServer(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       let patientsSynced = 0;
@@ -412,7 +411,7 @@ export default class PatientService extends Service {
       const errors: PatientUpdatedSyncError[] = [];
       const errorMessages: string[] = [];
       const totalPatients = patients.length;
-      
+
       const requests = patients.map(async (patient) => {
         const url = `${this.getBaseUrl()}/api/json/mobile/patients/synchro?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
         console.log("Send created or updated patients to server : ", url);
@@ -420,7 +419,7 @@ export default class PatientService extends Service {
           if (!patient.identifier) {
             throw new Error(` Patient avec l'ID ${patient.identifier} non trouvé`);
           }
-          const response = await axios.post(url, patient );
+          const response = await axios.post(url, patient);
           console.log("Send created or updated patients to server : ", JSON.stringify(patient));
           if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}`);
@@ -441,7 +440,7 @@ export default class PatientService extends Service {
       await Promise.allSettled(requests);
 
       const success = errors.length === 0;
-      
+
       if (!success) {
         console.warn("Patients non synchronisés :", errors);
         Logger.error("sendCreatedPatientsToServer Failed :", errors);
@@ -451,7 +450,7 @@ export default class PatientService extends Service {
         console.info("sendCreatedPatientsToServer Success :", patientsSynced + "/" + totalPatients);
         sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS + " " + patients);
       }
-      
+
       return {
         success,
         message: success ? "Synchronisation des patients créés/mis à jour réussie" : "Erreur lors de la synchronisation des patients créés/mis à jour",
@@ -465,7 +464,7 @@ export default class PatientService extends Service {
 
     } catch (error) {
       console.error("Erreur lors de la synchronisation des patients mis à jour :", error);
-      
+
       return {
         success: false,
         message: "Erreur lors de la synchronisation des patients créés/mis à jour",
@@ -488,7 +487,7 @@ export default class PatientService extends Service {
       const errors: ConsultationSyncError[] = [];
       const errorMessages: string[] = [];
       const totalConsultations = Object.values(consultations).flat().length;
-      
+
       const requests = Object.entries(consultations).map(async ([patientId, consultations]) => {
         const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/medicaldata/synchro/submissions/batch?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patientId}&lat&lon`;
         console.log(`URL: ${url}`);
@@ -506,14 +505,14 @@ export default class PatientService extends Service {
           const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
           Logger.error(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
           console.error(`${SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED} ${patientId}: ${errorMsg}`);
-          errors.push({ consultationId: "Patient id : " +patientId, error: errorMsg });
+          errors.push({ consultationId: "Patient id : " + patientId, error: errorMsg });
           errorMessages.push(`Erreur pour les consultations du patient ${patientId}: ${errorMsg}`);
         }
       });
       await Promise.allSettled(requests);
 
       const success = errors.length === 0;
-      
+
       if (!success) {
         console.warn("Consultations non synchronisées :", errors);
         Logger.error("sendCreatedConsultationsToServer Failed :", errors);
@@ -523,7 +522,7 @@ export default class PatientService extends Service {
         console.log("sendCreatedConsultationsToServer Success :", consultationsSynced + "/" + totalConsultations);
         sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS + " " + consultations);
       }
-      
+
       return {
         success,
         message: success ? "Synchronisation des consultations réussie" : "Erreur lors de la synchronisation des consultations",
@@ -539,7 +538,7 @@ export default class PatientService extends Service {
       console.error("Erreur lors de la synchronisation des consultations créées :", error);
       Logger.error("sendCreatedConsultationsToServer Failed :", { error });
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED + " " + error);
-      
+
       return {
         success: false,
         message: "Erreur lors de la synchronisation des consultations",
@@ -557,7 +556,7 @@ export default class PatientService extends Service {
   private async syncPictures(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       console.log(`Syncing pictures en cours : `);
-      
+
       // Si la synchronisation des images est désactivée, on retourne un succès sans statistiques
       if (!config.isPictureSyncEnabled) {
         return {
@@ -570,9 +569,9 @@ export default class PatientService extends Service {
           }
         };
       }
-      
+
       // TODO: Implement actual picture synchronization logic here
-      
+
       // Return successful synchronization result
       return {
         success: true,
@@ -585,7 +584,7 @@ export default class PatientService extends Service {
       };
     } catch (error) {
       console.error("Erreur lors de la synchronisation des images :", error);
-      
+
       return {
         success: false,
         message: "Erreur lors de la synchronisation des images",
@@ -605,17 +604,17 @@ export default class PatientService extends Service {
       const url = `${this.getBaseUrl()}/api/v3/json/mobile/patients/medicaldata/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
       const response = await axios.get(url);
       console.log("Get sync patients : ", url);
-      
+
       if (response.status !== 200 && response.status !== 201) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      
+
       const patients = response.data as PatientSyncDataResponseOfGetAllMedicalDataServer[];
       await this.patientRepository.createOrUpdateAll(patients);
       const totalPatients = patients.length;
 
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS);
-      
+
       return {
         success: true,
         message: "Récupération des patients du serveur réussie",
@@ -628,7 +627,7 @@ export default class PatientService extends Service {
     } catch (error) {
       console.error("Erreur lors de la synchronisation des patients :", error);
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED);
-      
+
       return {
         success: false,
         message: "Erreur lors de la récupération des patients du serveur",
@@ -648,17 +647,17 @@ export default class PatientService extends Service {
       const url = `${this.getBaseUrl()}/api/v3/json/mobile/patients/deleted/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
       const response = await axios.get(url);
       console.log("Get all deleted patient on server : ", url);
-      
+
       if (response.status !== 200 && response.status !== 201) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      
+
       const patients = response.data as PatientSyncDataResponseOfGetAllMedicalDataServer[];
-      await this.patientRepository.deleteAll(patients.map(p => p.identifier));
+      await this.deleteAll(patients.map(p => p.identifier));
       const totalPatients = patients.length;
 
-      sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS);
-      
+      await sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS);
+
       return {
         success: true,
         message: "Récupération des patients supprimés du serveur réussie",
@@ -671,7 +670,7 @@ export default class PatientService extends Service {
     } catch (error) {
       console.error("Erreur lors de la synchronisation des patients supprimés :", error);
       sendTraficAuditEvent(SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED);
-      
+
       return {
         success: false,
         message: "Erreur lors de la récupération des patients supprimés du serveur",
@@ -689,18 +688,41 @@ export default class PatientService extends Service {
     return this.patientRepository.countPatientsCreatedOrUpdatedSince(date, diabetesType);
   }
 
-  sendToCreateOrUpdatedOnlyOnePatient = async (patient : PatientFormData) : Promise<boolean> => {
+  sendToCreateOrUpdatedOnlyOnePatient = async (patient: PatientFormData): Promise<boolean> => {
     try {
-        const response = await axios.post(this.getFullUrl('/api/json/mobile/patient'), patient, {
-            headers: API_HEADER
-        });
-        return true;
+      const response = await axios.post(this.getFullUrl('/api/json/mobile/patient'), patient, {
+        headers: API_HEADER
+      });
+      return true;
     } catch (error) {
-        console.error('Erreur réseau :', error);
-        Logger.log('error', 'Error sending patient to create or updated only one patient on the server', { error });
-        return false;
+      console.error('Erreur réseau :', error);
+      Logger.log('error', 'Error sending patient to create or updated only one patient on the server', { error });
+      return false;
     }
-};
+  };
+
+  private deleteAll = async (patientIds: string[]): Promise<void> => {
+    try {
+      await this.patientRepository.deleteAll(patientIds);
+      await this.deleteAllFiles(patientIds);
+
+    } catch (error) {
+      console.error('Erreur lors de la suppression des patients :', error);
+      Logger.error('Erreur lors de la suppression des patients :', { error });
+    }
+  };
+
+  private deleteAllFiles = async (patientIds: string[]): Promise<void> => {
+    try {
+      const folderUri = `${FileSystem.documentDirectory}${PATH_OF_PATIENTS_DIR_ON_THE_LOCAL}/`;
+      const files = await FileSystem.readDirectoryAsync(folderUri);
+      const filesToDelete = files.filter(file => patientIds.includes(file));
+      await Promise.all(filesToDelete.map(file => FileSystem.deleteAsync(`${folderUri}${file}`)));
+    } catch (error) {
+      console.error('Erreur lors de la suppression des fichiers :', error);
+      Logger.error('Erreur lors de la suppression des fichiers :', { error });
+    }
+  };
 
 }
 

@@ -118,6 +118,7 @@ export class Migration {
       CREATE TABLE IF NOT EXISTS form_fill (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         uuid VARCHAR(80) NOT NULL,
+        id_trafic VARCHAR(15) NULL,
         fileName VARCHAR(80) NOT NULL,
         data TEXT NOT NULL,
         ficheName VARCHAR(80) NOT NULL,

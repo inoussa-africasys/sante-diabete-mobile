@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCallback, useRef, useState } from 'react';
+import { generateFormfillId } from '../functions/helpers';
 import { FormFill } from '../models/FormFill';
 import FormFillService from '../Services/formFillService';
 import Logger from '../utils/Logger';
@@ -11,6 +12,8 @@ export interface SyncFileData {
   date: string;
   id: string;
   formFill: FormFill;
+  id_trafic: string;
+  synced: boolean;  
 }
 
 export interface SyncFolderData {
@@ -19,6 +22,19 @@ export interface SyncFolderData {
   files?: SyncFileData[];
 }
 
+  /**
+   * Hook pour gérer la synchronisation des données locales avec le serveur.
+   * 
+   * Retourne un objet avec les propriétés suivantes :
+   * - `folders`: le tableau des dossiers avec des consultations locales qui peuvent être synchronisées
+   * - `loading`: un booléen indiquant si les données sont en train d'être chargées
+   * - `error`: un message d'erreur si une erreur est survenue lors du chargement ou de la synchronisation
+   * - `isSyncing`: un booléen indiquant si la synchronisation est en cours
+   * - `syncSuccess`: un booléen indiquant si la synchronisation a réussi
+   * - `loadData`: une fonction pour charger les données locales
+   * - `syncData`: une fonction pour synchroniser les données locales avec le serveur
+   * - `resetSyncSuccess`: une fonction pour réinitialiser la propriété `syncSuccess` à `false`
+   */
 export const useSyncData = () => {
   const [folders, setFolders] = useState<SyncFolderData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -31,7 +47,7 @@ export const useSyncData = () => {
   const formatDate = (dateString: string): string => {
     try {
       const date = new Date(dateString);
-      return format(date, 'dd-MM-yyyy_HH\'h\'mm\'min\'ss', { locale: fr });
+      return format(date, 'dd-MM-yyyy_HH\'h\'mm\'min\'', { locale: fr });
     } catch (error) {
       return dateString;
     }
@@ -72,7 +88,6 @@ export const useSyncData = () => {
       
       // Pour chaque fiche, récupérer les consultations locales associées
       for (const fiche of fiches) {
-        const ficheId = fiche.id?.toString() || '';
         const formFillService = await FormFillService.create();
         const formFill = await formFillService.getAllFormFillByFicheName(fiche.name?.toString() || '');
         
@@ -84,9 +99,11 @@ export const useSyncData = () => {
             name: fiche.name?.toString() || '',
             id: fiche.id,
             files: formFill.map(formFill => ({
+              id_trafic: formFill.id_trafic || generateFormfillId(),
               name: fiche.name?.toString() || '',
               date: formatDate(formFill.createdAt || ''),
               id: `TF-${formFill.id?.toString().padStart(8, '0')}`,
+              synced: formFill.synced,
               formFill: formFill
             }))
           };
@@ -126,7 +143,9 @@ export const useSyncData = () => {
       // Par exemple, envoyer toutes les consultations locales au serveur
       
       // Simuler un délai pour la démonstration
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const formFillService = await FormFillService.create();
+      const result = await formFillService.syncFormFill();
+      console.log('Sync result:', result);
       
       // Recharger les données après la synchronisation
       await loadData();

@@ -1,4 +1,4 @@
-import { Entypo, MaterialIcons } from '@expo/vector-icons';
+import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -121,11 +121,9 @@ const SyncPage = () => {
                   <View style={styles.fileItem}>
                     <View style={styles.fileInfo}>
                       <Entypo name="paper-plane" size={24} color="#2196F3" />
-                      {/* {file.consultation.isLocalCreated && (
-                         <View style={styles.localBadge}>
-                          <Text style={styles.localBadgeText}>Local</Text>
-                        </View> 
-                      )} */}
+                      {file.synced && (
+                        <Ionicons name="checkmark-done" size={20} color="#23a651" />
+                      )} 
                       <View style={styles.fileDetails}>
                         <Text style={styles.fileName}>{file.name}</Text>
                         <View style={styles.fileMetadata}>
@@ -133,7 +131,7 @@ const SyncPage = () => {
                             <Text style={styles.dateText}>Date: {file.date}</Text>
                           </View>
                           <View style={styles.idContainer}>
-                            <Text style={styles.idText}>{file.id}</Text>
+                            <Text style={styles.idText}>{file.id_trafic}</Text>
                           </View>
                         </View>
                       </View>

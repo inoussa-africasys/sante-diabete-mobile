@@ -1,3 +1,6 @@
+import { v4 } from "react-native-uuid/dist/v4";
+
+
 export const formatPatientDate = (date: string) => {
     const parsedDate = new Date(date);
     return parsedDate.toLocaleDateString('fr-FR');
@@ -32,3 +35,10 @@ export function parseSurveyData(rawData: any): Record<string, any> | undefined {
     }
 }
   
+
+export function generateFormfillId() {
+    const rawUuid = v4(); // Génère un UUID (ex: 'ba13f9a6-...')
+    const cleaned = rawUuid.replace(/-/g, '');
+    const id = cleaned.substring(0, 8).toUpperCase();
+    return `TF-${id}`;
+}

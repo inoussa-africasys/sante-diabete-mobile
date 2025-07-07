@@ -27,23 +27,23 @@ export default function RootLayout() {
     async function prepare() {
       // Migration.resetDatabase();  
       // Simuler un chargement, ex: chargement de polices, données, etc.
-      
+
       try {
         // Initialiser la configuration
         await initConfig();
         console.log('Configuration initialisée avec succès');
-        
+
         await new Promise(resolve => {
           setTimeout(resolve, 2000);
           initDB();
         });
-        
+
         setAppReady(true);
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de l\'application:', error);
       }
     }
-    
+
     prepare();
   }, []);
 
@@ -54,19 +54,19 @@ export default function RootLayout() {
       <StatusBar style="light" />
       {showSplash && <FullScreenSplash onAnimationComplete={handleSplashComplete} />}
       {isAppReady &&
-          <QueryClientProvider client={queryClient}>
-            <PreferencesProvider>
-              <DiabetesProvider>
-                <AuthProvider>
-                  <ToastProvider>
-                    <Stack screenOptions={{
-                      headerShown : false
-                    }} />
-                  </ToastProvider>
-                </AuthProvider>
-              </DiabetesProvider>
-            </PreferencesProvider>
-            </QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          <PreferencesProvider>
+            <DiabetesProvider>
+              <AuthProvider>
+                <ToastProvider>
+                  <Stack screenOptions={{
+                    headerShown: false
+                  }} />
+                </ToastProvider>
+              </AuthProvider>
+            </DiabetesProvider>
+          </PreferencesProvider>
+        </QueryClientProvider>
       }
     </View>
   );
