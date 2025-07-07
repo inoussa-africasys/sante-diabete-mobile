@@ -14,6 +14,7 @@ export class FormFill extends BaseModel {
     latitude: number;
     createdBy: string;
     deletedAt?: string;
+    id_trafic?: string;
 
     constructor(data?: Partial<FormFill>) {
         super();
@@ -30,6 +31,7 @@ export class FormFill extends BaseModel {
         this.createdAt = data?.createdAt || ''
         this.updatedAt = data?.updatedAt || ''
         this.deletedAt = data?.deletedAt || undefined;
+        this.id_trafic = data?.id_trafic || undefined;
     }
 
     public getFiche() : Fiche | null{

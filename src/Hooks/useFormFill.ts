@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import FormFillService from '../Services/formFillService';
+import useConfigStore from '../core/zustand/configStore';
 import { FormFill } from '../models/FormFill';
 import FormFillForm from '../types/formFill';
+import { useIsOnline } from './useIsOnline';
 type useFormFillType = {
     getFicheListWithFormFill: () => Promise<Map<string, FormFill>>;
     createFormFillOnLocalDB: (formFill: FormFillForm) => Promise<boolean>;
@@ -11,7 +13,8 @@ type useFormFillType = {
 export const useFormFill = (): useFormFillType => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-
+    const isOnline = useIsOnline();
+    const isAutoSyncActive = useConfigStore((state) => state.getValue('autoSync'));
 
     const getFicheListWithFormFill = async (): Promise<Map<string, FormFill>> => {
         try {
@@ -29,14 +32,17 @@ export const useFormFill = (): useFormFillType => {
         }
     };
 
-    const createFormFillOnLocalDB = async (formFill: FormFillForm) => {
+    const createFormFillOnLocalDB = async (formFill: FormFillForm): Promise<boolean> => {
         try {
             setIsLoading(true);
             const formFillService = await FormFillService.create();
-            const result = await formFillService.createFormFill(formFill);
+            const result = await formFillService.createFormFillAndReturn(formFill);
             console.info('formFill créée :', result);
-            console.info('formFill créée :', await formFillService.getAllFormFill());
-            return result;
+            if (result && isOnline && isAutoSyncActive) {
+                const resultSync = await formFillService.autoSyncFormFill(result);
+                return resultSync;
+            }
+            return true;
         } catch (error) {
             console.error('Erreur réseau :', error);
             setError(error as string);
@@ -47,7 +53,6 @@ export const useFormFill = (): useFormFillType => {
         }
     };
 
-
     return {
         getFicheListWithFormFill,
         createFormFillOnLocalDB,
@@ -55,4 +60,7 @@ export const useFormFill = (): useFormFillType => {
         error,
 
     };
+
+
+
 };
