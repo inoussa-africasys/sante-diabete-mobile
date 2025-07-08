@@ -3,12 +3,15 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useDiabetes } from '../context/DiabetesContext';
+import useConfigStore from '../core/zustand/configStore';
 import { QRCodeRepository } from '../Repositories/QRCodeRepository';
 import { DiabeteType } from '../types/enums';
 import { ConfirmModal } from './Modal';
 import { useToast } from './Toast/ToastProvider';
+
 
 interface AccueilPageProps {
   onBackPress?: () => void;
@@ -26,6 +29,12 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const { showToast } = useToast();
   const { userName } = useAuth();
   const [userNameValue, setUserNameValue] = React.useState<string | null>(null);
+
+
+  // les donnees de config
+    const showDownload = useConfigStore((state) => state.showDownload);
+    const showDelete = useConfigStore((state) => state.showDelete);
+    const showPatients = useConfigStore((state) => state.showPatients);
 
   const toggleMenu = () => {
     const toValue = menuOpen ? -300 : 0;
@@ -68,8 +77,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 
   return (
     <>
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="red" />
+    
+    <StatusBar backgroundColor="red" barStyle="dark-content" />
+      <SafeAreaView style={styles.container} >
 
         {/* Slide-out Menu */}
         <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }] }]}>
@@ -155,6 +165,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 
           {/* Gros boutons */}
           <View style={styles.bigButtonsContainer}>
+            {showPatients && (
             <TouchableOpacity
               style={styles.bigButton}
               onPress={handlePatientPress}
@@ -164,6 +175,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
                 <Text style={styles.bigButtonText}>Patients</Text>
               </View>
             </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={styles.bigButton}
@@ -179,9 +191,12 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
               </View>
             </TouchableOpacity>
 
+
           </View>
           {/* Grille de petits boutons */}
           <View style={styles.gridContainer}>
+
+            {showDownload && (
             <TouchableOpacity
               style={styles.mediumButton}
               onPress={() => {
@@ -196,8 +211,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
               />
               <Text style={styles.buttonText}>Fiche vierge</Text>
             </TouchableOpacity>
+            )}
 
-
+            {showDelete && (
             <TouchableOpacity
               style={[styles.mediumButton, styles.deleteButton]}
               onPress={() => console.log('Stock consommables - à implémenter')}
@@ -209,10 +225,10 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
               />
               <Text style={[styles.buttonText, styles.redText]}>Supprimer{"\n"}une fiche</Text>
             </TouchableOpacity>
-
+            )}
           </View>
         </View>
-      </View>
+      </SafeAreaView>
 
       <ConfirmModal
         type="danger"
@@ -244,6 +260,7 @@ const styles = StyleSheet.create({
   },
   menuHeader: {
     backgroundColor: 'red',
+    paddingTop: 50,
     paddingVertical: 10,
     paddingHorizontal: 20,
     flexDirection: 'row',

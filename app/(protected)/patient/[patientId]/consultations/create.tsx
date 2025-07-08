@@ -10,6 +10,8 @@ import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 
 export default function CreateConsultationScreen() {
   const params = useLocalSearchParams<{ patientId?: string; ficheId?: string }>();
@@ -108,7 +110,7 @@ export default function CreateConsultationScreen() {
 
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -119,7 +121,7 @@ export default function CreateConsultationScreen() {
       </View>
 
       <SurveyScreenDom surveyJson={surveyJson} handleSurveyComplete={handleCompletSurveyForm} />
-    </View>
+    </SafeAreaView>
   );
 }
 

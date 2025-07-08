@@ -8,6 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PatientDetailScreen() {
   const router = useRouter();
@@ -116,7 +117,7 @@ export default function PatientDetailScreen() {
 
   return (
     <>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -229,7 +230,7 @@ export default function PatientDetailScreen() {
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
 
       <ConfirmModal
         isVisible={showConfirmModal}

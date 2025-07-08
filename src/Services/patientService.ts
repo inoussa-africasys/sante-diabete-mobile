@@ -12,6 +12,7 @@ import { PatientMapper } from '../mappers/patientMapper';
 import Patient from "../models/Patient";
 import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError, SyncOnlyOnTraitementReturnType, SyncPatientReturnType } from "../types";
 import Logger from '../utils/Logger';
+import { getBase64ImageOfPatient } from '../utils/convertImageToBase64';
 import { sendTraficAuditEvent } from '../utils/traficAudit';
 import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
 import Service from "./core/Service";
@@ -556,6 +557,36 @@ export default class PatientService extends Service {
   private async syncPictures(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       console.log(`Syncing pictures en cours : `);
+      const lastSyncDate = await getLastSyncDate();
+      //const patients = await this.patientRepository.getAllPatientsUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate);
+      const patients = await this.patientRepository.getAll();
+      const totalPatients = patients.length;
+      let patientsSynced = 0;
+      const errors: PatientUpdatedSyncError[] = [];
+      const errorMessages: string[] = [];
+
+      const requests = patients.map(async (patient) => {
+        try {
+          const base64Image = await getBase64ImageOfPatient(patient.id_patient);
+          if (base64Image) {
+            console.info(`Syncing picture for patient ${patient.id_patient}`);
+            console.info(`Syncing picture : ${base64Image}`);
+            await axios.post(this.getFullUrl('/api/json/mobile/patient'), {
+              identifier: patient.id_patient,
+              photo: base64Image
+            }, {
+              headers: API_HEADER
+            });
+            patientsSynced++;
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+          Logger.error(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED} ${patient.id_patient}: ${errorMsg}`);
+          console.error(`${SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED} ${patient.id_patient}: ${errorMsg}`);
+          errors.push({ patientId: patient.id_patient, error: errorMsg });
+          errorMessages.push(`Erreur pour le patient ${patient.id_patient}: ${errorMsg}`);
+        }
+      });
 
       // Si la synchronisation des images est désactivée, on retourne un succès sans statistiques
       if (!config.isPictureSyncEnabled) {
@@ -577,9 +608,9 @@ export default class PatientService extends Service {
         success: true,
         message: "Synchronisation des images réussie",
         statistics: {
-          total: 0,  // Update with actual counts when implementing
-          success: 0,
-          failed: 0
+          total: totalPatients,
+          success: patientsSynced,
+          failed: totalPatients - patientsSynced
         }
       };
     } catch (error) {

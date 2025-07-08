@@ -3,6 +3,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '../../src/Components/Toast';
 import { useFiche } from '../../src/Hooks/useFiche';
 
@@ -150,7 +151,7 @@ export default function ListeFichesScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -167,7 +168,7 @@ export default function ListeFichesScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={<EmptyList />}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

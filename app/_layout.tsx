@@ -1,10 +1,13 @@
 import { AuthProvider } from '@/src/context/AuthContext';
 import { Migration } from '@/src/core/database/migrations';
+import useConfigStore from '@/src/core/zustand/configStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Image } from 'expo-image';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { Button, Dimensions, StyleSheet, Text, View } from "react-native";
 import "../assets/css/global.css";
 import FullScreenSplash from "../src/Components/FullScreenSplash";
 import { ToastProvider } from '../src/Components/Toast/ToastProvider';
@@ -12,13 +15,19 @@ import { initConfig } from '../src/Config';
 import { DiabetesProvider } from '../src/context/DiabetesContext';
 import { PreferencesProvider } from '../src/context/PreferencesContext';
 
+
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [isAppReady, setAppReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
 
-  // Fonction appelée quand l'animation du splash est terminée
+
+  const [authenticated, setAuthenticated] = useState(false);
+  const fingerprintEnabled = useConfigStore((state) => state.fingerprint);
+  const pinAtStartup = useConfigStore((state) => state.pinAtStartup);
+
+
   const handleSplashComplete = () => {
     setShowSplash(false);
   };
@@ -46,6 +55,84 @@ export default function RootLayout() {
 
     prepare();
   }, []);
+
+
+
+
+
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const authenticate = async () => {
+      if (!fingerprintEnabled && !pinAtStartup) {
+        setAuthenticated(true);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+        if (!hasHardware || !isEnrolled) {
+          setError("Aucune méthode d'authentification n'est configurée sur cet appareil.");
+          setLoading(false);
+          return;
+        }
+
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Déverrouillez l’application',
+          fallbackLabel: 'Utiliser le code de l’appareil',
+          cancelLabel: 'Annuler',
+          disableDeviceFallback: false,
+        });
+
+        if (result.success) {
+          setAuthenticated(true);
+        } else {
+          setError('Échec ou annulation de l’authentification.');
+        }
+      } catch (err) {
+        setError('Erreur lors de l’authentification.');
+      }
+
+      setLoading(false);
+    };
+
+    authenticate();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.content}>
+        <Image
+          source={require('../assets/images/splash-icon-v2.png')}
+          style={styles.image}
+          contentFit="contain"
+        />
+      </View>
+    );
+  }
+
+  if (!authenticated) {
+    return (
+      <View style={styles.centered}>
+        <Text>{error}</Text>
+        <Button title="Réessayer" onPress={() => {
+          setLoading(true);
+          setError('');
+          setAuthenticated(false); // redéclenche l'authent
+        }} />
+      </View>
+    );
+  }
+
+
+
+
+
 
 
 
@@ -77,3 +164,34 @@ export default function RootLayout() {
 const initDB = () => {
   Migration.initialize();
 }
+
+
+const { width, height } = Dimensions.get('window');
+
+const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: width,
+    height: height,
+    backgroundColor: '#FF0000',
+    zIndex: 999,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: {
+    width: width,
+    height: height,
+  },
+});
