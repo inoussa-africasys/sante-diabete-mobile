@@ -24,3 +24,19 @@ export function generateConsultationName(date: Date = new Date()): string {
     const fileNameWithoutExtension = fileName?.split('.').shift();
     return fileNameWithoutExtension || '';
   }
+
+  export function parseConsultationDate(dateStr: string): Date | null {
+    const [day, month, year] = dateStr.split('-').map(Number);
+  
+    if (
+      !day || !month || !year ||
+      day < 1 || day > 31 ||
+      month < 1 || month > 12 ||
+      year < 1000 || year > 9999
+    ) {
+      return null;
+    }
+  
+    return new Date(year, month - 1, day);
+  }
+  

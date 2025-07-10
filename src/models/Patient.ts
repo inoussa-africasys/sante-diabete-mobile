@@ -22,7 +22,9 @@ export default class Patient extends BaseModel {
     deletedAt?: string;
     isLocalCreated?: boolean;
     isModified?: boolean;
+    date?: string;
 
+    
     constructor(data?: Partial<Patient>) {
         super();
         this.id = data?.id ;
@@ -48,5 +50,6 @@ export default class Patient extends BaseModel {
         this.deletedAt = data?.deletedAt || undefined;
         this.isLocalCreated = data?.isLocalCreated || true;
         this.isModified = data?.isModified || false;
+        this.date = data?.date || undefined;
     }
 }

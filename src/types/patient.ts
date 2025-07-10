@@ -13,8 +13,8 @@ export interface PatientFormData {
 
 
 export interface ConsultationFormData {
-    data: string;
-    id_fiche: string;
+  data: string;
+  id_fiche: string;
 }
 
 
@@ -22,7 +22,7 @@ export interface PatientSyncData {
   identifier: string;
   firstName: string;
   lastName: string;
-  dateBirthday: Date; 
+  dateBirthday: Date;
   gender: string;
   bloodGroup: string;
   electrophoresis: string;
@@ -32,8 +32,8 @@ export interface PatientSyncData {
   comments: string;
   emergencyPeople: string;
   emergencyContact: string;
-  isModified: string; 
-  end_date: Date; 
+  isModified: string;
+  end_date: Date;
   traficUser: string;
 }
 
@@ -87,28 +87,34 @@ export interface DataConsultationOfGetWithPatientGetAllServer {
 
 
 export interface SyncPatientReturnType {
-    success: boolean;
-    message: string;
-    errors?: string[];
-    statistics: {
-      syncDeletedPatients: SyncStatistics;
-      sendCreatedOrUpdatedPatientsToServer: SyncStatistics;
-      sendCreatedConsultationsToServer: SyncStatistics;
-      getAllPatientOnServer: SyncStatistics;
-      getAllDeletedPatientOnServer: SyncStatistics;
-      syncPictures: SyncStatistics;
-    };
+  success: boolean;
+  message: string;
+  errors?: string[];
+  statistics: {
+    syncDeletedPatients: SyncStatistics;
+    sendCreatedOrUpdatedPatientsToServer: SyncStatistics;
+    sendCreatedConsultationsToServer: SyncStatistics;
+    getAllPatientOnServer: SyncStatistics;
+    getAllDeletedPatientOnServer: SyncStatistics;
+    syncPictures: SyncStatistics;
+  };
 }
 
 export interface SyncOnlyOnTraitementReturnType {
-    success: boolean;
-    message: string;
-    errors?: string[];
-    statistics: SyncStatistics;
+  success: boolean;
+  message: string;
+  errors?: string[];
+  statistics: SyncStatistics;
 }
 
 export interface SyncStatistics {
   total: number;
   success: number;
   failed: number;
+}
+
+
+export interface PatientSyncPicture {
+  identifier: string;
+  photo ?: string;
 }

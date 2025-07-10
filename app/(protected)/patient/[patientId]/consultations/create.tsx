@@ -10,6 +10,8 @@ import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 
 export default function CreateConsultationScreen() {
   const params = useLocalSearchParams<{ patientId?: string; ficheId?: string }>();
@@ -76,13 +78,14 @@ export default function CreateConsultationScreen() {
       id_fiche : ficheId,
     }
     await createConsultationOnLocalDB(consultation,patientId,location.coords);
-    router.push(`/patient/${patientId}`);
+    //router.push(`/patient/${patientId}`);
+    router.back();
   };
 
 
   if (!patientId) {
     return (
-      <View>
+      <View style={styles.container}>
         <Text>Erreur : ID du patient manquant</Text>
       </View>
     );
@@ -90,7 +93,7 @@ export default function CreateConsultationScreen() {
 
   if (getFicheError || getPatientError) {
     return (
-      <View>
+      <View style={styles.container}>
         <Text>Erreur : {getFicheError}</Text>
         <Text>Erreur : {getPatientError}</Text>
       </View>
@@ -108,18 +111,18 @@ export default function CreateConsultationScreen() {
 
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {patient?.last_name} {patient?.first_name} Consultation
+          {fiche?.name}
         </Text>
       </View>
 
       <SurveyScreenDom surveyJson={surveyJson} handleSurveyComplete={handleCompletSurveyForm} />
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditConsultationScreen() {
   const params = useLocalSearchParams<{ patientId?: string; consultationId?: string }>();
@@ -97,7 +98,7 @@ export default function EditConsultationScreen() {
 
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -117,7 +118,7 @@ export default function EditConsultationScreen() {
         )
       }
       
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -7,6 +7,7 @@ import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function RemplireFiche() {
@@ -92,7 +93,7 @@ export default function RemplireFiche() {
 
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView  style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -103,7 +104,7 @@ export default function RemplireFiche() {
       </View>
 
       <SurveyScreenDom surveyJson={surveyJson} handleSurveyComplete={handleCompletSurveyForm} />
-    </View>
+    </SafeAreaView>
   );
 }
 

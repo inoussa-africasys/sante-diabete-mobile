@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Animated, Dimensions, StyleSheet, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -31,7 +31,7 @@ const FullScreenSplash: React.FC<FullScreenSplashProps> = ({ onAnimationComplete
           onAnimationComplete();
         }
       });
-    }, 2000);
+    }, 10);
     
     return () => clearTimeout(timer);
   }, [onAnimationComplete, fadeAnim]);
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     width: width,
-    height: height,
+    height: height+50,
     backgroundColor: '#FF0000',
     zIndex: 999,
   },

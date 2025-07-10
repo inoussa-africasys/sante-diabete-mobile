@@ -1,7 +1,7 @@
-import TraficAssistantPage from '@/src/Components/Administration/TraficAssistantPage'
-import { useRouter } from 'expo-router'
-import React from 'react'
-import { SafeAreaView } from 'react-native'
+import TraficAssistantPage from '@/src/Components/Administration/TraficAssistantPage';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const TraficAssistant = () => {
     const router = useRouter();

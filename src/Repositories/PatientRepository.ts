@@ -2,7 +2,7 @@ import { getDiabetesType } from '../functions';
 import { ConsultationMapper } from '../mappers/consultationMapper';
 import { PatientMapper } from '../mappers/patientMapper';
 import Patient from '../models/Patient';
-import { PatientSyncData, PatientSyncDataResponseOfGetAllMedicalDataServer } from '../types';
+import { PatientSyncData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientSyncPicture } from '../types';
 import Logger from '../utils/Logger';
 import { ConsultationRepository } from './ConsultationRepository';
 import { GenericRepository } from './GenericRepository';
@@ -105,6 +105,34 @@ export class PatientRepository extends GenericRepository<Patient> {
   }
 
 
+  public async getAllPatientsPicturesUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate: string | null | undefined): Promise<PatientSyncPicture[]> {
+    try {
+
+      let query = "";
+      let params: any[] = [];
+      if (!lastSyncDate) {
+        query = "SELECT * FROM " + this.tableName + " WHERE photo IS NOT NULL AND type_diabete = ? AND deletedAt IS NULL ORDER BY createdAt DESC";
+        params = [await getDiabetesType()];
+      } else {
+        query = "SELECT * FROM " + this.tableName + " WHERE updatedAt >= ? AND photo IS NOT NULL AND type_diabete = ? AND deletedAt IS NULL ORDER BY createdAt DESC";
+        params = [lastSyncDate, await getDiabetesType()];
+      }
+      const result = this.db.getAllSync(query, params);
+      const patients = result.map((item) => {
+        const patient = this.modelFactory(item);
+        return PatientMapper.toPatientSyncPicture(patient);
+      })
+
+
+      return patients;
+    } catch (error) {
+      console.error('Error fetching updated patients:', error);
+      Logger.log('error', 'Error fetching updated patients', { error });
+      return [];
+    }
+  } 
+
+
   public async markToSynced(id: number): Promise<void> {
     try {
       this.db.runSync(`UPDATE ${this.tableName} SET updatedAt = ?,   synced = ? WHERE id = ? AND deletedAt IS NULL`, [new Date().toISOString(), true, id]);
@@ -134,6 +162,7 @@ export class PatientRepository extends GenericRepository<Patient> {
         const patient = PatientMapper.syncResponseToPatient(item);
         patient.createdAt = new Date().toISOString();
         patient.updatedAt = new Date().toISOString();
+        patient.date = new Date(item.generationDate).toISOString();
         patient.type_diabete = await getDiabetesType();
         patient.synced = true;
         patient.isLocalCreated = false;

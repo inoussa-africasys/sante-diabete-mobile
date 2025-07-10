@@ -1,5 +1,6 @@
 import { Images } from '@/src/Constants/Images';
 import { usePatient } from '@/src/Hooks/usePatient';
+import { PatientMapper } from '@/src/mappers/patientMapper';
 import { PatientFormData } from '@/src/types';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -8,8 +9,8 @@ import { format } from 'date-fns';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { PatientMapper } from '@/src/mappers/patientMapper';
 import { ActivityIndicator, Alert, Image, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface FormErrors {
   nom?: string;
@@ -162,10 +163,13 @@ export default function NouveauPatientScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
+        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setFormData({ ...formData, photo: result.assets[0].uri });
+        // Store the image as base64 string
+        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setFormData({ ...formData, photo: base64Image });
       }
       setIsLoading(false);
     } catch (error) {
@@ -183,10 +187,13 @@ export default function NouveauPatientScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
+        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setFormData({ ...formData, photo: result.assets[0].uri });
+        // Store the image as base64 string
+        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setFormData({ ...formData, photo: base64Image });
       }
       setIsLoading(false);
     } catch (error) {
@@ -210,7 +217,7 @@ export default function NouveauPatientScreen() {
 
   
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
@@ -430,7 +437,7 @@ export default function NouveauPatientScreen() {
           <ActivityIndicator size="large" color="red" />
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

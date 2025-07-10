@@ -4,8 +4,8 @@ import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Utilisation de l'interface SyncFolderData du hook useSyncData
 
 const ListeFicheEdition = () => {
     const router = useRouter();
@@ -24,7 +24,7 @@ const { isLoading, error, formFills ,loadFormFills} = useFormFill();
     
    
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -86,7 +86,7 @@ const { isLoading, error, formFills ,loadFormFills} = useFormFill();
         </>
           }
         </View>
-      </View>
+      </SafeAreaView>
     );
 }
 

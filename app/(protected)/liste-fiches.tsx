@@ -3,6 +3,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '../../src/Components/Toast';
 import { useFiche } from '../../src/Hooks/useFiche';
 
@@ -44,7 +45,7 @@ export default function ListeFichesScreen() {
         return `Éditer une fiche `;
       case 'remplir':{
         if(patientId){
-          return `Consultation pour le patient ${patientId}`;
+          return `Nouveau suivi ${patientId}`;
         }
         return `Remplir une fiche `;
       }
@@ -65,7 +66,7 @@ export default function ListeFichesScreen() {
         router.push(`/patient/${patientId}/consultations/edit?mode=edit&ficheId=${fiche.id}`);
         break;
       case Action.Fill:
-        router.push(`/remplire-fiche?mode=fill&ficheId=${fiche.id}`);
+        router.push(`/patient/${patientId}/consultations/create?mode=empty&ficheId=${fiche.id}`);
         break;
       case Action.Empty:
         router.push(`/patient/${patientId}/consultations/create?mode=empty&ficheId=${fiche.id}`);
@@ -150,7 +151,7 @@ export default function ListeFichesScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -167,7 +168,7 @@ export default function ListeFichesScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={<EmptyList />}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

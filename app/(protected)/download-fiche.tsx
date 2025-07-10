@@ -5,6 +5,7 @@ import { useNetworkState } from 'expo-network';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '../../src/Components/Toast';
 import { useFiche } from '../../src/Hooks/useFiche';
 import FicheService from '../../src/Services/ficheService';
@@ -133,7 +134,7 @@ export default function DownloadFicheScreen() {
 
   return (
     <>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -150,7 +151,7 @@ export default function DownloadFicheScreen() {
         contentContainerStyle={styles.list}
       />
       
-    </View>
+    </SafeAreaView>
     {showLoadingModal && <LoadingModal isVisible={showLoadingModal} message={"En cours de téléchargement " + ficheDownloadingName} />}
     {showErrorModal && <AlertModal isVisible={showErrorModal} message="Une erreur est survenue lors du téléchargement de la fiche" onClose={() => setShowErrorModal(false)} title="Erreur" />}
     {showSuccessModal && <AlertModal isVisible={showSuccessModal} message="Fiche téléchargée avec succès" onClose={() => setShowSuccessModal(false)} title="Succès" />}

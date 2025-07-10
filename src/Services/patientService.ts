@@ -60,6 +60,7 @@ export default class PatientService extends Service {
       patientClass.updatedAt = new Date().toISOString();
       patientClass.createdBy = this.getConnectedUsername();
       patientClass.type_diabete = this.getTypeDiabete();
+      patientClass.date = new Date().toISOString();
       const location = await this.getCurrentLocation();
       if (location) {
         patientClass.latitude = location.latitude;
@@ -555,8 +556,6 @@ export default class PatientService extends Service {
 
   private async syncPictures(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
-      console.log(`Syncing pictures en cours : `);
-
       // Si la synchronisation des images est désactivée, on retourne un succès sans statistiques
       if (!config.isPictureSyncEnabled) {
         return {
@@ -570,18 +569,50 @@ export default class PatientService extends Service {
         };
       }
 
-      // TODO: Implement actual picture synchronization logic here
+      try {
+        const resultGet = await this.getPicturesOnTheServer();
 
-      // Return successful synchronization result
-      return {
-        success: true,
-        message: "Synchronisation des images réussie",
-        statistics: {
-          total: 0,  // Update with actual counts when implementing
-          success: 0,
-          failed: 0
+
+        const resultPost = await this.sendPicturesOnTheServer();
+
+        if (resultGet.success && resultPost.success) {
+          return {
+            success: true,
+            message: "Synchronisation des images réussie",
+            statistics: {
+              total: resultGet.statistics.total + resultPost.statistics.total,
+              success: resultGet.statistics.success + resultPost.statistics.success,
+              failed: resultGet.statistics.failed + resultPost.statistics.failed
+            }
+          }
+        } else {
+          return {
+            success: false,
+            message: "Erreur lors de la synchronisation des images",
+            errors: ["Erreur lors de la synchronisation des images",JSON.stringify(resultGet.errors),JSON.stringify(resultPost.errors)],
+            statistics: {
+              total: 0,
+              success: 0,
+              failed: 0
+            }
+          }
         }
-      };
+
+
+      } catch (error) {
+        console.error("Erreur lors de la synchronisation des images :", error);
+        return {
+          success: false,
+          message: "Erreur lors de la synchronisation des images",
+          errors: [error instanceof Error ? error.message : JSON.stringify(error)],
+          statistics: {
+            total: 0,
+            success: 0,
+            failed: 0
+          }
+        };
+      }
+
     } catch (error) {
       console.error("Erreur lors de la synchronisation des images :", error);
 
@@ -598,12 +629,108 @@ export default class PatientService extends Service {
     }
   }
 
+
+  private async getPicturesOnTheServer(): Promise<SyncOnlyOnTraitementReturnType> {
+    const lastSyncDate = await getLastSyncDate();
+    const patients = await this.patientRepository.getAllPatientsUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate);
+    const totalPatients = patients.length;
+    let patientsPicturesSynced = 0;
+    const errors: PatientUpdatedSyncError[] = [];
+    const errorMessages: string[] = [];
+
+    for (const patient of patients) {
+      try {
+        const url = `${this.getBaseUrl()}/api/json/mobile/patients/media?patientID=${patient.identifier}&token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
+        console.log("Get sync patient media:", url);
+
+        const response = await axios.get(url);
+
+        if (response.status !== 200 && response.status !== 201) {
+          throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        console.log("Get sync patient media response:", response.data);
+
+        /*         const patientsPictures = response.data as PatientSyncDataResponseOfGetAllMedicalDataServer[];
+                await this.patientRepository.createOrUpdateAll(patientsPictures); */
+
+        sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS);
+        patientsPicturesSynced++;
+      } catch (error) {
+        const errorMessage = `Erreur pour le patient ${patient.identifier}: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
+        console.error(errorMessage);
+        errorMessages.push(errorMessage);
+        errors.push({
+          patientId: patient.identifier,
+          error: errorMessage
+        });
+      }
+    }
+
+    return {
+      success: errorMessages.length === 0,
+      message: errorMessages.length === 0
+        ? "Récupération des patients du serveur réussie"
+        : "Des erreurs sont survenues pendant la récupération des patients",
+      errors: errorMessages,
+      statistics: {
+        total: totalPatients,
+        success: patientsPicturesSynced,
+        failed: totalPatients - patientsPicturesSynced
+      }
+    };
+  }
+
+
+  private async sendPicturesOnTheServer(): Promise<SyncOnlyOnTraitementReturnType> {
+
+    const lastSyncDate = await getLastSyncDate();
+    const patients = await this.patientRepository.getAllPatientsPicturesUpdatedAtIsGreaterThanLastSyncDateOnLocalDB(lastSyncDate);
+    const totalPatients = patients.length;
+    let patientsPicturesSynced = 0;
+    const errors: PatientUpdatedSyncError[] = [];
+    const errorMessages: string[] = [];
+
+    for (const patient of patients) {
+      try {
+        const url = `${this.getBaseUrl()}/api/json/mobile/patients/media?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patient.identifier}&media=${patient.photo}`;
+
+       /*  const response = await axios.post(url);
+        if (response.status !== 200 && response.status !== 201) {
+          throw new Error(`Erreur HTTP: ${response.status}`);
+        } */
+        patientsPicturesSynced++;
+      } catch (error) {
+        const errorMessage = `Erreur pour le patient ${patient.identifier}: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
+        console.error(errorMessage);
+        errorMessages.push(errorMessage);
+        errors.push({
+          patientId: patient.identifier,
+          error: errorMessage
+        });
+      }
+    }
+
+    return {
+      success: errorMessages.length === 0,
+      message: errorMessages.length === 0
+        ? "Synchronisation des images réussie"
+        : "Des erreurs sont survenues pendant la synchronisation des images",
+      errors: errorMessages,
+      statistics: {
+        total: totalPatients,
+        success: patientsPicturesSynced,
+        failed: totalPatients - patientsPicturesSynced
+      }
+    };
+
+  }
+
+
   private async getAllPatientOnServer(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       const lastSyncDate = await getLastSyncDate();
       const url = `${this.getBaseUrl()}/api/v3/json/mobile/patients/medicaldata/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
       const response = await axios.get(url);
-      console.log("Get sync patients : ", url);
 
       if (response.status !== 200 && response.status !== 201) {
         throw new Error(`Erreur HTTP: ${response.status}`);

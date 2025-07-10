@@ -6,11 +6,13 @@ import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePatient } from '../../Hooks/usePatient';
 import { useDiabetes } from '../../context/DiabetesContext';
 import Empty from '../Empty';
 import SyncLoader from '../SyncLoader';
+
 
 interface PatientListPageProps {
   onPatientPress: (patientId: string) => void;
