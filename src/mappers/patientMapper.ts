@@ -1,5 +1,5 @@
 import Patient from "../models/Patient";
-import { PatientFormData, PatientSyncData, PatientSyncDataResponseOfGetAllServer } from "../types";
+import { PatientFormData, PatientSyncData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientSyncPicture } from "../types";
 
 export class PatientMapper {
     static toPatientFormData(patient: Patient): PatientFormData {
@@ -26,7 +26,11 @@ export class PatientMapper {
         patient.phone = patientFormData.telephone;
         patient.email = patientFormData.email;
         patient.comment = patientFormData.commentaire;
+        
+        // Store photo directly as base64 string in the database
+        // This handles both the new base64 format and maintains compatibility with URI format
         patient.photo = patientFormData.photo || undefined;
+        
         return patient;
     }
 
@@ -52,7 +56,7 @@ export class PatientMapper {
     }
 
 
-    static syncResponseToPatient(patientSyncData: PatientSyncDataResponseOfGetAllServer): Patient {
+    static syncResponseToPatient(patientSyncData: PatientSyncDataResponseOfGetAllMedicalDataServer): Patient {
         const patient = new Patient();
         patient.id_patient = patientSyncData.identifier;
         patient.first_name = patientSyncData.firstName;
@@ -64,8 +68,15 @@ export class PatientMapper {
         patient.email = patientSyncData.email;
         patient.comment = patientSyncData.comments;
         patient.createdBy = patientSyncData.traficUser;
-        patient.isModified = patientSyncData.isModified === 'true';
+        patient.isModified = patientSyncData.isModified === true;
         return patient;
+    }
+
+    static toPatientSyncPicture(patient: Patient): PatientSyncPicture {
+      return {
+        identifier: patient.id_patient,
+        photo: patient.photo ,
+      };
     }
 }
 

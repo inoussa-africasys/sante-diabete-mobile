@@ -84,6 +84,7 @@ export class Migration {
         latitude REAL,
         synced BOOLEAN NOT NULL DEFAULT false,
         createdBy VARCHAR(80),
+        date DATE NULL,
         createdAt DATETIME NOT NULL,
         updatedAt DATETIME NOT NULL,
         deletedAt DATETIME NULL,
@@ -108,6 +109,7 @@ export class Migration {
         createdBy VARCHAR(80),
         createdAt DATETIME NOT NULL,
         updatedAt DATETIME NOT NULL,
+        date DATE NULL,
         deletedAt DATETIME NULL,
         isLocalCreated BOOLEAN NOT NULL DEFAULT true
 

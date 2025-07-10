@@ -163,10 +163,13 @@ export default function NouveauPatientScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
+        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setFormData({ ...formData, photo: result.assets[0].uri });
+        // Store the image as base64 string
+        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setFormData({ ...formData, photo: base64Image });
       }
       setIsLoading(false);
     } catch (error) {
@@ -184,10 +187,13 @@ export default function NouveauPatientScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
+        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setFormData({ ...formData, photo: result.assets[0].uri });
+        // Store the image as base64 string
+        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setFormData({ ...formData, photo: base64Image });
       }
       setIsLoading(false);
     } catch (error) {

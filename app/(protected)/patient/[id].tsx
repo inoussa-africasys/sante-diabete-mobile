@@ -3,6 +3,7 @@ import useConsultation from '@/src/Hooks/useConsultation';
 import { usePatient } from '@/src/Hooks/usePatient';
 import { Consultation } from '@/src/models/Consultation';
 import Patient from '@/src/models/Patient';
+import { generateConsultationName, parseConsultationDate } from '@/src/utils/consultation';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -177,7 +178,7 @@ export default function PatientDetailScreen() {
                       >
                         <FontAwesome5 name="file-alt" size={20} color="#9E9E9E" />
                         <Text style={styles.consultationText}>
-                          {consultation.fileName || `Consultation ${index + 1}`}
+                          {consultation.fileName || generateConsultationName(parseConsultationDate(consultation.date || '') || new Date())}
                         </Text>
                       </TouchableOpacity>
                     ))}

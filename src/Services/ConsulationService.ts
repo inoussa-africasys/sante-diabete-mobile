@@ -38,6 +38,7 @@ export default class ConsultationService extends Service {
       consultationToCreate.createdBy = this.getConnectedUsername();
       consultationToCreate.createdAt = new Date().toISOString();
       consultationToCreate.updatedAt = new Date().toISOString();
+      consultationToCreate.date = new Date().toISOString();
       const consultationCreated = this.consultationRepository.insertAndReturn(consultationToCreate);
       if (!consultationCreated) {
         throw new Error('La consultation locale n\'a pas pu etre creer');

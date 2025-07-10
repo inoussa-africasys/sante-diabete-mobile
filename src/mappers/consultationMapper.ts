@@ -50,6 +50,7 @@ export class ConsultationMapper {
         consultation.createdAt = new Date().toISOString();
         consultation.updatedAt = new Date().toISOString();
         consultation.ficheName = dataConsultationOfGetWithPatientGetAllServer.form_name;
+        consultation.date = dataConsultationOfGetWithPatientGetAllServer.date_consultation;
         return consultation;
     }
 }

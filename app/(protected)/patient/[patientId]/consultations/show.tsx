@@ -7,10 +7,10 @@ import { usePatient } from "@/src/Hooks/usePatient";
 import { Consultation } from "@/src/models/Consultation";
 import Fiche from "@/src/models/Fiche";
 import Patient from "@/src/models/Patient";
-import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Feather, FontAwesome, FontAwesome6, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ShowConsultationScreen() {
@@ -96,10 +96,44 @@ export default function ShowConsultationScreen() {
     );
   }
 
-  if (!consultation || !patient || !fiche) {
+  
+  if (!consultation) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={styles.errorText}>Impossible de charger la consultation.</Text>
+        <StatusBar barStyle="light-content" />
+        <FontAwesome6 name="user-doctor" size={150} color="gray" />
+        <Text style={styles.errorText}>La consultation n'a pas été trouvée</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.btnBack}>
+          <Text style={styles.btnBackText}>Retour</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <StatusBar barStyle="light-content" />
+        <FontAwesome name="user-times" size={150} color="gray" />
+        <Text style={styles.errorText}>Le patient {patientId} n'a pas été trouvé</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.btnBack}>
+          <Text style={styles.btnBackText}>Retour</Text>
+        </TouchableOpacity>
+
+      </View>
+    );
+  }
+
+  if (!fiche) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <StatusBar barStyle="light-content" />
+        <Ionicons name="document-text-outline" size={150} color="gray" />
+        <Text style={styles.errorText}>La lecture de cette consultation nécessite que vous téléchargez la fiche vierge </Text>
+        <Text style={styles.errorTextFicheName}>{consultation?.ficheName}</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.btnBack}>
+          <Text style={styles.btnBackText}>Retour</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -161,6 +195,7 @@ const styles = StyleSheet.create({
         marginTop: 16,
         fontSize: 16,
         color: '#666',
+        textAlign: 'center',
     },
     header: {
         flexDirection: 'row',
@@ -215,5 +250,35 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginLeft: 12,
         color: '#333'
+    },
+    errorTextFicheName: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        fontWeight: 'bold',
+    },
+    btnBack: {
+        marginTop: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        marginRight: 8,
+        paddingHorizontal: 20,
+        backgroundColor: 'red',
+        borderRadius: 12,
+        elevation: 2,
+        fontSize: 16,
+        color: '#fff',
+        fontWeight: 'bold',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4
+    },
+    btnBackText: {
+        fontSize: 16,
+        color: '#fff',
+        fontWeight: 'bold',
     }
 });

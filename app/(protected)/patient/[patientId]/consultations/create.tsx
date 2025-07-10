@@ -78,13 +78,14 @@ export default function CreateConsultationScreen() {
       id_fiche : ficheId,
     }
     await createConsultationOnLocalDB(consultation,patientId,location.coords);
-    router.push(`/patient/${patientId}`);
+    //router.push(`/patient/${patientId}`);
+    router.back();
   };
 
 
   if (!patientId) {
     return (
-      <View>
+      <View style={styles.container}>
         <Text>Erreur : ID du patient manquant</Text>
       </View>
     );
@@ -92,7 +93,7 @@ export default function CreateConsultationScreen() {
 
   if (getFicheError || getPatientError) {
     return (
-      <View>
+      <View style={styles.container}>
         <Text>Erreur : {getFicheError}</Text>
         <Text>Erreur : {getPatientError}</Text>
       </View>
@@ -116,7 +117,7 @@ export default function CreateConsultationScreen() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {patient?.last_name} {patient?.first_name} Consultation
+          {fiche?.name}
         </Text>
       </View>
 

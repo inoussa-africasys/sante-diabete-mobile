@@ -16,6 +16,7 @@ export class Consultation extends BaseModel {
     createdBy: string;
     deletedAt?: string;
     isLocalCreated?: boolean;
+    date?: string;
 
     constructor(data?: Partial<Consultation>) {
         super();
@@ -35,6 +36,7 @@ export class Consultation extends BaseModel {
         this.updatedAt = data?.updatedAt || ''
         this.deletedAt = data?.deletedAt || undefined;
         this.isLocalCreated = data?.isLocalCreated || true;
+        this.date = data?.date || undefined;
     }
 
     public getFiche() : Fiche{

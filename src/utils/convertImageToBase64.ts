@@ -3,6 +3,12 @@ import PatientService from '../Services/patientService';
 
 const convertImageToBase64 = async (uri: string): Promise<string | null> => {
   try {
+    // Check if the URI is already a base64 string
+    if (uri.startsWith('data:image')) {
+      return uri; // Already in base64 format
+    }
+    
+    // Convert file URI to base64
     const base64 = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
     });
@@ -18,10 +24,17 @@ export const getBase64ImageOfPatient = async (patientId: string): Promise<string
   try {
     const patient = await (await PatientService.create()).getPatient(patientId);
     console.info(`Patient : ${patient}`);
-    if (patient && patient.photo && patient.photo.startsWith('file://')) {
-      const base64Image = await convertImageToBase64(patient.photo);
-      if (base64Image) {
-        return base64Image;
+    if (patient && patient.photo) {
+      // If photo is already in base64 format, return it directly
+      if (patient.photo.startsWith('data:image')) {
+        return patient.photo;
+      }
+      // If photo is a file URI, convert it to base64
+      else if (patient.photo.startsWith('file://')) {
+        const base64Image = await convertImageToBase64(patient.photo);
+        if (base64Image) {
+          return base64Image;
+        }
       }
     }
     return null;

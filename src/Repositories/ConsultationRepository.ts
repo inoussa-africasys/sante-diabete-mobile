@@ -1,4 +1,5 @@
 import { Consultation } from '../models/Consultation';
+import { parseConsultationDate } from '../utils/consultation';
 import Logger from '../utils/Logger';
 import { GenericRepository } from './GenericRepository';
 
@@ -30,7 +31,8 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
       const grouped: Record<string, Consultation[]> = {};
 
       for (const row of rows) {
-        const date = row.createdAt?.split('T')[0] || 'inconnue';
+        console.log("row : ", row.date);
+        const date = parseConsultationDate((row as Consultation).date || '')?.toISOString().split('T')[0] || 'inconnue';
         if (!grouped[date]) grouped[date] = [];
         grouped[date].push(this.modelFactory(row));
       }
