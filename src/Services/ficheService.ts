@@ -17,9 +17,6 @@ export default class FicheService extends Service {
     }
 
     async fetchAllFichesOnServerQuery(): Promise<string[]> {
-        console.log("baseUrl : ", this.baseUrl);
-        console.log("token : ", this.token);
-        console.log("type_diabete : ", this.getTypeDiabete());
         if (!this.getTypeDiabete()) {
             throw new Error('No typediabete found');
         }
