@@ -12,6 +12,7 @@ import { PatientMapper } from '../mappers/patientMapper';
 import Patient from "../models/Patient";
 import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError, SyncOnlyOnTraitementReturnType, SyncPatientReturnType } from "../types";
 import Logger from '../utils/Logger';
+import { TraficFolder } from '../utils/TraficFolder';
 import { sendTraficAuditEvent } from '../utils/traficAudit';
 import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
 import Service from "./core/Service";
@@ -87,8 +88,8 @@ export default class PatientService extends Service {
       const jsonContent = JSON.stringify(patient.toJson(), null, 2);
       const fileName = `${patient.id_patient}.json`;
 
-      const folderUri = `${FileSystem.documentDirectory}${PATH_OF_PATIENTS_DIR_ON_THE_LOCAL}/`;
-      const fileUri = `${folderUri}${fileName}`;
+      const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getPatientsFolderPath(this.getTypeDiabete())}`;
+      const fileUri = `${folderUri}/${fileName}`;
 
       const dirInfo = await FileSystem.getInfoAsync(folderUri);
       if (!dirInfo.exists) {
@@ -146,7 +147,7 @@ export default class PatientService extends Service {
 
   async updatePatientJson(id_patient: string, updatedFields: Partial<Patient>): Promise<void> {
     try {
-      const folderUri = `${FileSystem.documentDirectory}${PATH_OF_PATIENTS_DIR_ON_THE_LOCAL}/`;
+      const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getPatientsFolderPath(this.getTypeDiabete())}/`;
       const fileUri = `${folderUri}${id_patient}.json`;
 
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
@@ -277,7 +278,7 @@ export default class PatientService extends Service {
       };
 
       if (config.isPictureSyncEnabled) {
-        syncPicturesResult = await this.syncPictures();
+        /* syncPicturesResult = await this.syncPictures(); */
         console.log("Images synchronisées on the server:", syncPicturesResult.success);
         if (!syncPicturesResult.success) {
           console.error("Erreur lors de la synchronisation des images");
@@ -589,7 +590,7 @@ export default class PatientService extends Service {
           return {
             success: false,
             message: "Erreur lors de la synchronisation des images",
-            errors: ["Erreur lors de la synchronisation des images",JSON.stringify(resultGet.errors),JSON.stringify(resultPost.errors)],
+            errors: ["Erreur lors de la synchronisation des images", JSON.stringify(resultGet.errors), JSON.stringify(resultPost.errors)],
             statistics: {
               total: 0,
               success: 0,
@@ -653,8 +654,8 @@ export default class PatientService extends Service {
         /*         const patientsPictures = response.data as PatientSyncDataResponseOfGetAllMedicalDataServer[];
                 await this.patientRepository.createOrUpdateAll(patientsPictures); */
 
-        sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS);
-        patientsPicturesSynced++;
+        /* sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS); */
+        /* patientsPicturesSynced++; */
       } catch (error) {
         const errorMessage = `Erreur pour le patient ${patient.identifier}: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
         console.error(errorMessage);
@@ -694,10 +695,10 @@ export default class PatientService extends Service {
       try {
         const url = `${this.getBaseUrl()}/api/json/mobile/patients/media?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patient.identifier}&media=${patient.photo}`;
 
-       /*  const response = await axios.post(url);
-        if (response.status !== 200 && response.status !== 201) {
-          throw new Error(`Erreur HTTP: ${response.status}`);
-        } */
+        /*  const response = await axios.post(url);
+         if (response.status !== 200 && response.status !== 201) {
+           throw new Error(`Erreur HTTP: ${response.status}`);
+         } */
         patientsPicturesSynced++;
       } catch (error) {
         const errorMessage = `Erreur pour le patient ${patient.identifier}: ${error instanceof Error ? error.message : JSON.stringify(error)}`;

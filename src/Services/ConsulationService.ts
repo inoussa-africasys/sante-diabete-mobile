@@ -8,6 +8,7 @@ import { PatientRepository } from '../Repositories/PatientRepository';
 import { Coordinates } from "../types";
 import { generateConsultationName, generateUUID } from '../utils/consultation';
 import Logger from '../utils/Logger';
+import { TraficFolder } from '../utils/TraficFolder';
 import { ConsultationFormData } from './../types/patient';
 import Service from "./core/Service";
 
@@ -63,7 +64,7 @@ export default class ConsultationService extends Service {
       const jsonContent = JSON.stringify(consultation.toJson(), null, 2);
       const fileName = `${generateConsultationName()}.json`;
 
-      const folderUri = `${FileSystem.documentDirectory}${PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL}/`;
+      const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(),consultation.id_patient)}/`;
       const fileUri = `${folderUri}${fileName}`;
 
       const dirInfo = await FileSystem.getInfoAsync(folderUri);
