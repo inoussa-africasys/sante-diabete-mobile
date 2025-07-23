@@ -30,7 +30,7 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
 
       const grouped: Record<string, Consultation[]> = {};
 
-      for (const row of rows) {
+      for (const row  of rows) {
         console.log("row : ", row.date);
         const date = parseConsultationDate((row as Consultation).date || '')?.toISOString().split('T')[0] || 'inconnue';
         if (!grouped[date]) grouped[date] = [];
