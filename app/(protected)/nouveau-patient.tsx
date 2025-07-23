@@ -1,69 +1,59 @@
-import { Images } from '@/src/Constants/Images';
+import FicheDoesntExist from '@/src/Components/FicheDoesntExist';
+import { AlertModal, LoadingModal } from '@/src/Components/Modal';
+import SurveyScreenDom from '@/src/Components/Survey/SurveyScreenDom';
+import { useDiabetes } from '@/src/context/DiabetesContext';
+import useConsultation from '@/src/Hooks/useConsultation';
 import { usePatient } from '@/src/Hooks/usePatient';
 import { PatientMapper } from '@/src/mappers/patientMapper';
-import { PatientFormData } from '@/src/types';
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
-import { format } from 'date-fns';
-import * as ImagePicker from 'expo-image-picker';
+import { ConsultationFormData, FicheAdministrativeFormData } from '@/src/types/patient';
+import { getFicheAdministrativeName } from '@/src/utils/ficheAdmin';
+import Logger from '@/src/utils/Logger';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-interface FormErrors {
-  nom?: string;
-  prenom?: string;
-  dateNaissance?: string;
-  email?: string;
-  telephone?: string;
-}
 
 export default function NouveauPatientScreen() {
   const router = useRouter();
   const { patientId } = useLocalSearchParams();
   const isEditMode = Boolean(patientId);
-  const [formData, setFormData] = useState<PatientFormData>({
-    nom: '',
-    prenom: '',
-    dateNaissance: null,
-    genre: '',
-    profession: '',
-    telephone: '',
-    email: '',
-    commentaire: '',
-    photo: null
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showImageOptions, setShowImageOptions] = useState(false);
+  const [formData, setFormData] = useState<FicheAdministrativeFormData>();
+  const { diabetesType } = useDiabetes();
+  const [isOpenSuccessModal, setIsOpenSuccessModal] = useState(false);
+  const [isCreatingPatient, setIsCreatingPatient] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const {
-    insertPatientOnTheLocalDb, 
-    updatePatientOnTheLocalDb, 
     getAllOnTheLocalDbPatients,
-    isLoading : isLoadingPatient, 
-    error : errorPatient
+    error: errorPatient,
+    getFicheAdministrative,
+    ficheAdministrative,
+    insertPatientOnTheLocalDb,
+    associateFicheAdministrativeToPatient,
   } = usePatient();
+
+  const { isLoading: isLoadingConsultation, createConsultationOnLocalDB } = useConsultation();
+
+
 
   useEffect(() => {
     (async () => {
-      const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (galleryStatus.status !== 'granted') {
-        Alert.alert('Permission requise', 'Nous avons besoin de votre permission pour accéder à la galerie d\'images');
-      }
-      
+
+      setIsLoading(true);
+      await getFicheAdministrative();
       // Charger les données du patient si on est en mode édition
       if (isEditMode && patientId) {
         try {
-          setIsLoading(true);
           const patients = await getAllOnTheLocalDbPatients();
           const patientToEdit = patients.find(p => p.id_patient === patientId);
-          
+
+
           if (patientToEdit) {
-            const formDataFromPatient = PatientMapper.toPatientFormData(patientToEdit);
-            setFormData(formDataFromPatient);
+            const consultation = await patientToEdit.ficheAdministrative();
+            setFormData(consultation.parseDataToJson());
           } else {
             Alert.alert('Erreur', `Patient avec l'ID ${patientId} non trouvé`);
             router.back();
@@ -75,152 +65,71 @@ export default function NouveauPatientScreen() {
           setIsLoading(false);
         }
       }
+
+      
+      setIsLoading(false);
     })();
   }, [patientId, isEditMode]);
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-    let isValid = true;
-
-    // Validation du nom
-    if (!formData.nom.trim()) {
-      newErrors.nom = 'Le nom est obligatoire';
-      isValid = false;
-    }
-
-    // Validation du prénom
-    if (!formData.prenom.trim()) {
-      newErrors.prenom = 'Le prénom est obligatoire';
-      isValid = false;
-    }
-
-    // Validation de l'email (si fourni)
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Format d\'email invalide';
-      isValid = false;
-    }
-
-    // Validation du téléphone (si fourni)
-    if (formData.telephone && !/^[0-9+\s-]{8,15}$/.test(formData.telephone)) {
-      newErrors.telephone = 'Format de téléphone invalide';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
-  };
-
-  const handleSave = async () => {
-    if (validateForm()) {
-      try {
-        let result;
-        
-        if (isEditMode && patientId) {
-          // Mode édition
-          console.log('Mise à jour patient:', formData);
-          result = await updatePatientOnTheLocalDb(patientId as string, formData);
-          if (result && !isLoadingPatient && !errorPatient) {
-            Alert.alert('Succès', 'Patient mis à jour avec succès');
-            router.push('/liste-patient');
-          }
-        } else {
-          // Mode création
-          console.log('Enregistrer nouveau patient:', formData);
-          result = await insertPatientOnTheLocalDb(formData);
-          if (result && !isLoadingPatient && !errorPatient) {
-            Alert.alert('Succès', 'Patient enregistré avec succès');
-            router.push('/liste-patient');
-          }
-        }
-        
-        if (!result || isLoadingPatient || errorPatient) {
-          Alert.alert('Message Erreur', 'Veuillez remplir correctement les champs !');
-        }
-      } catch (error) {
-        console.error('Erreur lors de l\'enregistrement:', error);
-        Alert.alert('Message Erreur', 'Une erreur est survenue lors de l\'enregistrement');
-      }
-    } else {
-      Alert.alert('Message Erreur', 'Veuillez remplir correctement les champs !');
-    }
-  };
 
   if (errorPatient) {
     console.error('Message Erreur', errorPatient);
     Alert.alert('Message Erreur', errorPatient);
   }
 
-  const handlePhotoPress = () => {
-    setShowImageOptions(true);
-  };
 
-  const handlePickImage = async () => {
-    setShowImageOptions(false);
+  async function getCurrentLocation(): Promise<Location.LocationObject> {
+
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      return {} as Location.LocationObject;
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    return location;
+  }
+
+
+  const handleSaveDataFicheAdministrative = async (data: FicheAdministrativeFormData) => {
     try {
-      setIsLoading(true);
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-        base64: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        // Store the image as base64 string
-        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        setFormData({ ...formData, photo: base64Image });
+      setIsCreatingPatient(true);
+      const patientFormData = PatientMapper.ficheAdminToFormPatient(data);
+      const patientCreated = await insertPatientOnTheLocalDb(patientFormData);
+      if (!patientCreated) {
+        throw new Error('Impossible d\'enregistrer le patient');
       }
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Erreur lors de la sélection d\'image:', error);
-      setIsLoading(false);
-      Alert.alert('Message Erreur', 'Impossible de sélectionner une image. Veuillez réessayer.');
-    }
-  };
-  
-  const handleTakePhoto = async () => {
-    setShowImageOptions(false);
-    try {
-      setIsLoading(true);
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-        base64: true,
-      });
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        // Store the image as base64 string
-        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        setFormData({ ...formData, photo: base64Image });
+      const consultationFormData: ConsultationFormData = {
+        data: JSON.stringify(data),
+        id_fiche: ficheAdministrative?.id?.toString() || ''
       }
-      setIsLoading(false);
+      const coordinates = await getCurrentLocation();
+      const consultation = await createConsultationOnLocalDB(consultationFormData, patientCreated.id_patient, coordinates.coords);
+      if (consultation) {
+        const result = await associateFicheAdministrativeToPatient(patientCreated.id_patient, consultation);
+        if (!result) {
+          throw new Error('Impossible d\'associer la fiche administrative au patient');
+        }
+        setIsOpenSuccessModal(true);
+      } else {
+        throw new Error('Impossible d\'enregistrer la fiche administrative');
+      }
+      setIsCreatingPatient(false);
+
     } catch (error) {
-      console.error('Erreur lors de la prise de photo:', error);
-      setIsLoading(false);
-      Alert.alert('Message Erreur', 'Impossible de prendre une photo. Veuillez réessayer.');
+      console.error('Erreur lors de l\'enregistrement du patient:', error);
+      Alert.alert('Erreur', 'Impossible d\'enregistrer le patient');
+      Logger.log('error', 'Error inserting patient on the local db', { error });
+    } finally {
+      setIsCreatingPatient(false);
     }
-  };
+  }
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      setFormData({...formData, dateNaissance: selectedDate});
-      setErrors({...errors, dateNaissance: undefined});
-    }
-  };
 
-  const showDatePickerModal = () => {
-    setShowDatePicker(true);
-  };
-
-  
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
@@ -230,216 +139,49 @@ export default function NouveauPatientScreen() {
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView style={styles.content}>
-        {/* Photo */}
-        <View style={styles.photoContainer}>
-          <TouchableOpacity style={styles.photoButton} onPress={handlePhotoPress}>
-            {formData.photo ? (
-              <Image 
-                source={{ uri: formData.photo }} 
-                style={styles.photoImage}
-              />
-            ) : (
-              <Image 
-                source={Images.userIcon} 
-                style={styles.photoImage}
-              />
-            )}
-            <View style={styles.cameraIconContainer}>
-              <FontAwesome5 name="camera" size={20} color="#666" />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Form */}
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <FontAwesome5 name="user" size={20} color="#666" />
-            <TextInput
-              style={[styles.input, errors.nom ? styles.inputError : null]}
-              placeholder="Nom*"
-              value={formData.nom}
-              onChangeText={(text) => {
-                setFormData({...formData, nom: text});
-                if (text.trim()) setErrors({...errors, nom: undefined});
-              }}
-            />
-          </View>
-          {errors.nom && <Text style={styles.errorText}>{errors.nom}</Text>}
-
-          <View style={styles.inputContainer}>
-            <FontAwesome5 name="user" size={20} color="#666" />
-            <TextInput
-              style={[styles.input, errors.prenom ? styles.inputError : null]}
-              placeholder="Prénom*"
-              value={formData.prenom}
-              onChangeText={(text) => {
-                setFormData({...formData, prenom: text});
-                if (text.trim()) setErrors({...errors, prenom: undefined});
-              }}
-            />
-          </View>
-          {errors.prenom && <Text style={styles.errorText}>{errors.prenom}</Text>}
-
-          <TouchableOpacity style={styles.inputContainer} onPress={showDatePickerModal}>
-            <FontAwesome5 name="calendar" size={20} color="#666" />
-            <Text style={[styles.input, errors.dateNaissance ? styles.inputError : null]}>
-              {formData.dateNaissance ? format(formData.dateNaissance, 'dd/MM/yyyy') : 'Date de naissance'}
-            </Text>
-          </TouchableOpacity>
-          {errors.dateNaissance && <Text style={styles.errorText}>{errors.dateNaissance}</Text>}
-          
-          {showDatePicker && (
-            Platform.OS === 'ios' ? (
-              <Modal
-                transparent={true}
-                animationType="slide"
-                visible={showDatePicker}
-              >
-                <View style={styles.centeredView}>
-                  <View style={styles.modalView}>
-                    <DateTimePicker
-                      value={formData.dateNaissance || new Date()}
-                      mode="date"
-                      display="spinner"
-                      onChange={handleDateChange}
-                    />
-                    <TouchableOpacity
-                      style={styles.modalButton}
-                      onPress={() => setShowDatePicker(false)}
-                    >
-                      <Text style={styles.modalButtonText}>Confirmer</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Modal>
-            ) : (
-              <DateTimePicker
-                value={formData.dateNaissance || new Date()}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-              />
-            )
-          )}
-
-          <View style={styles.genreContainer}>
-            <Text style={styles.genreLabel}>Genre</Text>
-            <View style={styles.genreSelector}>
-
-              <Picker
-                selectedValue={formData.genre}
-                onValueChange={(itemValue, itemIndex) => setFormData({...formData, genre: itemValue})}
-                style={{ height: 50, width: "100%" }}
-              >
-                <Picker.Item label="Sélectionner le genre" />
-                <Picker.Item label="Homme" value="H" />
-                <Picker.Item label="Femme" value="F" />
-              </Picker>
-
-            </View>
-          </View>
-
-          <View style={styles.inputContainer}>
-            <FontAwesome5 name="briefcase" size={20} color="#666" />
-            <TextInput
-              style={styles.input}
-              placeholder="Profession"
-              value={formData.profession}
-              onChangeText={(text) => setFormData({...formData, profession: text})}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <FontAwesome5 name="phone" size={20} color="#666" />
-            <TextInput
-              style={[styles.input, errors.telephone ? styles.inputError : null]}
-              placeholder="Numéro de Téléphone"
-              value={formData.telephone}
-              onChangeText={(text) => {
-                setFormData({...formData, telephone: text});
-                if (errors.telephone) setErrors({...errors, telephone: undefined});
-              }}
-              keyboardType="phone-pad"
-            />
-          </View>
-          {errors.telephone && <Text style={styles.errorText}>{errors.telephone}</Text>}
-
-          <View style={styles.inputContainer}>
-            <FontAwesome5 name="envelope" size={20} color="#666" />
-            <TextInput
-              style={[styles.input, errors.email ? styles.inputError : null]}
-              placeholder="Adresse email"
-              value={formData.email}
-              onChangeText={(text) => {
-                setFormData({...formData, email: text});
-                if (errors.email) setErrors({...errors, email: undefined});
-              }}
-              keyboardType="email-address"
-            />
-          </View>
-          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-
-          <View style={styles.commentContainer}>
-            <Text style={styles.commentLabel}>Commentaire</Text>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="Un petit commentaire sur le patient"
-              value={formData.commentaire}
-              onChangeText={(text) => setFormData({...formData, commentaire: text})}
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>{isLoading ? <ActivityIndicator size="small" color="white" /> : ''} {isEditMode ? 'METTRE À JOUR' : 'ENREGISTRER'}</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-
-      {/* Modal pour les options de photo */}
-      <Modal
-        visible={showImageOptions}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowImageOptions(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.optionsContainer}>
-            <Text style={styles.optionsTitle}>Choisir une photo</Text>
-            
-            <TouchableOpacity style={styles.optionButton} onPress={handleTakePhoto}>
-              <FontAwesome5 name="camera" size={24} color="#666" />
-              <Text style={styles.optionText}>Prendre une photo</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.optionButton} onPress={handlePickImage}>
-              <FontAwesome5 name="image" size={24} color="#666" />
-              <Text style={styles.optionText}>Choisir depuis la galerie</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.optionButton, styles.cancelButton]} 
-              onPress={() => setShowImageOptions(false)}
-            >
-              <Text style={styles.cancelText}>Annuler</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-
-
+      {
+        ficheAdministrative ? (
+          <SurveyScreenDom surveyJson={ficheAdministrative.parseDataToJson()} handleSurveyComplete={async (data) => {
+            console.log('Survey data:', data);
+            await handleSaveDataFicheAdministrative(data);
+          }} />
+        ) : (
+          <FicheDoesntExist
+            ficheName={getFicheAdministrativeName(diabetesType.toString())}
+            gotBack={() => router.back()}
+            text="La creation du patient nécessite que vous téléchargez une fiche administrative : "
+          />
+        )
+      }
       {/* Indicateur de chargement global */}
       {isLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="red" />
         </View>
       )}
+      {isOpenSuccessModal && (
+        <AlertModal
+          title="Patient enregistré"
+          type="success"
+          message="Patient enregistré avec succès"
+          onClose={() => {
+            setIsOpenSuccessModal(false);
+            router.replace('/liste-patient');
+          }}
+          isVisible={isOpenSuccessModal}
+        />
+      )}
+      {isCreatingPatient && (
+        <LoadingModal
+          message="Patient en cours d'enregistrement..."
+          isVisible={isCreatingPatient}
+        />
+      )}
     </SafeAreaView>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -469,203 +211,6 @@ const styles = StyleSheet.create({
   headerRight: {
     width: 34, // Pour équilibrer avec le bouton retour
   },
-  content: {
-    flex: 1,
-  },
-  photoContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  photoButton: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  photoImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-  },
-  cameraIconContainer: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  form: {
-    padding: 20,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
-    paddingVertical: 10,
-    marginBottom: 15,
-  },
-  input: {
-    flex: 1,
-    marginLeft: 15,
-    fontSize: 16,
-    color: '#212121',
-  },
-  genreContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
-    paddingVertical: 15,
-    marginBottom: 15,
-  },
-  genreLabel: {
-    fontSize: 16,
-    color: '#212121',
-    marginBottom: 5,
-  },
-  genreSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  genreText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  commentContainer: {
-    marginBottom: 30,
-  },
-  commentLabel: {
-    fontSize: 16,
-    color: '#212121',
-    marginBottom: 10,
-  },
-  commentInput: {
-    borderWidth: 1,
-    borderColor: '#EEEEEE',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
-    color: '#212121',
-    textAlignVertical: 'top',
-    minHeight: 80,
-  },
-  saveButton: {
-    backgroundColor: 'red',
-    borderRadius: 25,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 12,
-    marginLeft: 35,
-    marginTop: -10,
-    marginBottom: 10,
-  },
-  inputError: {
-    borderBottomColor: 'red',
-  },
-  centeredView: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalView: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalButton: {
-    backgroundColor: '#E91E63',
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2,
-    marginTop: 15,
-    width: '80%',
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  optionsContainer: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-  },
-  optionsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  optionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
-  },
-  optionText: {
-    fontSize: 16,
-    marginLeft: 15,
-  },
-  cancelButton: {
-    justifyContent: 'center',
-    marginTop: 10,
-    borderBottomWidth: 0,
-  },
-  cancelText: {
-    color: 'red',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-
-  backButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   loadingOverlay: {
     position: 'absolute',
     top: 0,
@@ -675,5 +220,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  containerFicheDoesntExist: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  FicheDoesntExistText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'red',
   },
 });

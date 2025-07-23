@@ -62,7 +62,7 @@ export default class ConsultationService extends Service {
   async saveConsultationAsJson(consultation: Consultation): Promise<string> {
     try {
       const jsonContent = JSON.stringify(consultation.toJson(), null, 2);
-      const fileName = `${generateConsultationName()}.json`;
+      const fileName = `${generateConsultationName()}`;
 
       const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(),consultation.id_patient)}/`;
       const fileUri = `${folderUri}${fileName}`;

@@ -9,6 +9,7 @@ import { getLastSyncDate } from '../functions';
 import { setLastSyncDate } from '../functions/syncHelpers';
 import { ConsultationMapper } from '../mappers/consultationMapper';
 import { PatientMapper } from '../mappers/patientMapper';
+import { Consultation } from '../models/Consultation';
 import Patient from "../models/Patient";
 import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError, SyncOnlyOnTraitementReturnType, SyncPatientReturnType } from "../types";
 import Logger from '../utils/Logger';
@@ -52,7 +53,7 @@ export default class PatientService extends Service {
     }
   }
 
-  async insertOnTheLocalDb(patientFormData: PatientFormData): Promise<void> {
+  async insertOnTheLocalDb(patientFormData: PatientFormData): Promise<Patient> {
     try {
       const patientClass = PatientMapper.toPatient(patientFormData);
       patientClass.id_patient = this.generatePatientId();
@@ -67,11 +68,28 @@ export default class PatientService extends Service {
         patientClass.latitude = location.latitude;
         patientClass.longitude = location.longitude;
       }
-      this.patientRepository.insert(patientClass);
-      this.savePatientAsJson(patientClass);
+      const result = await this.patientRepository.insertAndReturn(patientClass);
+      if (!result) { throw new Error('Patient non enregistré'); }
+      this.savePatientAsJson(result);
+      return result;
 
     } catch (error) {
-      console.error('Erreur réseau :', error);
+      console.error('Erreur réseau dans insertOnTheLocalDb :', error);
+      throw error;
+    }
+  }
+
+  async associateFicheAdministrativeToPatient(patientId: string, ficheAdministrative: Consultation): Promise<boolean> {
+    try {
+      const patient = await this.patientRepository.findAllByPatientId(patientId);
+      if (!patient) { throw new Error(` Patient avec l'ID ${patientId} non trouvé`); }
+      if (!ficheAdministrative.id) { throw new Error(` Fiche administrative avec l'ID ${ficheAdministrative.id} non trouvé`); }
+      patient.fiche_administrative_id = ficheAdministrative.id.toString();
+      await this.patientRepository.update(patient.id!, patient);
+      this.updatePatientJson(patientId, patient);
+      return true;
+    } catch (error) {
+      console.error('Erreur réseau dans associateFicheAdministrativeToPatient :', error);
       throw error;
     }
   }
@@ -86,7 +104,7 @@ export default class PatientService extends Service {
   async savePatientAsJson(patient: Patient): Promise<void> {
     try {
       const jsonContent = JSON.stringify(patient.toJson(), null, 2);
-      const fileName = `${patient.id_patient}.json`;
+      const fileName = `${patient.id_patient}`;
 
       const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getPatientsFolderPath(this.getTypeDiabete())}`;
       const fileUri = `${folderUri}/${fileName}`;
@@ -148,7 +166,7 @@ export default class PatientService extends Service {
   async updatePatientJson(id_patient: string, updatedFields: Partial<Patient>): Promise<void> {
     try {
       const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getPatientsFolderPath(this.getTypeDiabete())}/`;
-      const fileUri = `${folderUri}${id_patient}.json`;
+      const fileUri = `${folderUri}${id_patient}`;
 
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
       if (!fileInfo.exists) {

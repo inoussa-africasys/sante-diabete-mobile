@@ -116,5 +116,19 @@ export interface SyncStatistics {
 
 export interface PatientSyncPicture {
   identifier: string;
-  photo ?: string;
+  photo?: string;
+}
+
+
+export interface FicheAdministrativeFormData {
+  nom: string,
+  prenom: string,
+  dateNaissance: string,
+  genre: string,
+  profession: string,
+  telephone: string,
+  email: string,
+  commentaire: string,
+  photo: string
+  [key: string]: any;
 }

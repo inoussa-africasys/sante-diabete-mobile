@@ -1,3 +1,4 @@
+import FicheDoesntExist from "@/src/Components/FicheDoesntExist";
 import { AlertModal, ConfirmModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
 import { parseSurveyData } from "@/src/functions/helpers";
@@ -42,7 +43,6 @@ export default function ShowConsultationScreen() {
         setPatient(patientFetched);
 
         if (consultationFetched?.ficheName) {
-            console.log("consultation : ",consultationFetched);
           const ficheFetched = await getFicheByName(consultationFetched.ficheName);
           setFiche(ficheFetched);
         }
@@ -64,7 +64,6 @@ export default function ShowConsultationScreen() {
   };
 
   const handleDeleteConsultation = async (consultationId: string) => {
-    console.log("handleDeleteConsultation ",consultationId);
     const result = await deleteConsultationOnTheLocalDb(consultationId); 
     if(!result){
       console.error("Erreur lors de la suppression de la consultation");
@@ -126,15 +125,7 @@ export default function ShowConsultationScreen() {
 
   if (!fiche) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <StatusBar barStyle="light-content" />
-        <Ionicons name="document-text-outline" size={150} color="gray" />
-        <Text style={styles.errorText}>La lecture de cette consultation nécessite que vous téléchargez la fiche vierge </Text>
-        <Text style={styles.errorTextFicheName}>{consultation?.ficheName}</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.btnBack}>
-          <Text style={styles.btnBackText}>Retour</Text>
-        </TouchableOpacity>
-      </View>
+      <FicheDoesntExist ficheName={consultation?.ficheName} gotBack={() => router.back()}/>
     );
   }
 
