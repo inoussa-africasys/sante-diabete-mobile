@@ -27,15 +27,17 @@ export default function NouveauPatientScreen() {
 
   const [isLoading, setIsLoading] = useState(false);
   const {
-    getAllOnTheLocalDbPatients,
+    isLoading: isLoadingPatient,
+    getPatientByIdOnTheLocalDb,
     error: errorPatient,
     getFicheAdministrative,
     ficheAdministrative,
     insertPatientOnTheLocalDb,
     associateFicheAdministrativeToPatient,
+    updatePatientOnTheLocalDb,
   } = usePatient();
 
-  const { isLoading: isLoadingConsultation, createConsultationOnLocalDB } = useConsultation();
+  const { isLoading: isLoadingConsultation, createConsultationOnLocalDB,updateConsultationByIdOnLocalDB,getConsultationById } = useConsultation();
 
 
 
@@ -47,12 +49,15 @@ export default function NouveauPatientScreen() {
       // Charger les données du patient si on est en mode édition
       if (isEditMode && patientId) {
         try {
-          const patients = await getAllOnTheLocalDbPatients();
-          const patientToEdit = patients.find(p => p.id_patient === patientId);
-
-
-          if (patientToEdit) {
-            const consultation = await patientToEdit.ficheAdministrative();
+          const patient = await getPatientByIdOnTheLocalDb(patientId.toString());
+          if (patient) {
+            if(!patient.fiche_administrative_id){
+              throw new Error('Patient avec l\'ID ' + patientId + ' non trouvé ');
+            }
+            const consultation = await getConsultationById(patient.fiche_administrative_id!);
+            if (!consultation) {
+              throw new Error('Consultation avec l\'ID ' + patient.fiche_administrative_id + ' non trouvée');
+            }
             setFormData(consultation.parseDataToJson());
           } else {
             Alert.alert('Erreur', `Patient avec l'ID ${patientId} non trouvé`);
@@ -65,8 +70,6 @@ export default function NouveauPatientScreen() {
           setIsLoading(false);
         }
       }
-
-      
       setIsLoading(false);
     })();
   }, [patientId, isEditMode]);
@@ -90,38 +93,91 @@ export default function NouveauPatientScreen() {
 
 
   const handleSaveDataFicheAdministrative = async (data: FicheAdministrativeFormData) => {
-    try {
-      setIsCreatingPatient(true);
-      const patientFormData = PatientMapper.ficheAdminToFormPatient(data);
-      const patientCreated = await insertPatientOnTheLocalDb(patientFormData);
-      if (!patientCreated) {
-        throw new Error('Impossible d\'enregistrer le patient');
-      }
-
-      const consultationFormData: ConsultationFormData = {
-        data: JSON.stringify(data),
-        id_fiche: ficheAdministrative?.id?.toString() || ''
-      }
-      const coordinates = await getCurrentLocation();
-      const consultation = await createConsultationOnLocalDB(consultationFormData, patientCreated.id_patient, coordinates.coords);
-      if (consultation) {
-        const result = await associateFicheAdministrativeToPatient(patientCreated.id_patient, consultation);
-        if (!result) {
-          throw new Error('Impossible d\'associer la fiche administrative au patient');
+    if (isEditMode && patientId) {
+      try {
+        setIsCreatingPatient(true);
+        const patient = await getPatientByIdOnTheLocalDb(patientId.toString());
+        if (!patient) {
+          throw new Error('Patient avec l\'ID ' + patientId + ' non trouvé ');
         }
-        setIsOpenSuccessModal(true);
-      } else {
-        throw new Error('Impossible d\'enregistrer la fiche administrative');
-      }
-      setIsCreatingPatient(false);
+        const consultationFormData: ConsultationFormData = {
+          data: JSON.stringify(data),
+          id_fiche: ficheAdministrative?.id?.toString() || ''
+        }
+        if(!patient.fiche_administrative_id){
+          throw new Error('Patient avec l\'ID ' + patientId + ' non trouvé ');
+        }
+        const patientFormData = PatientMapper.ficheAdminToFormPatient(data);
+        const patientUpdatedResult = await updatePatientOnTheLocalDb(patient.id_patient, patientFormData);
+        if (!patientUpdatedResult) {
+          throw new Error('Patient avec l\'ID ' + patientId + ' n\'a pas pu etre mis à jour ');
+        }
+        const result = await updateConsultationByIdOnLocalDB(patient.fiche_administrative_id, consultationFormData);
 
-    } catch (error) {
-      console.error('Erreur lors de l\'enregistrement du patient:', error);
-      Alert.alert('Erreur', 'Impossible d\'enregistrer le patient');
-      Logger.log('error', 'Error inserting patient on the local db', { error });
-    } finally {
-      setIsCreatingPatient(false);
+        if (result) {
+          const consultation = await getConsultationById(patient.fiche_administrative_id);
+          if (!consultation) {
+            throw new Error('Consultation avec l\'ID ' + patient.fiche_administrative_id + ' n\'a pas pu etre mise à jour');
+          }
+          const result = await associateFicheAdministrativeToPatient(patient.id_patient, consultation);
+          if (!result) {
+            throw new Error('Impossible d\'associer la fiche administrative au patient');
+          }
+          setIsOpenSuccessModal(true);
+        } else {
+          throw new Error('Impossible d\'enregistrer la fiche administrative');
+        }
+        setIsCreatingPatient(false);
+      } catch (error) {
+        console.error('Erreur lors de l\'enregistrement du patient:', error);
+        Alert.alert('Erreur', 'Impossible d\'enregistrer le patient');
+        Logger.log('error', 'Error inserting patient on the local db', { error });
+      } finally {
+        setIsCreatingPatient(false);
+      }
+    } else {
+      try {
+        setIsCreatingPatient(true);
+        const patientFormData = PatientMapper.ficheAdminToFormPatient(data);
+        const patientCreated = await insertPatientOnTheLocalDb(patientFormData);
+        if (!patientCreated) {
+          throw new Error('Impossible d\'enregistrer le patient');
+        }
+
+        const consultationFormData: ConsultationFormData = {
+          data: JSON.stringify(data),
+          id_fiche: ficheAdministrative?.id?.toString() || ''
+        }
+        const coordinates = await getCurrentLocation();
+        const consultation = await createConsultationOnLocalDB(consultationFormData, patientCreated.id_patient, coordinates.coords);
+        if (consultation) {
+          const result = await associateFicheAdministrativeToPatient(patientCreated.id_patient, consultation);
+          if (!result) {
+            throw new Error('Impossible d\'associer la fiche administrative au patient');
+          }
+          setIsOpenSuccessModal(true);
+        } else {
+          throw new Error('Impossible d\'enregistrer la fiche administrative');
+        }
+        setIsCreatingPatient(false);
+
+      } catch (error) {
+        console.error('Erreur lors de l\'enregistrement du patient:', error);
+        Alert.alert('Erreur', 'Impossible d\'enregistrer le patient');
+        Logger.log('error', 'Error inserting patient on the local db', { error });
+      } finally {
+        setIsCreatingPatient(false);
+      }
     }
+
+  }
+
+  if(isLoading){
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="red" />
+      </View>
+    )
   }
 
 
@@ -140,11 +196,15 @@ export default function NouveauPatientScreen() {
       </View>
 
       {
-        ficheAdministrative ? (
-          <SurveyScreenDom surveyJson={ficheAdministrative.parseDataToJson()} handleSurveyComplete={async (data) => {
-            console.log('Survey data:', data);
-            await handleSaveDataFicheAdministrative(data);
-          }} />
+        ficheAdministrative  ? (
+          <SurveyScreenDom
+            surveyJson={ficheAdministrative.parseDataToJson()}
+            handleSurveyComplete={async (data) => {
+              console.log('Survey data:', data);
+              await handleSaveDataFicheAdministrative(data);
+            }}
+            data={formData}
+          />
         ) : (
           <FicheDoesntExist
             ficheName={getFicheAdministrativeName(diabetesType.toString())}
@@ -154,7 +214,7 @@ export default function NouveauPatientScreen() {
         )
       }
       {/* Indicateur de chargement global */}
-      {isLoading && (
+      {isLoading || isLoadingPatient || isLoadingConsultation && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="red" />
         </View>

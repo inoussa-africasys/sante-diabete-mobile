@@ -29,7 +29,6 @@ export default function PatientDetailScreen() {
         const patient = await getPatientOnTheLocalDb(patientId);
         setPatient(patient);
         const consultationsData = await getConsultations(patientId);
-        console.log("consultations : ", consultationsData);
 
         if (consultationsData) {
           Object.entries(consultationsData).forEach(([date, dateConsultations]) => {
@@ -111,6 +110,7 @@ export default function PatientDetailScreen() {
   };
 
   const formatDate = (dateString: string) => {
+    console.log("dateString : ",dateString);
     if (!dateString) return 'Date inconnue';
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });

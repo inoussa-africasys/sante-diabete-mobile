@@ -26,17 +26,23 @@ export function generateConsultationName(date: Date = new Date()): string {
   }
 
   export function parseConsultationDate(dateStr: string): Date | null {
+    console.log("dateStr : ",dateStr);
+    const date = new Date(dateStr);
+    
     const [day, month, year] = dateStr.split('-').map(Number);
-  
+    console.log("day : ",day);
+    console.log("month : ",month);
+    console.log("year : ",year);
     if (
       !day || !month || !year ||
       day < 1 || day > 31 ||
       month < 1 || month > 12 ||
       year < 1000 || year > 9999
     ) {
-      return null;
+      
+      return date;
     }
-  
+    console.log("new Date(year, month - 1, day) : ",new Date(year, month - 1, day));
     return new Date(year, month - 1, day);
   }
   
