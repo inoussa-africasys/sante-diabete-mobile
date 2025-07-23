@@ -89,7 +89,8 @@ export class Migration {
         updatedAt DATETIME NOT NULL,
         deletedAt DATETIME NULL,
         isLocalCreated BOOLEAN NOT NULL DEFAULT true,
-        isModified BOOLEAN NOT NULL DEFAULT false
+        isModified BOOLEAN NOT NULL DEFAULT false,
+        fiche_administrative_id VARCHAR(30) NULL
       )
     `);
 

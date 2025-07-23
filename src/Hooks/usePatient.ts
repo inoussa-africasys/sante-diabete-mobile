@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useDiabetes } from "../context/DiabetesContext";
+import { Consultation } from "../models/Consultation";
+import Fiche from "../models/Fiche";
 import Patient from "../models/Patient";
+import FicheService from "../Services/ficheService";
 import PatientService from "../Services/patientService";
 import { PatientFormData } from "../types";
 import { SyncPatientReturnType } from "../types/patient";
@@ -9,7 +12,7 @@ import Logger from "../utils/Logger";
 type usePatientReturnType = {
     getAllOnTheLocalDbPatients : () => Promise<Patient[]>;
     getAllOnTheServerPatients : () => Promise<Patient[]>;
-    insertPatientOnTheLocalDb : (patient : PatientFormData) => Promise<boolean>;
+    insertPatientOnTheLocalDb : (patient : PatientFormData) => Promise<Patient | null>;
     updatePatientOnTheLocalDb : (patientId: string, patient: PatientFormData) => Promise<boolean>;
     deletePatientOnTheLocalDb : (patientId: string) => Promise<boolean>;
     getPatientOnTheLocalDb : (patientId: string) => Promise<Patient | null>;
@@ -18,12 +21,34 @@ type usePatientReturnType = {
     countPatientsCreatedOrUpdatedSince : (date: string,diabetesType: string) => Promise<any>;
     isLoading : boolean;
     error : string | null;
+    getFicheAdministrative : () => Promise<Fiche | null>;
+    ficheAdministrative : Fiche | null;
+    associateFicheAdministrativeToPatient : (patientId: string, ficheAdministrative: Consultation) => Promise<boolean>;
 }
 
 export const usePatient = () : usePatientReturnType => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const {diabetesType} = useDiabetes();
+    const [ficheAdministrative, setFicheAdministrative] = useState<Fiche | null>(null);
+
+    const getFicheAdministrative = async () => {
+        try {
+            setIsLoading(true);
+            const ficheService = await FicheService.create();
+            const fiche  = await ficheService.getFicheAdministrativeOnTheLocalDb();
+            console.log("fiche Administrative : ",fiche);
+            setFicheAdministrative(fiche);
+            setIsLoading(false);
+            return fiche;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error fetching patients by type diabete', { error });
+            setError(error as string);
+            setIsLoading(false);
+            return null;
+        }
+    };
     
     
     const getAllOnTheLocalDbPatients = async () => {
@@ -63,15 +88,15 @@ export const usePatient = () : usePatientReturnType => {
         try {
             setIsLoading(true);
             const patientsService = await PatientService.create();
-            const patients = await patientsService.insertOnTheLocalDb(patient);
+            const patientCreated = await patientsService.insertOnTheLocalDb(patient);
             setIsLoading(false);
-            return true;
+            return patientCreated;
         } catch (error) {
             console.error('Erreur réseau :', error);
             Logger.log('error', 'Error inserting patient on the local db', { error });
             setError(error as string);
             setIsLoading(false);
-            return false;
+            return null;
         }
     };
 
@@ -188,6 +213,21 @@ export const usePatient = () : usePatientReturnType => {
         }
     };
 
+    const associateFicheAdministrativeToPatient = async (patientId: string, ficheAdministrative: Consultation) => {
+        try {
+            setIsLoading(true);
+            const patientsService = await PatientService.create();
+            await patientsService.associateFicheAdministrativeToPatient(patientId, ficheAdministrative);
+            return true;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error associating fiche administrative to patient', { error });
+            setError(error as string);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return {
         getAllOnTheLocalDbPatients,
@@ -200,6 +240,9 @@ export const usePatient = () : usePatientReturnType => {
         syncPatients,
         countPatientsCreatedOrUpdatedSince,
         isLoading,
-        error
+        error,
+        getFicheAdministrative,
+        ficheAdministrative,
+        associateFicheAdministrativeToPatient
     };
 }

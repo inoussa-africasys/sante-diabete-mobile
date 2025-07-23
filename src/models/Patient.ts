@@ -1,4 +1,6 @@
+import ConsultationService from "../Services/ConsulationService";
 import { BaseModel } from "./BaseModel";
+import { Consultation } from "./Consultation";
 
 export default class Patient extends BaseModel {
 
@@ -23,7 +25,7 @@ export default class Patient extends BaseModel {
     isLocalCreated?: boolean;
     isModified?: boolean;
     date?: string;
-
+    fiche_administrative_id?: string;
     
     constructor(data?: Partial<Patient>) {
         super();
@@ -51,5 +53,18 @@ export default class Patient extends BaseModel {
         this.isLocalCreated = data?.isLocalCreated || true;
         this.isModified = data?.isModified || false;
         this.date = data?.date || undefined;
+        this.fiche_administrative_id = data?.fiche_administrative_id || undefined;
+    }
+
+    public async ficheAdministrative(): Promise<Consultation> {
+        const consultationService = await ConsultationService.create();
+        if (!this.fiche_administrative_id) {
+            throw new Error('Fiche administrative ID is missing for patient ' + this.id);
+        }
+        const consultation = await consultationService.getConsultationByIdOnLocalDB(parseInt(this.fiche_administrative_id));
+        if (!consultation) {
+            throw new Error('Fiche administrative ID : ' + this.fiche_administrative_id + ' not found for patient ' + this.id);
+        }
+        return consultation;
     }
 }

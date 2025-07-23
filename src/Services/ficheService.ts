@@ -1,6 +1,7 @@
 import { API_HEADER } from "../Constants/App";
 import { FicheRepository } from "../Repositories/FicheRepository";
 import Fiche from "../models/Fiche";
+import { generateFicheAdministrativeName } from "../utils/ficheAdmin";
 import Service from "./core/Service";
 
 export default class FicheService extends Service {
@@ -95,6 +96,10 @@ export default class FicheService extends Service {
 
     async getByNameInLocalDB(ficheName : string): Promise<Fiche | null> {
         return await this.ficheRepository.findByName(ficheName);
+    }
+
+    async getFicheAdministrativeOnTheLocalDb(): Promise<Fiche | null> {
+        return await this.ficheRepository.findByName(generateFicheAdministrativeName(this.getTypeDiabete()!));
     }
 
 }

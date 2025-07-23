@@ -47,4 +47,8 @@ export class Consultation extends BaseModel {
         }
         return fiche;
     }
+
+    public parseDataToJson() {
+        return JSON.parse(this.data);
+    }
 }

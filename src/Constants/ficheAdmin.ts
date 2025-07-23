@@ -1,0 +1,1 @@
+export const FICHE_ADMINISTRATIVE_NAME = 'fiche_administrative';

@@ -16,7 +16,7 @@ export class ConsultationMapper {
         consultation.data = consultationFormData.data;
         consultation.id_fiche = consultationFormData.id_fiche;
         const ficheRepository = new FicheRepository();
-        const fiche = ficheRepository.findByName(consultationFormData.id_fiche);
+        const fiche = ficheRepository.findById(parseInt(consultationFormData.id_fiche));
         consultation.ficheName = fiche?.name as string || '' ;
         return consultation;
     }

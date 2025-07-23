@@ -1,5 +1,5 @@
 import Patient from "../models/Patient";
-import { PatientFormData, PatientSyncData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientSyncPicture } from "../types";
+import { FicheAdministrativeFormData, PatientFormData, PatientSyncData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientSyncPicture } from "../types";
 
 export class PatientMapper {
     static toPatientFormData(patient: Patient): PatientFormData {
@@ -76,6 +76,21 @@ export class PatientMapper {
       return {
         identifier: patient.id_patient,
         photo: patient.photo ,
+      };
+    }
+
+
+    static ficheAdminToFormPatient(data: FicheAdministrativeFormData): PatientFormData {
+      return {
+        nom: data.studentName,
+        prenom: data.studentFirstName,
+        dateNaissance: data.dateNaissance ? new Date(data.dateNaissance) : new Date(),
+        genre: data.genre,
+        profession: data.profession,
+        telephone: data.contact,
+        email: data.email,
+        commentaire: data.commentaire,
+        photo: data.photo
       };
     }
 }
