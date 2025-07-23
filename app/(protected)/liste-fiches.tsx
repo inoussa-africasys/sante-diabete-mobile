@@ -113,7 +113,7 @@ export default function ListeFichesScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
@@ -126,13 +126,13 @@ export default function ListeFichesScreen() {
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color="#2196F3" />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
@@ -146,7 +146,7 @@ export default function ListeFichesScreen() {
           <MaterialIcons name="error-outline" size={48} color="#f44336" />
           <Text style={styles.errorText}>Une erreur est survenue</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 

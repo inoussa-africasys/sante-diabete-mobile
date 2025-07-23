@@ -196,7 +196,7 @@ export default function NouveauPatientScreen() {
       </View>
 
       {
-        ficheAdministrative  ? (
+        ficheAdministrative && ficheAdministrative.data ? (
           <SurveyScreenDom
             surveyJson={ficheAdministrative.parseDataToJson()}
             handleSurveyComplete={async (data) => {
