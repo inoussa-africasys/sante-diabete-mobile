@@ -1,4 +1,5 @@
 import { randomUUID } from "expo-crypto";
+import { Consultation } from "../models/Consultation";
 
 export function generateConsultationName(date: Date = new Date()): string {
     const pad = (n: number) => n.toString().padStart(2, '0');
@@ -45,4 +46,12 @@ export function generateConsultationName(date: Date = new Date()): string {
     console.log("new Date(year, month - 1, day) : ",new Date(year, month - 1, day));
     return new Date(year, month - 1, day);
   }
+  
+
+  export const getconsultationName = (consultation: Consultation) => {
+    if (consultation.isFicheAdministrative()) {
+      return consultation.ficheName || 'Fiche administrative';
+    }
+    return consultation.fileName || generateConsultationName(parseConsultationDate(consultation.date || '') || new Date());
+  };
   
