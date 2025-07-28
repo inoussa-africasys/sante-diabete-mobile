@@ -1,12 +1,16 @@
-
-export const generateFicheAdministrativeName = (typeDiabete: string): string => {
-    //return typeDiabete.toLowerCase() + "_" + FICHE_ADMINISTRATIVE_NAME;
-    return "dt1_administrative_v4";
-};
+import FicheService from "../Services/ficheService";
 
 
-export const getFicheAdministrativeName = (typeDiabete: string): string => {
-    return generateFicheAdministrativeName(typeDiabete);
+export const getFicheAdministrativeName = async (): Promise<string> => {
+    const ficheService = await FicheService.create();
+    const ficheNames = await ficheService.getAllFicheNames();
+    console.log("ficheNames : ",ficheNames);
+    const latestFicheName = getLatestAdminFicheName(ficheNames);
+    console.log("latestFicheName : ",latestFicheName);
+    if (!latestFicheName) {
+        throw new Error('No fiche found for type diabete');
+    }
+    return latestFicheName;
 };
 
 
@@ -26,6 +30,6 @@ export function getLatestAdminFicheName(ficheNames: string[]): string | null {
             }
         }
     }
-
+    console.log("latestFicheName : ",latestFicheName);
     return latestFicheName;
 }

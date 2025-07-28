@@ -44,7 +44,7 @@ async function addDirectoryToZip(zip: JSZip, dirPath: string, relativePath: stri
 async function copyDatabaseToTrafficFolder() {
     try {
         const dbPath = `${DATABASE_PATH}${DATABASE_NAME}`;
-        const tempDbPath = `${FileSystem.documentDirectory}/${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}/${DATABASE_NAME}`;
+        const tempDbPath = `${FileSystem.documentDirectory}${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}${DATABASE_NAME}`;
         
         console.log(`📋 Copie de la base de données...`);
         console.log(`📄 Source: ${dbPath}`);
@@ -60,7 +60,16 @@ async function copyDatabaseToTrafficFolder() {
                 to: tempDbPath
             });
             
-            console.log(`✅ Base de données copiée avec succès !`);
+            const dbInfo2 = await FileSystem.getInfoAsync(tempDbPath);
+            
+            if (dbInfo2.exists && !dbInfo2.isDirectory) {
+                console.log(`✅ Base de données copiée avec succès ! Taille : ${dbInfo2.size} octets, Date : ${dbInfo2.modificationTime}, MD5 : ${dbInfo2.md5} `);
+            } else {
+                console.log(`⚠️ Base de données non trouvée à destination temporaire : ${tempDbPath}`);
+            }    
+             await setTimeout(() => {
+                console.log(`✅ Base de données copiée avec succès !`);
+            }, 1000);    
         } else {
             console.log(`⚠️ Base de données non trouvée à: ${dbPath}`);
         }
@@ -71,29 +80,11 @@ async function copyDatabaseToTrafficFolder() {
     }
 }
 
-// Fonction pour créer un fichier d'information sur la base de données
-async function createDatabaseInfoFile(zip: JSZip, dbPath: string) {
-    try {
-        // Créer un fichier d'information détaillé sur la base de données
-        console.log('📝 Création du fichier d\'information de la base de données...');
-        
-        // On peut créer un fichier texte avec les informations de la DB
-        const dbInfo = await FileSystem.getInfoAsync(dbPath);
-        const currentDate = new Date().toISOString();
-        const infoText = `=== INFORMATIONS BASE DE DONNÉES SQLITE ===\n\nFichier: ${DATABASE_NAME}\nChemin: ${dbPath}\nDate d'export: ${currentDate}\nStatut: Non incluse (trop volumineuse)\n\n=== RAISON ===\nLa base de données est trop volumineuse pour être incluse\ndirectement dans l'archive ZIP sans causer des problèmes\nde mémoire sur l'appareil mobile.\n\n=== CONTENU DE CETTE ARCHIVE ===\n✓ Dossiers et fichiers de données\n✓ Fichiers de configuration\n✓ Logs et rapports\n✗ Base de données SQLite (voir instructions ci-dessous)\n\n=== POUR RÉCUPÉRER LA BASE DE DONNÉES ===\n\n1. LOCALISATION:\n   - Chemin: ${dbPath}\n   - Nom du fichier: ${DATABASE_NAME}\n\n2. MÉTHODES D'EXPORT:\n   a) Via l'application:\n      - Utilisez une fonction d'export dédiée\n      - Ou accédez aux paramètres de sauvegarde\n   \n   b) Accès direct (si possible):\n      - Naviguez vers le répertoire SQLite\n      - Copiez le fichier ${DATABASE_NAME}\n      - Sauvegardez-le séparément\n\n=== IMPORTANT ===\nCette base de données contient toutes les données\nimportantes de l'application. Assurez-vous de la\nsauvegarder régulièrement pour éviter toute perte.\n\n=== SUPPORT ===\nEn cas de problème, contactez l'équipe technique\navec ce fichier d'information.`;
-        
-        zip.file('database_info.txt', infoText);
-        console.log('✅ Fichier d\'information de la base de données créé à la racine du ZIP');
-        
-    } catch (error) {
-        console.error('❌ Erreur lors de la création du fichier d\'information:', error);
-    }
-}
 
 // Fonction pour nettoyer le fichier temporaire de la base de données
 async function cleanupTempDatabase() {
     try {
-        const tempDbPath = `${FileSystem.documentDirectory}/${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}/${DATABASE_NAME}`;
+        const tempDbPath = `${FileSystem.documentDirectory}${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}${DATABASE_NAME}`;
         const tempDbInfo = await FileSystem.getInfoAsync(tempDbPath);
         
         if (tempDbInfo.exists) {
@@ -107,7 +98,7 @@ async function cleanupTempDatabase() {
 }
 
 export async function zipDirectory() {
-    const dirUri = `${FileSystem.documentDirectory}/${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}`;
+    const dirUri = `${FileSystem.documentDirectory}${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}`;
     const zip = new JSZip();
 
     try {
@@ -122,9 +113,6 @@ export async function zipDirectory() {
         
         // Ajouter récursivement tous les fichiers et dossiers (y compris la DB copiée)
         await addDirectoryToZip(zip, dirUri);
-        console.log('✅ Tous les fichiers et dossiers ont été ajoutés au ZIP');
-        
-        console.log('✅ Export terminé - fichiers et base de données inclus');
     } catch (error) {
         console.error('❌ Erreur lors de la lecture des fichiers:', error);
         throw error;
@@ -135,7 +123,7 @@ export async function zipDirectory() {
     console.log('✅ Fichier zip généré');
 
     // Sauvegarder le ZIP
-    const zipUri = `${FileSystem.documentDirectory}/${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}/${NAME_OF_TRAFIC_ZIP_FILE}`;
+    const zipUri = `${FileSystem.documentDirectory}${NAME_OF_TRAFIC_ZIP_FILE}`;
     console.log('✅ Chemin du fichier zip :', zipUri);
     await FileSystem.writeAsStringAsync(zipUri, zipContent, {
         encoding: FileSystem.EncodingType.Base64,
@@ -144,8 +132,8 @@ export async function zipDirectory() {
     console.log('✅ ZIP créé ici :', zipUri);
     
     // Nettoyer le fichier temporaire de la base de données s'il existe
-    await cleanupTempDatabase();
-    
+    // await cleanupTempDatabase();
+
     return zipUri;
 }
 
@@ -170,14 +158,14 @@ export async function shareViaWhatsApp(zipUri: string) {
 
 
 export async function uploadZipToTheWebService(zipUri: string) {
-  const apiUrl = 'https://ton-backend.com/upload';
+    const apiUrl = 'https://ton-backend.com/upload';
 
   // Lire le fichier en base64
   const base64 = await FileSystem.readAsStringAsync(zipUri, {
     encoding: FileSystem.EncodingType.Base64,
   });
 
-  const filename = 'archive.zip';
+    const filename = 'archive.zip';
 
   const formData = new FormData();
   formData.append('file', {
@@ -203,3 +191,19 @@ export async function uploadZipToTheWebService(zipUri: string) {
 }
 
 
+
+const deleteSQLiteDatabase = async (dbName = DATABASE_NAME) => {
+  const dbPath = FileSystem.documentDirectory + 'SQLite/' + dbName;
+
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(dbPath);
+    if (fileInfo.exists) {
+      await FileSystem.deleteAsync(dbPath, { idempotent: true });
+      console.log(`🗑️ Base de données "${dbName}" supprimée avec succès.`);
+    } else {
+      console.log(`⚠️ Base de données "${dbName}" introuvable.`);
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la suppression de la base de données :', error);
+  }
+};

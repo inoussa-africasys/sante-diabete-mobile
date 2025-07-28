@@ -6,7 +6,6 @@ import useConsultation from '@/src/Hooks/useConsultation';
 import { usePatient } from '@/src/Hooks/usePatient';
 import { PatientMapper } from '@/src/mappers/patientMapper';
 import { ConsultationFormData, FicheAdministrativeFormData } from '@/src/types/patient';
-import { getFicheAdministrativeName } from '@/src/utils/ficheAdmin';
 import Logger from '@/src/utils/Logger';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -32,6 +31,7 @@ export default function NouveauPatientScreen() {
     error: errorPatient,
     getFicheAdministrative,
     ficheAdministrative,
+    ficheAdministrativeName,
     insertPatientOnTheLocalDb,
     associateFicheAdministrativeToPatient,
     updatePatientOnTheLocalDb,
@@ -172,6 +172,7 @@ export default function NouveauPatientScreen() {
 
   }
 
+
   if(isLoading){
     return (
       <View style={styles.container}>
@@ -207,7 +208,7 @@ export default function NouveauPatientScreen() {
           />
         ) : (
           <FicheDoesntExist
-            ficheName={getFicheAdministrativeName(diabetesType.toString())}
+            ficheName={ficheAdministrativeName ?? ""}
             gotBack={() => router.back()}
             text="La creation du patient nécessite que vous téléchargez une fiche administrative : "
           />

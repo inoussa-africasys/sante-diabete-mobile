@@ -23,6 +23,7 @@ type usePatientReturnType = {
     error : string | null;
     getFicheAdministrative : () => Promise<Fiche | null>;
     ficheAdministrative : Fiche | null;
+    ficheAdministrativeName : string | null;
     associateFicheAdministrativeToPatient : (patientId: string, ficheAdministrative: Consultation) => Promise<boolean>;
 }
 
@@ -31,6 +32,7 @@ export const usePatient = () : usePatientReturnType => {
     const [error, setError] = useState<string | null>(null);
     const {diabetesType} = useDiabetes();
     const [ficheAdministrative, setFicheAdministrative] = useState<Fiche | null>(null);
+    const [ficheAdministrativeName, setFicheAdministrativeName] = useState<string | null>(null);
 
     const getFicheAdministrative = async () => {
         try {
@@ -39,6 +41,7 @@ export const usePatient = () : usePatientReturnType => {
             const fiche  = await ficheService.getFicheAdministrativeOnTheLocalDb();
             console.log("fiche Administrative : ",fiche);
             setFicheAdministrative(fiche);
+            setFicheAdministrativeName(fiche?.name ?? null);
             setIsLoading(false);
             return fiche;
         } catch (error) {
@@ -230,6 +233,7 @@ export const usePatient = () : usePatientReturnType => {
     };
 
     return {
+        ficheAdministrativeName,
         getAllOnTheLocalDbPatients,
         getAllOnTheServerPatients,
         insertPatientOnTheLocalDb,

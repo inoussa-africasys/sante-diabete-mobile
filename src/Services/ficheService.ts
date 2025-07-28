@@ -4,7 +4,7 @@ import { FicheRepository } from "../Repositories/FicheRepository";
 import Fiche from "../models/Fiche";
 import Logger from "../utils/Logger";
 import { TraficFolder } from '../utils/TraficFolder';
-import { generateFicheAdministrativeName } from "../utils/ficheAdmin";
+import { getFicheAdministrativeName } from "../utils/ficheAdmin";
 import Service from "./core/Service";
 
 export default class FicheService extends Service {
@@ -74,7 +74,6 @@ export default class FicheService extends Service {
             const data: any = await response.json();
             const fiche = await this.ficheRepository.findByName(ficheName);
             if (!fiche) { Logger.log('error', 'Error downloading fiche', { fiche }); throw new Error('Fiche not found'); }
-            console.log("fiche downloaded : Ok ", data);
             fiche.data = JSON.stringify(data);
             fiche.is_downloaded = true;
             await this.ficheRepository.update(fiche.id!, fiche);
@@ -104,7 +103,8 @@ export default class FicheService extends Service {
     }
 
     async getFicheAdministrativeOnTheLocalDb(): Promise<Fiche | null> {
-        return await this.ficheRepository.findByName(generateFicheAdministrativeName(this.getTypeDiabete()!));
+        const ficheAdministrativeName = await getFicheAdministrativeName();
+        return await this.ficheRepository.findByName(ficheAdministrativeName);
     }
 
     async createFicheAsJsonFile(fiche: Fiche): Promise<Fiche | null> {
@@ -128,6 +128,10 @@ export default class FicheService extends Service {
         }
 
         return fiche;
+    }
+
+    getAllFicheNames(): string[] {
+        return this.ficheRepository.findAllNames(this.getTypeDiabete()!);
     }
 
 }
