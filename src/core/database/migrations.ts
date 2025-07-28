@@ -56,6 +56,7 @@ export class Migration {
         data TEXT NULL,
         is_downloaded BOOLEAN DEFAULT false,
         path TEXT NULL,
+        is_administrative BOOLEAN DEFAULT false,  
         createdAt DATETIME NOT NULL,
         updatedAt DATETIME NOT NULL      
       )
