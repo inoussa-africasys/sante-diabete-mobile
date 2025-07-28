@@ -11,10 +11,10 @@ export default function useTraficAssistant() : UseTraficAssistantType {
 
     const handleSendData = () => {
         setIsLoading(true);
-        setTimeout(() => {
-            TraficAssistantService.zipPatientDirectory();
+        TraficAssistantService.zipPatientDirectory().then((zipUri) => {
             setIsLoading(false);
-        }, 2000);
+            console.log("✅ Fichiers patients zippés :", zipUri);
+        });
     }
 
     return {

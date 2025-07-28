@@ -9,6 +9,7 @@ export default class Fiche extends BaseModel {
     path: string;
     is_downloaded: boolean;
     data: string;
+    is_administrative: boolean;
 
     constructor(data?: Partial<Fiche>) {
         super();
@@ -18,6 +19,7 @@ export default class Fiche extends BaseModel {
         this.path = data?.path || '';
         this.is_downloaded = data?.is_downloaded || false;
         this.data = data?.data || '';
+        this.is_administrative = data?.is_administrative || false;
     }
 
 

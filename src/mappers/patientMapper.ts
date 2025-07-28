@@ -81,16 +81,17 @@ export class PatientMapper {
 
 
     static ficheAdminToFormPatient(data: FicheAdministrativeFormData): PatientFormData {
+      
       return {
-        nom: data.studentName,
-        prenom: data.studentFirstName,
-        dateNaissance: data.dateNaissance ? new Date(data.dateNaissance) : new Date(),
-        genre: data.genre,
-        profession: data.profession,
-        telephone: data.contact,
-        email: data.email,
-        commentaire: data.commentaire,
-        photo: data.photo
+        nom: data["Donnees_administratives.nom"] || "",
+        prenom: data["Donnees_administratives.prenom"] || "",
+        dateNaissance: data["Donnees_administratives.date_de_naissance"] ? new Date(data["Donnees_administratives.date_de_naissance"]) : new Date(),
+        genre: data["Donnees_administratives.genre"] || "",
+        profession: data["Donnees_administratives.profession"] || "",
+        telephone: data["Donnees_administratives.telephone"] || "",
+        email: data["Donnees_administratives.mail"] || "",
+        commentaire: data["Donnees_administratives.commentaire"] || "",
+        photo: data["Donnees_administratives.photo"] || ""
       };
     }
 }

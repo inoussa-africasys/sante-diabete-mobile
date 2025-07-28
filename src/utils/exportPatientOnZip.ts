@@ -1,6 +1,8 @@
 import * as FileSystem from "expo-file-system";
 import { zip } from "react-native-zip-archive";
 
+
+
 const PATH_OF_PATIENTS_DIR_ON_THE_LOCAL = "patients"; // remplace si besoin
 
 /**
@@ -28,4 +30,5 @@ export async function zipPatientDirectory(): Promise<string | null> {
     return null;
   }
 }
+
 

@@ -1,1 +1,1 @@
-export const FICHE_ADMINISTRATIVE_NAME = 'fiche_administrative';
+export const FICHE_ADMINISTRATIVE_NAME = 'dt1_administrative_v4';

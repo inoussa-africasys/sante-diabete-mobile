@@ -1,6 +1,4 @@
-import * as FileSystem from 'expo-file-system';
-import { zip } from 'react-native-zip-archive';
-import { NAME_OF_TRAFIC_ZIP_FILE, PATH_OF_PATIENTS_DIR_ON_THE_LOCAL } from '../Constants/App';
+import { shareViaWhatsApp, uploadZipToTheWebService, zipDirectory } from '../utils/exportZipViajsZip';
 
 export default class TraficAssistantService {
 
@@ -12,7 +10,22 @@ export default class TraficAssistantService {
      */
     static zipPatientDirectory = async (): Promise<string | null> => {
         try {
-            const folderUri = `${FileSystem.documentDirectory}${PATH_OF_PATIENTS_DIR_ON_THE_LOCAL}/`;
+
+                const zipUri = await zipDirectory();
+                console.log("✅ Fichiers patients zippés :", zipUri);
+              
+                // Partager
+                await shareViaWhatsApp(zipUri);
+              
+                console.log("✅ Fichiers patients partagés :", zipUri);
+                // Envoyer au backend
+                await uploadZipToTheWebService(zipUri);
+                
+                 console.log("✅ Fichiers patients envoyés au backend :", zipUri);
+
+                return zipUri;
+              
+           /*  const folderUri = `${FileSystem.documentDirectory}${PATH_OF_PATIENTS_DIR_ON_THE_LOCAL}/`;
             const zipDestination = `${FileSystem.documentDirectory}${NAME_OF_TRAFIC_ZIP_FILE}`;
 
             // Vérifie que le dossier existe
@@ -25,13 +38,17 @@ export default class TraficAssistantService {
             // Crée le ZIP
             const zippedPath = await zip(folderUri, zipDestination);
             console.log("✅ Fichiers patients zippés :", zippedPath);
-            return zippedPath;
+            return zippedPath; */
         } catch (error) {
             console.error("❌ Erreur lors de la création de l'archive ZIP :", error);
             return null;
         }
 
     }
+
+
+
+    
 
 
 

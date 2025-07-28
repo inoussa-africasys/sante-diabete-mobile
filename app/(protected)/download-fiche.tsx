@@ -23,7 +23,7 @@ export default function DownloadFicheScreen() {
   const [showLoadingModal, setShowLoadingModal] = React.useState(false);
   const [showErrorModal, setShowErrorModal] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
-  
+
 
   const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge'].includes(params.mode)) ? params.mode : 'remplir';
 
@@ -40,9 +40,6 @@ export default function DownloadFicheScreen() {
 
   });
 
-  if (error) {
-    showToast('Erreur lors de la récupération des fiches', 'error', 3000);
-  }
 
   useEffect(() => {
     if (networkState.isConnected === false) {
@@ -77,7 +74,7 @@ export default function DownloadFicheScreen() {
 
 
   const renderItem = ({ item, ficheDownloadingName, isDownloading }: { item: string, ficheDownloadingName: string, isDownloading: boolean }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.item}
       onPress={() => handleDownload(item)}
     >
@@ -86,18 +83,18 @@ export default function DownloadFicheScreen() {
         <Text style={styles.itemText}>{item}</Text>
       </View>
       {item === ficheDownloadingName && isDownloading ? (
-          <ActivityIndicator size="small" color="#4CAF50" />
-        ) : (
-          <MaterialIcons name="file-download" size={24} color="#4CAF50" />
-        )}
+        <ActivityIndicator size="small" color="#4CAF50" />
+      ) : (
+        <MaterialIcons name="file-download" size={24} color="#4CAF50" />
+      )}
     </TouchableOpacity>
   );
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
           >
@@ -108,15 +105,16 @@ export default function DownloadFicheScreen() {
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color="#2196F3" />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
+    console.log(error);
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
           >
@@ -124,37 +122,38 @@ export default function DownloadFicheScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Téléchargement de fiche</Text>
         </View>
-        <View style={styles.centerContent}>
+        <View style={[styles.centerContent,]}>
           <MaterialIcons name="error-outline" size={48} color="#f44336" />
           <Text style={styles.errorText}>Une erreur est survenue</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <>
       <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Téléchargement de fiche</Text>
-      </View>
-      <FlatList
-        data={fiches || []}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Téléchargement de fiche</Text>
+        </View>
+
+        <FlatList
+          data={fiches || []}
         renderItem={(item) => renderItem({item: item.item,ficheDownloadingName: ficheDownloadingName,isDownloading: isLoadingDownloadFiche})}
-        keyExtractor={(item) => item?.toString() || Math.random().toString()}
-        contentContainerStyle={styles.list}
-      />
-      
-    </SafeAreaView>
-    {showLoadingModal && <LoadingModal isVisible={showLoadingModal} message={"En cours de téléchargement " + ficheDownloadingName} />}
-    {showErrorModal && <AlertModal isVisible={showErrorModal} message="Une erreur est survenue lors du téléchargement de la fiche" onClose={() => setShowErrorModal(false)} title="Erreur" />}
-    {showSuccessModal && <AlertModal isVisible={showSuccessModal} message="Fiche téléchargée avec succès" onClose={() => setShowSuccessModal(false)} title="Succès" />}
+          keyExtractor={(item) => item?.toString() || Math.random().toString()}
+          contentContainerStyle={styles.list}
+        />
+
+      </SafeAreaView>
+      {showLoadingModal && <LoadingModal isVisible={showLoadingModal} message={"En cours de téléchargement " + ficheDownloadingName} />}
+      {showErrorModal && <AlertModal isVisible={showErrorModal} message="Une erreur est survenue lors du téléchargement de la fiche" onClose={() => setShowErrorModal(false)} title="Erreur" />}
+      {showSuccessModal && <AlertModal isVisible={showSuccessModal} message="Fiche téléchargée avec succès" onClose={() => setShowSuccessModal(false)} title="Succès" />}
     </>
   );
 }

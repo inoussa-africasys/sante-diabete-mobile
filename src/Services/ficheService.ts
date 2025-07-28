@@ -1,7 +1,10 @@
+import * as FileSystem from 'expo-file-system';
 import { API_HEADER } from "../Constants/App";
 import { FicheRepository } from "../Repositories/FicheRepository";
 import Fiche from "../models/Fiche";
-import { generateFicheAdministrativeName } from "../utils/ficheAdmin";
+import Logger from "../utils/Logger";
+import { TraficFolder } from '../utils/TraficFolder';
+import { getFicheAdministrativeName } from "../utils/ficheAdmin";
 import Service from "./core/Service";
 
 export default class FicheService extends Service {
@@ -64,19 +67,20 @@ export default class FicheService extends Service {
             });
 
             if (!response.ok) {
+                Logger.log('error', 'Error downloading fiche', { response });
                 throw new Error(`Erreur HTTP: ${response.status}`);
             }
 
             const data: any = await response.json();
             const fiche = await this.ficheRepository.findByName(ficheName);
-            if (!fiche) { throw new Error('Fiche not found'); }
+            if (!fiche) { Logger.log('error', 'Error downloading fiche', { fiche }); throw new Error('Fiche not found'); }
             fiche.data = JSON.stringify(data);
             fiche.is_downloaded = true;
             await this.ficheRepository.update(fiche.id!, fiche);
 
             const ficheUpdated = await this.ficheRepository.findByName(ficheName);
-            if (!ficheUpdated) { throw new Error('Fiche not found'); }
-            console.log("fiche updated : Ok ", ficheUpdated);
+            if (!ficheUpdated) { Logger.log('error', 'Error downloading fiche', { ficheUpdated }); throw new Error('Fiche not found'); }
+            await this.createFicheAsJsonFile(ficheUpdated);
             return ficheUpdated;
         } catch (error) {
             console.error('Erreur réseau :', error);
@@ -89,17 +93,45 @@ export default class FicheService extends Service {
         return await this.ficheRepository.findAllDownloadedAndNotEmptyFiche(this.getTypeDiabete()!);
     }
 
-    async getByIdInLocalDB(ficheId : string): Promise<Fiche | null> {
+    async getByIdInLocalDB(ficheId: string): Promise<Fiche | null> {
         const id = parseInt(ficheId)
         return await this.ficheRepository.findById(id);
     }
 
-    async getByNameInLocalDB(ficheName : string): Promise<Fiche | null> {
+    async getByNameInLocalDB(ficheName: string): Promise<Fiche | null> {
         return await this.ficheRepository.findByName(ficheName);
     }
 
     async getFicheAdministrativeOnTheLocalDb(): Promise<Fiche | null> {
-        return await this.ficheRepository.findByName(generateFicheAdministrativeName(this.getTypeDiabete()!));
+        const ficheAdministrativeName = await getFicheAdministrativeName();
+        return await this.ficheRepository.findByName(ficheAdministrativeName);
+    }
+
+    async createFicheAsJsonFile(fiche: Fiche): Promise<Fiche | null> {
+
+        try {
+            const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getFormsDefinitionsFolderPath(this.getTypeDiabete())}`;
+            const fileUri = `${folderUri}/${fiche.name}`;
+
+            const dirInfo = await FileSystem.getInfoAsync(folderUri);
+            if (!dirInfo.exists) {
+                await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
+            }
+
+            await FileSystem.writeAsStringAsync(fileUri, fiche.data, {
+                encoding: FileSystem.EncodingType.UTF8,
+            });
+
+            console.log( `✅ Fiche enregistrée dans le fichier : ${fileUri}`);
+        } catch (error) {
+            console.error("❌ Erreur d'enregistrement du fichier JSON :", error);
+        }
+
+        return fiche;
+    }
+
+    getAllFicheNames(): string[] {
+        return this.ficheRepository.findAllNames(this.getTypeDiabete()!);
     }
 
 }

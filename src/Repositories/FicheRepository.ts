@@ -46,5 +46,13 @@ export class FicheRepository extends GenericRepository<Fiche> {
     db.runSync(sql, values);
   }
 
+  public findAllNames(type_diabete: string): string[] {
+    const result = this.db.getAllSync(`SELECT name FROM ${this.tableName} WHERE type_diabete = ?`, [type_diabete]);
+    return result.map((item : any) => item.name as string);
+  }
+
+
+  
+
 
 }

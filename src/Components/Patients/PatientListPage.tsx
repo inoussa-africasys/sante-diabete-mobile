@@ -220,7 +220,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
         {/* Actions Bar */}
         <View style={styles.actionsBar}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/liste-fiches?mode=vierge&dt=${diabetesType}`)}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/download-fiche`)}>
             <FontAwesome5 name="download" size={20} color="#4CAF50" />
           </TouchableOpacity>
           <View style={styles.actionDivider} />
