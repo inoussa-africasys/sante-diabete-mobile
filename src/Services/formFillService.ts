@@ -1,4 +1,5 @@
 import axios from "axios";
+import * as FileSystem from 'expo-file-system';
 import { APP_VERSION } from "../Constants/App";
 import { generateFormfillId } from "../functions/helpers";
 import FormFillMapper from "../mappers/formFill";
@@ -6,8 +7,9 @@ import { FormFill } from "../models/FormFill";
 import { FormFillRepository } from "../Repositories/FormFillRepository";
 import { SyncErrorType, SyncFormFillResultType } from "../types/app";
 import FormFillForm from "../types/formFill";
-import { generateUUID } from "../utils/consultation";
+import { generateFormFillName, generateUUID } from "../utils/consultation";
 import Logger from "../utils/Logger";
+import { TraficFolder } from "../utils/TraficFolder";
 import Service from "./core/Service";
 
 
@@ -38,6 +40,7 @@ export default class FormFillService extends Service {
             formFillMapped.type_diabete = this.getTypeDiabete();
             formFillMapped.id_trafic = generateFormfillId();
             await this.formFillRepository.insert(formFillMapped);
+            await this.saveFormFillAsJson(formFillMapped);
             return true;
         } catch (error) {
             console.error('Error creating form fill:', error);
@@ -191,6 +194,31 @@ export default class FormFillService extends Service {
             console.error('Error getting form fill:', error);
             Logger.log('error', 'Error getting form fill:', { error });
             return null;
+        }
+    }
+
+
+    async saveFormFillAsJson(formFill: FormFill): Promise<void> {
+        try {
+            const jsonContent = formFill.data;
+            const fileName = generateFormFillName(formFill.ficheName);
+
+            const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getFormsInstancesFolderPath(this.getTypeDiabete(),formFill.ficheName)}`;
+            const fileUri = `${folderUri}/${fileName}`;
+
+            const dirInfo = await FileSystem.getInfoAsync(folderUri);
+            if (!dirInfo.exists) {
+                await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
+            }
+
+            await FileSystem.writeAsStringAsync(fileUri, jsonContent, {
+                encoding: FileSystem.EncodingType.UTF8,
+            });
+            console.log(`Form fill enregistré dans le fichier : ${fileUri}`);
+
+        } catch (error) {
+            Logger.error("Erreur d'enregistrement du fichier JSON form fill :", error as Error);
+            console.error("Erreur d'enregistrement du fichier JSON form fill :", error);
         }
     }
 

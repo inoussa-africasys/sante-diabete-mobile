@@ -153,10 +153,10 @@ const AdministrationPage = () => {
           /> */}
 
           <MenuOngAssociationsItem
-            icon={<MaterialIcons name="location-on" size={24} color="white" />}
-            title="Marquer cette Position"
-            onPress={() => configStore.toggle('showPosition')}
-            isActive={configStore.getValue('showPosition')}
+            icon={<MaterialIcons name="sync" size={24} color="white" />}
+            title="Synchronisation"
+            onPress={() => configStore.toggle('showSyncButton')}
+            isActive={configStore.getValue('showSyncButton')}
           />
 
           <MenuOngAssociationsItem
@@ -174,17 +174,17 @@ const AdministrationPage = () => {
           />
 
           <MenuOngAssociationsItem
-            icon={<FontAwesome5 name="user-nurse" size={24} color="white" />}
-            title="Patients"
-            onPress={() => configStore.toggle('showPatients')}
-            isActive={configStore.getValue('showPatients')}
+            icon={<FontAwesome5 name="edit" size={24} color="white" />}
+            title="Editer une fiche"
+            onPress={() => configStore.toggle('showFicheEditerButton')}
+            isActive={configStore.getValue('showFicheEditerButton')}
           />
 
           <MenuOngAssociationsItem
             icon={<MaterialIcons name="inventory" size={24} color="white" />}
-            title="Gestion de Stock"
-            onPress={() => configStore.toggle('showStock')}
-            isActive={configStore.getValue('showStock')}
+            title="Remplir une fiche"
+            onPress={() => configStore.toggle('showFicheRemplieButton')}
+            isActive={configStore.getValue('showFicheRemplieButton')}
           />
 
           <MenuOngAssociationsItem

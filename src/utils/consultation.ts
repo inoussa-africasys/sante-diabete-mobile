@@ -55,3 +55,19 @@ export function generateConsultationName(date: Date = new Date()): string {
     return consultation.fileName || generateConsultationName(parseConsultationDate(consultation.date || '') || new Date());
   };
   
+
+
+  export function generateFormFillName(baseName: string): string {
+    const now = new Date();
+  
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Mois de 0 à 11
+    const year = now.getFullYear();
+  
+    const hours = String(now.getHours()).padStart(1, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+  
+    return `${baseName}_${day}-${month}-${year}_${hours}h${minutes}min${seconds}`;
+  }
+  

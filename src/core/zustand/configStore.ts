@@ -17,7 +17,10 @@ interface ConfigState {
     showStock: boolean;
     showSearch: boolean;
     showMedication: boolean;
-
+    showSyncButton: boolean;
+    showFicheRemplieButton: boolean;
+    showFicheEditerButton: boolean;
+    
     timer1: number;
     timer2: number;
     timer3: number;
@@ -41,7 +44,10 @@ type ToggleKeys =
     | 'showPatients'
     | 'showStock'
     | 'showSearch'
-    | 'showMedication';
+    | 'showMedication'
+    | 'showSyncButton'
+    | 'showFicheRemplieButton'
+    | 'showFicheEditerButton';
 
 type ConfigKeys = keyof Omit<ConfigState, 'toggle' | 'setValue' | 'getValue'>;
 
@@ -58,10 +64,16 @@ const useConfigStore = create<ConfigState>()(
             showPosition: false,
             showDownload: false,
             showDelete: false,
-            showPatients: false,
+            showPatients: true,
             showStock: false,
             showSearch: false,
             showMedication: false,
+            showSyncButton: false,
+            showFicheRemplieButton: false,
+            showFicheEditerButton: false,
+            
+            
+            
 
             timer1: 30,
             timer2: 60,

@@ -5,6 +5,7 @@ export const Images = {
     MaliMap : require('@/assets/images/mali-carte.webp'),
     userIcon : require('@/assets/images/user-icon.png'),
     traficAssistant : require('@/assets/images/trafic-assistant.png'),
+    commingSoon : require('@/assets/images/comming-soon.webp'),
     
 
 }

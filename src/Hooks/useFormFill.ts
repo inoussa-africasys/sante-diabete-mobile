@@ -3,6 +3,7 @@ import FormFillService from '../Services/formFillService';
 import useConfigStore from '../core/zustand/configStore';
 import { FormFill } from '../models/FormFill';
 import FormFillForm from '../types/formFill';
+import Logger from '../utils/Logger';
 import { useIsOnline } from './useIsOnline';
 type useFormFillType = {
     getFicheListWithFormFill: () => Promise<Map<string, FormFill>>;
@@ -43,10 +44,17 @@ export const useFormFill = (): useFormFillType => {
             const formFillService = await FormFillService.create();
             const result = await formFillService.createFormFillAndReturn(formFill);
             console.info('formFill créée :', result);
-            if (result && isOnline && isAutoSyncActive) {
+            if (!result) {
+                console.error('Erreur lors de la création de la formFill');
+                setError('Erreur lors de la création de la formFill');
+                Logger.error('Erreur lors de la création de la formFill');
+                return false;
+            }
+            if (isOnline && isAutoSyncActive) {
                 const resultSync = await formFillService.autoSyncFormFill(result);
                 return resultSync;
             }
+            await formFillService.saveFormFillAsJson(result);
             return true;
         } catch (error) {
             console.error('Erreur réseau :', error);

@@ -60,7 +60,7 @@ export default function RemplireFiche() {
 
   const handleCompletSurveyForm = async (data: any) => {
     const formFill : FormFillForm = {
-      data : JSON.stringify(data),  
+      data : data,  
       ficheName : ficheName,
       coordinates : location?.coords || {latitude: 0, longitude: 0},
     }
