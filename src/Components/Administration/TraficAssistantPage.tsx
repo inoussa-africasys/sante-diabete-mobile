@@ -16,7 +16,8 @@ const TraficAssistantPage = ({ goBack }: TraficAssistantPageProps) => {
   const { handleSendData : handleSendDataTraficAssistant, isLoading } = useTraficAssistant();
 
     const handleSendData = async () => {
-       await handleSendDataTraficAssistant();
+      const zipUri = await handleSendDataTraficAssistant();
+      console.log('✅ page Trafic Assistant :', zipUri);
     }
   
   return (

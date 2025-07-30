@@ -1,5 +1,27 @@
-import { shareViaWhatsApp, uploadZipToTheWebService, zipDirectory } from '../utils/exportZipViajsZip';
+import axios from 'axios';
+import Constants from 'expo-constants';
+import { getBaseUrl, getConnectedUsername, getToken } from '../functions/auth';
+import { getZipFileAsBase64 } from '../functions/traficAssistance';
+import { zipDirectory } from '../utils/exportZipViajsZip';
+import Logger from '../utils/Logger';
+interface SendZipFileToTheBackendType {
+    brand: string;
+    modelName: string;
+    osVersion: string;
+    zipUri: string;
+}
 
+type FormatTraficAssistantMailMessageType = {
+    brand: string;
+    modelName: string;
+    osVersion: string;
+}
+
+type SendZipFileToTheBackendWithAxiosType = {
+    emailBody: string;
+    subject: string;
+    media: string;
+}
 export default class TraficAssistantService {
 
 
@@ -11,35 +33,18 @@ export default class TraficAssistantService {
     static zipPatientDirectory = async (): Promise<string | null> => {
         try {
 
-                const zipUri = await zipDirectory();
-                console.log("✅ Fichiers patients zippés :", zipUri);
-              
-                // Partager
-                await shareViaWhatsApp(zipUri);
-              
-                console.log("✅ Fichiers patients partagés :", zipUri);
-                // Envoyer au backend
-                await uploadZipToTheWebService(zipUri);
-                
-                 console.log("✅ Fichiers patients envoyés au backend :", zipUri);
+            const zipUri = await zipDirectory();
+            console.log("✅ Fichiers patients zippés :", zipUri);
 
-                return zipUri;
-              
-           /*  const folderUri = `${FileSystem.documentDirectory}${PATH_OF_PATIENTS_DIR_ON_THE_LOCAL}/`;
-            const zipDestination = `${FileSystem.documentDirectory}${NAME_OF_TRAFIC_ZIP_FILE}`;
+            // Partager
+            //await shareViaWhatsApp(zipUri);
+            // Envoyer au backend
+            //await uploadZipToTheWebService(zipUri);
 
-            // Vérifie que le dossier existe
-            const folderInfo = await FileSystem.getInfoAsync(folderUri);
-            if (!folderInfo.exists || !folderInfo.isDirectory) {
-                console.error("❌ Le dossier patients n'existe pas :", folderUri);
-                return null;
-            }
+            return zipUri;
 
-            // Crée le ZIP
-            const zippedPath = await zip(folderUri, zipDestination);
-            console.log("✅ Fichiers patients zippés :", zippedPath);
-            return zippedPath; */
         } catch (error) {
+            Logger.log('error', 'Erreur lors de la création de l\'archive ZIP', { error });
             console.error("❌ Erreur lors de la création de l'archive ZIP :", error);
             return null;
         }
@@ -48,7 +53,62 @@ export default class TraficAssistantService {
 
 
 
-    
+
+    static sendZipFileToTheBackend = async ({ brand, modelName, osVersion, zipUri }: SendZipFileToTheBackendType) => {
+        try {
+            const { subject, message } = await this.formatTraficAssistantMailMessage({ brand, modelName, osVersion });
+            const base64Zip = await getZipFileAsBase64(zipUri);
+            if(!base64Zip) {
+                console.error("❌ Erreur lors de la lecture du fichier ZIP en base64 :", zipUri);
+                return;
+            }
+            try {
+                const baseUrl = await getBaseUrl();
+                const token = await getToken();
+                const version = Constants.expoConfig?.version;
+                const url = `${baseUrl}/api/json/mobile/trafic/assistant/upload/zip?token=${token}&app_version=${version}`;
+                const data : SendZipFileToTheBackendWithAxiosType = {
+                    emailBody: message,
+                    subject : subject,
+                    media: base64Zip
+                }
+                const response = await axios.post(url, data);
+                if(response.status === 200) {
+                    console.log("✅ Fichier ZIP envoyé au backend :", {status : response.status, statusText : response.statusText});
+                }
+            } catch (error) {
+                Logger.log('error', 'Erreur lors de l\'envoi du fichier ZIP au backend', { error });
+                console.error("❌ Erreur lors de l'envoi du fichier ZIP au backend :", error);
+            }
+        } catch (error) {
+            Logger.log('error', 'Erreur lors du partage du fichier ZIP', { error });
+            console.error("❌ Erreur lors du partage du fichier ZIP :", error);
+        }
+    }
+
+
+
+    private static formatTraficAssistantMailMessage = async ({ brand, modelName, osVersion }: FormatTraficAssistantMailMessageType): Promise<{ subject: string, message: string }> => {
+        const baseUrl = await getBaseUrl();
+        const version = Constants.expoConfig?.version;
+        const userName = await getConnectedUsername();
+        const subject = "Données via Trafic Assistant | Santé Diabète Mobile Test Trafic Assistant";
+        const message = `
+            <h1>Santé Diabète Mobile Test Trafic Assistant</h1> \n\n <br/>
+
+            Nom d'utilisateur : ${userName}\n <br/>
+            Version Trafic : ${version}\n <br/>
+            URL Serveur Trafic : ${baseUrl}\n <br/>
+            <br/>
+            <b>Informations appareil utilisateur</b>\n <br/>
+            Version android : ${osVersion}\n <br/>
+            Nom de l'appareil : ${modelName}\n <br/>
+            Model : ${brand}\n <br/>
+            <br/>
+            `;
+        return { subject, message };
+    }
+
 
 
 
