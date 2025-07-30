@@ -4,14 +4,14 @@
     "slug": "sante-diabet-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon-logo.png",
+    "icon": "./assets/images/sd_logo.png",
     "scheme": "santediabetmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "backgroundColor": "#FF0000",
     "assetBundlePatterns": ["**/*"],
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/splash-icon-v2.png",
       "resizeMode": "native",
       "backgroundColor": "#FF0000"
     },
@@ -20,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/splash-icon.png",
+        "foregroundImage": "./assets/images/splash-icon-v2.png",
         "backgroundColor": "#FF0000"
       },
       "edgeToEdgeEnabled": true,
@@ -28,7 +28,7 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.africasys.santediabete.mobile"
+      "package": "com.africasys_cloudlyyours.santediabete.mobile"
     },
     "web": {
       "bundler": "metro",
@@ -40,7 +40,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/splash-icon-v2.png",
           "resizeMode": "cover",
           "backgroundColor": "#FF0000"
         }

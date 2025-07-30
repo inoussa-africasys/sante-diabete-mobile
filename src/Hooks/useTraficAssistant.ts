@@ -19,12 +19,12 @@ export default function useTraficAssistant(): UseTraficAssistantType {
         setIsLoading(true);
         TraficAssistantService.zipPatientDirectory().then((zipUri) => {
             setIsLoading(false);
-            /* TraficAssistantService.sendZipFileToTheBackend({
+            TraficAssistantService.sendZipFileToTheBackend({
                 brand : brand ?? "",
                 modelName : modelName ?? "",
                 osVersion : osVersion ?? "",
                 zipUri: zipUri ?? ""
-            }); */
+            });
 
             console.log("✅ Fichiers patients zippés :", zipUri);
         });

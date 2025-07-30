@@ -34,7 +34,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   // les donnees de config
     const showDownload = useConfigStore((state) => state.showDownload);
     const showDelete = useConfigStore((state) => state.showDelete);
-    const showPatients = useConfigStore((state) => state.showPatients);
+    const showFicheRemplieButton = useConfigStore((state) => state.showFicheRemplieButton);
+    const showSyncButton = useConfigStore((state) => state.showSyncButton);
+    const showFicheEditerButton = useConfigStore((state) => state.showFicheEditerButton);
 
   const toggleMenu = () => {
     const toValue = menuOpen ? -300 : 0;
@@ -137,6 +139,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 
           <View style={styles.gridContainer}>
 
+            {showFicheRemplieButton && (
             <TouchableOpacity
               style={[styles.mediumButton]}
               onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
@@ -148,7 +151,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
               />
               <Text style={styles.buttonText}>Remplir{"\n"}une fiche</Text>
             </TouchableOpacity>
+            )}
 
+            {showFicheEditerButton && (
             <TouchableOpacity
               style={styles.mediumButton}
               onPress={() => router.push(`/liste-fiche-edition`)}
@@ -160,12 +165,13 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
               />
               <Text style={[styles.buttonText, styles.amberText]}>Editer{"\n"}une fiche</Text>
             </TouchableOpacity>
+            )}
           </View>
 
 
           {/* Gros boutons */}
           <View style={styles.bigButtonsContainer}>
-            {showPatients && (
+           
             <TouchableOpacity
               style={styles.bigButton}
               onPress={handlePatientPress}
@@ -175,8 +181,8 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
                 <Text style={styles.bigButtonText}>Patients</Text>
               </View>
             </TouchableOpacity>
-            )}
 
+            {showSyncButton && (
             <TouchableOpacity
               style={styles.bigButton}
               onPress={() => router.push('/sync')}
@@ -190,7 +196,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
                 <Text style={styles.bigButtonText}>Synchroniser</Text>
               </View>
             </TouchableOpacity>
-
+            )}
 
           </View>
           {/* Grille de petits boutons */}
@@ -216,7 +222,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
             {showDelete && (
             <TouchableOpacity
               style={[styles.mediumButton, styles.deleteButton]}
-              onPress={() => console.log('Stock consommables - à implémenter')}
+              onPress={() => router.push('/errors/comming-soon')}
             >
               <MaterialIcons
                 name="delete"

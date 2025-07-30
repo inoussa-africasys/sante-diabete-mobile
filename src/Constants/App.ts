@@ -1,9 +1,10 @@
+import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
 
 export const APP_NAME = process.env.APP_NAME
 
-export const VERSION_NAME = "1.2.24"
-export const APP_VERSION = "1.2.24"
+export const VERSION_NAME = Constants.expoConfig?.version
+export const APP_VERSION = Constants.expoConfig?.version
 export const SURVEY_FOLDER = `${FileSystem.documentDirectory}surveys/`
 export const AUTH_BASE_URL_KEY = 'auth_base_url'
 export const ACTIVE_DIABETE_TYPE_KEY = 'active_diabete_type'
