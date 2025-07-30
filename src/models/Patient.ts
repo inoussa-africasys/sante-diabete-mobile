@@ -1,4 +1,5 @@
 import ConsultationService from "../Services/ConsulationService";
+import { PatientToSaveOnJson } from "../types";
 import { BaseModel } from "./BaseModel";
 import { Consultation } from "./Consultation";
 
@@ -66,5 +67,27 @@ export default class Patient extends BaseModel {
             throw new Error('Fiche administrative ID : ' + this.fiche_administrative_id + ' not found for patient ' + this.id);
         }
         return consultation;
+    }
+
+
+    public toJson(): PatientToSaveOnJson {
+        return {
+            identifier: this.id_patient,
+            firstName: this.first_name,
+            lastName: this.last_name,
+            dateBirthday: this.date_of_birth,
+            gender: this.genre,
+            bloodGroup: "",
+            electrophoresis: "",
+            job: this.profession,
+            contact:  this.phone,
+            email: this.email,
+            comments: this.comment,
+            emergencyPeople: "",
+            emergencyContact: "",
+            isModified: this.isModified ? 'true' : 'false',
+            end_date: this.createdAt || '',
+            traficUser: this.trafic_user
+        };
     }
 }

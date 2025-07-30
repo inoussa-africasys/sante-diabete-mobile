@@ -103,7 +103,7 @@ export default class PatientService extends Service {
 
   async savePatientAsJson(patient: Patient): Promise<void> {
     try {
-      const jsonContent = JSON.stringify(patient.toJson(), null, 2);
+      const jsonContent = JSON.stringify(patient.toJson());
       const fileName = `${patient.id_patient}`;
 
       const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getPatientsFolderPath(this.getTypeDiabete())}`;
@@ -120,6 +120,7 @@ export default class PatientService extends Service {
 
       console.log(`Patient enregistré dans le fichier : ${fileUri}`);
     } catch (error) {
+      Logger.error("Erreur d'enregistrement du fichier JSON :", error as Error);
       console.error("Erreur d'enregistrement du fichier JSON :", error);
     }
   }

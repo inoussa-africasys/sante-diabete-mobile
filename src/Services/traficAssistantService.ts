@@ -2,7 +2,7 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 import { getBaseUrl, getConnectedUsername, getToken } from '../functions/auth';
 import { getZipFileAsBase64 } from '../functions/traficAssistance';
-import { zipDirectory } from '../utils/exportZipViajsZip';
+import { shareViaWhatsApp, zipDirectory } from '../utils/exportZipViajsZip';
 import Logger from '../utils/Logger';
 interface SendZipFileToTheBackendType {
     brand: string;
@@ -37,7 +37,7 @@ export default class TraficAssistantService {
             console.log("✅ Fichiers patients zippés :", zipUri);
 
             // Partager
-            //await shareViaWhatsApp(zipUri);
+            await shareViaWhatsApp(zipUri);
             // Envoyer au backend
             //await uploadZipToTheWebService(zipUri);
 

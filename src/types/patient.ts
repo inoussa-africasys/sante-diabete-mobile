@@ -132,3 +132,23 @@ export interface FicheAdministrativeFormData {
   photo: string
   [key: string]: any;
 }
+
+
+export interface PatientToSaveOnJson {
+  identifier: string;
+  firstName: string;
+  lastName: string;
+  dateBirthday: string; // format YYYY-MM-DD
+  gender: string;       // ex: 'H' pour homme, 'F' pour femme, etc.
+  bloodGroup: string;
+  electrophoresis: string;
+  job: string;
+  contact: string;
+  email: string;
+  comments: string;
+  emergencyPeople: string;
+  emergencyContact: string;
+  isModified: string;   // valeur texte "false" ou "true", sinon changer en boolean
+  end_date: string;     // format YYYY-MM-DD
+  traficUser: string;
+}

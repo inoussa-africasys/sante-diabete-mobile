@@ -53,6 +53,7 @@ export default class ConsultationService extends Service {
       return consultationCreated;
     } catch (error) {
       console.error('Erreur de creation de la consultation locale :', error);
+      Logger.log('error', 'Error creating consultation on the local db', { error });
       throw error;
     }
   }
@@ -61,7 +62,7 @@ export default class ConsultationService extends Service {
 
   async saveConsultationAsJson(consultation: Consultation): Promise<string> {
     try {
-      const jsonContent = JSON.stringify(consultation.toJson(), null, 2);
+      const jsonContent = consultation.data;
       const fileName = `${generateConsultationName()}`;
 
       const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(),consultation.id_patient)}/`;
@@ -81,6 +82,7 @@ export default class ConsultationService extends Service {
       return fileName;
     } catch (error) {
       console.error("❌ Erreur d'enregistrement de la consultation :", error);
+      Logger.log('error', 'Error saving consultation as json', { error });
       return "";
     }
   }
@@ -92,6 +94,7 @@ export default class ConsultationService extends Service {
       return consultationService;
     } catch (error) {
       console.error('Erreur de recherche de la consultation :', error);
+      Logger.log('error', 'Error fetching consultation by id on local db', { error });
       return null;
     }
   }
@@ -102,6 +105,7 @@ export default class ConsultationService extends Service {
       return patient;
     } catch (error) {
       console.error('Erreur de recherche du patient :', error);
+      Logger.log('error', 'Error fetching patient by consultation id on local db', { error });
       return null;
     }
   }
@@ -183,6 +187,7 @@ export default class ConsultationService extends Service {
       console.log("✅ Fichier consultation mis à jour :", fileUri);
     } catch (err) {
       console.error("❌ Erreur mise à jour consultation file :", err);
+      Logger.log('error', 'Error updating consultation file', { error: err });
     }
   }
 
@@ -201,6 +206,7 @@ export default class ConsultationService extends Service {
       }
     } catch (err) {
       console.error("❌ Erreur lors de la suppression du fichier :", err);
+      Logger.log('error', 'Error deleting consultation file', { error: err });
     }
   }
 
@@ -229,6 +235,7 @@ export default class ConsultationService extends Service {
       return consultationCreated;
     } catch (error) {
       console.error('Erreur de creation de la consultation locale :', error);
+      Logger.log('error', 'Error creating consultation on the local db', { error });
       throw error;
     }
   }
