@@ -1,5 +1,5 @@
-import { getFicheAdministrativeName } from '../utils/ficheAdmin';
 import { FicheRepository } from './../Repositories/FicheRepository';
+import { checkIfConsultationIsAFicheAdministrative } from './../utils/ficheAdmin';
 import { BaseModel } from "./BaseModel";
 import Fiche from "./Fiche";
 
@@ -53,7 +53,7 @@ export class Consultation extends BaseModel {
         return JSON.parse(this.data);
     }
 
-    public isFicheAdministrative(): boolean {
-        return this.ficheName === getFicheAdministrativeName(this.type_diabete);
+    public async isFicheAdministrative(): Promise<boolean> {
+        return await checkIfConsultationIsAFicheAdministrative(this);
     }
 }

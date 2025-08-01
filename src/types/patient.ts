@@ -9,6 +9,7 @@ export interface PatientFormData {
   email: string;
   commentaire: string;
   photo: string | null;
+  fiche_administrative_name: string | null;
 }
 
 

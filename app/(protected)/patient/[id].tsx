@@ -72,7 +72,7 @@ export default function PatientDetailScreen() {
   };
 
   const handleNewConsultation = () => {
-    router.push(`/liste-fiches?patientId=${patientId}&mode=remplir`);
+    router.push(`/liste-fiches?patientId=${patientId}&mode=consultation`);
     setShowOptions(false);
   };
 
@@ -110,7 +110,6 @@ export default function PatientDetailScreen() {
   };
 
   const formatDate = (dateString: string) => {
-    console.log("dateString : ",dateString);
     if (!dateString) return 'Date inconnue';
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });

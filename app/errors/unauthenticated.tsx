@@ -6,6 +6,9 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 const Unauthenticated = () => {
   return (
     <View style={styles.container}>
+     <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <Ionicons name="arrow-back" size={24} color="#000" />
+     </TouchableOpacity>
       <Ionicons name="shield-outline" size={100} color="#D50000" />
       <Text style={styles.title}>Non authentifié</Text>
       <Text style={styles.text}>Vous devez scanner un QR CODE autorisé pour accéder à cette page</Text>
@@ -23,6 +26,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 30,
+    left: 30,
+    backgroundColor: '#0002',
+    padding: 10,
+    borderRadius: 100,
   },
   text: {
     fontSize: 18,

@@ -3,6 +3,7 @@ import { ConsultationMapper } from '../mappers/consultationMapper';
 import { PatientMapper } from '../mappers/patientMapper';
 import Patient from '../models/Patient';
 import { PatientSyncData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientSyncPicture } from '../types';
+import { checkIfConsultationIsAFicheAdministrative, getFicheAdministrativeName } from '../utils/ficheAdmin';
 import Logger from '../utils/Logger';
 import { ConsultationRepository } from './ConsultationRepository';
 import { GenericRepository } from './GenericRepository';
@@ -130,7 +131,7 @@ export class PatientRepository extends GenericRepository<Patient> {
       Logger.log('error', 'Error fetching updated patients', { error });
       return [];
     }
-  } 
+  }
 
 
   public async markToSynced(id: number): Promise<void> {
@@ -166,14 +167,25 @@ export class PatientRepository extends GenericRepository<Patient> {
         patient.type_diabete = await getDiabetesType();
         patient.synced = true;
         patient.isLocalCreated = false;
+
+        if (item.dataConsultations.length > 0) {
+          const consultation = item.dataConsultations.find((consultation) => checkIfConsultationIsAFicheAdministrative(ConsultationMapper.DataConsultationOfGetWithPatientGetAllMedicalDataToConsultation(consultation, patient.id_patient, patient.type_diabete)));
+          if (consultation) {
+            patient.fiche_administrative_name = consultation.form_name;
+          } else {
+            patient.fiche_administrative_name = await getFicheAdministrativeName() ?? undefined;
+          }
+        }
+
         await this.createOrUpdate(patient, 'id_patient');
 
         const consultationRepository = new ConsultationRepository();
         consultationRepository.insertAll(
           item.dataConsultations.map(
             (consultation) => {
+              console.log("Consultation created or updated :", consultation.uuid);
               countConsultationsSyncedSuccess++;
-              return ConsultationMapper.DataConsultationOfGetWithPatientGetAllMedicalDataToConsultation(consultation,patient.id_patient, patient.type_diabete )
+              return ConsultationMapper.DataConsultationOfGetWithPatientGetAllMedicalDataToConsultation(consultation, patient.id_patient, patient.type_diabete)
             }
           )
         );

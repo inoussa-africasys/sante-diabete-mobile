@@ -13,7 +13,8 @@ enum Action {
   Edit = 'edit',
   Fill = 'fill',
   Empty = 'empty',
-  EditFormFill = 'editFormFill'
+  EditFormFill = 'editFormFill',
+  Consultation = 'consultation'
 }
 
 export default function ListeFichesScreen() {
@@ -23,7 +24,7 @@ export default function ListeFichesScreen() {
   const { getAllFicheDownloaded, isLoading, error } = useFiche();
   const [fiches, setFiches] = React.useState<Fiche[]>([]);
 
-  const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge', 'editFormFill'].includes(params.mode)) ? params.mode : 'remplir';
+  const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge', 'editFormFill','consultation'].includes(params.mode)) ? params.mode : 'remplir';
   const patientId = params.patientId as string;
 
  useEffect(() => {
@@ -53,6 +54,8 @@ export default function ListeFichesScreen() {
         return `Téléchargement de fiche `;
       case 'editFormFill':
         return `Éditer une fiche `;
+      case 'consultation':
+        return `Consultation ${patientId}`;
       default:
         return `Liste des fiches `;
     }
@@ -74,6 +77,9 @@ export default function ListeFichesScreen() {
       case Action.EditFormFill:
         router.push(`/edit-fiche?mode=editFormFill&ficheId=${fiche.id}`);
         break;
+      case Action.Consultation:
+        router.push(`/patient/${patientId}/consultations/create?mode=consultation&ficheId=${fiche.id}`);
+        break;
     }
   };
 
@@ -94,6 +100,9 @@ export default function ListeFichesScreen() {
             break;
           case 'editFormFill':
             action = Action.EditFormFill;
+            break;
+          case 'consultation':
+            action = Action.Consultation;
             break;
         }
         handleMakeAction(action, item);

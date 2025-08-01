@@ -6,7 +6,7 @@ import Patient from '../models/Patient';
 import { ConsultationRepository } from "../Repositories/ConsultationRepository";
 import { PatientRepository } from '../Repositories/PatientRepository';
 import { Coordinates } from "../types";
-import { generateConsultationName, generateUUID } from '../utils/consultation';
+import { generateConsultationName, generateFicheAdministrativeNameForJsonSave, generateUUID } from '../utils/consultation';
 import Logger from '../utils/Logger';
 import { TraficFolder } from '../utils/TraficFolder';
 import { ConsultationFormData } from './../types/patient';
@@ -63,7 +63,12 @@ export default class ConsultationService extends Service {
   async saveConsultationAsJson(consultation: Consultation): Promise<string> {
     try {
       const jsonContent = consultation.data;
-      const fileName = `${generateConsultationName()}`;
+      let fileName = '';
+      if (await consultation.isFicheAdministrative()) {
+        fileName = `${generateFicheAdministrativeNameForJsonSave(new Date(),consultation.ficheName)}`;
+      } else {
+        fileName = `${generateConsultationName(new Date())}`;
+      }
 
       const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(),consultation.id_patient)}/`;
       const fileUri = `${folderUri}${fileName}`;
@@ -237,6 +242,21 @@ export default class ConsultationService extends Service {
       console.error('Erreur de creation de la consultation locale :', error);
       Logger.log('error', 'Error creating consultation on the local db', { error });
       throw error;
+    }
+  }
+
+
+  async getConsultationsByPatientId(patientId: string): Promise<Consultation[]> {
+    try {
+      const consultations = this.consultationRepository.query()
+        .where('id_patient = ?', [patientId])
+        .where('deletedAt IS NULL')
+        .all();
+      return consultations;
+    } catch (error) {
+      console.error('Erreur de recherche des consultations :', error);
+      Logger.log('error', 'Error fetching consultations by patient id on local db', { error });
+      return [];
     }
   }
 

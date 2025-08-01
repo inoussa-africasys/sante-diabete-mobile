@@ -62,15 +62,15 @@ const useConfigStore = create<ConfigState>()(
             inclusiveMode: false,
 
             showPosition: false,
-            showDownload: false,
-            showDelete: false,
+            showDownload: true,
+            showDelete: true,
             showPatients: true,
-            showStock: false,
+            showStock: true,
             showSearch: false,
             showMedication: false,
-            showSyncButton: false,
-            showFicheRemplieButton: false,
-            showFicheEditerButton: false,
+            showSyncButton: true,
+            showFicheRemplieButton: true,
+            showFicheEditerButton: true,
             
             
             

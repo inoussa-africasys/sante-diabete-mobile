@@ -3,6 +3,7 @@ import { useAuth } from "@/src/context/AuthContext";
 import { useDiabetes } from "@/src/context/DiabetesContext";
 import { decodeCleanAndInsertQRCodeOnDB } from "@/src/Services/authenticationService";
 import { DiabeteType } from "@/src/types/enums";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import QRCodeScannerView from '../src/Components/Scanner/QRCodeScannerView';
@@ -70,8 +71,9 @@ const ScannerScreen = () => {
       type="success"
       isVisible={loginSuccess} 
       onClose={handleCloseLoginSuccess}
-      title="Connexion reussie" 
-      message={"Connexion reussie avec l'utilisateur : " + username} 
+      title={"Bravo " + username} 
+      customIcon={<MaterialIcons name="cloud-done" size={120} color="#4CAF50" />}
+      message={"Votre application est configurée, à vous d'impacter le monde"} 
       confirmText="OK"
     />
     <LoadingModal 

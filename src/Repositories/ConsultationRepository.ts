@@ -23,14 +23,14 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
 
   public getAllConsultationOnLocalDBGroupedByDate(patientId: string, type_diabete: string): Record<string, Consultation[]> {
     try {
-      const rows = this.db.getAllSync(
+      const rows : any[] = this.db.getAllSync(
         `SELECT * FROM ${this.tableName} WHERE id_patient = ? AND type_diabete = ? AND deletedAt IS NULL ORDER BY createdAt ASC`,
         [patientId, type_diabete]
       );
 
       const grouped: Record<string, Consultation[]> = {};
 
-      for (const row  of rows) {
+      for (const row of rows) {
         console.log("row : ", row.date);
         const date = parseConsultationDate((row as Consultation).date || '')?.toISOString().split('T')[0] || 'inconnue';
         if (!grouped[date]) grouped[date] = [];
@@ -82,7 +82,7 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
 
   public markToSynced(id_patient: string): void {
     try {
-      this.db.runSync(`UPDATE ${this.tableName} SET synced = ? updatedAt = ? WHERE id_patient = ?`, [true, new Date().toISOString(), id_patient]);
+      this.db.runSync(`UPDATE ${this.tableName} SET synced = ?, updatedAt = ? WHERE id_patient = ?`, [true, new Date().toISOString(), id_patient]);
     } catch (error) {
       console.error('Error marking consultations as synced:', error);
       Logger.log('error', 'Error marking consultations as synced', { error });

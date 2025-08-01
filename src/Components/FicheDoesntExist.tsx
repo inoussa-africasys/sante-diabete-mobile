@@ -14,7 +14,7 @@ const FicheDoesntExist = ({ ficheName, gotBack, text }: FicheDoesntExistProps) =
             <View style={[styles.container, styles.centerContent]}>
                 <StatusBar barStyle="light-content" />
                 <Ionicons name="document-text-outline" size={150} color="gray" />
-                <Text style={styles.errorText}>{"La lecture de cette consultation nécessite que vous téléchargez la fiche vierge correspondante"}</Text>
+                <Text style={styles.errorText}>{text || "La lecture de cette consultation nécessite que vous téléchargez la fiche vierge correspondante"}</Text>
                 <TouchableOpacity onPress={gotBack} style={styles.btnBack}>
                     <Text style={styles.btnBackText}>Retour</Text>
                 </TouchableOpacity>

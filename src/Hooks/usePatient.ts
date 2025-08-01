@@ -39,15 +39,14 @@ export const usePatient = () : usePatientReturnType => {
             setIsLoading(true);
             const ficheService = await FicheService.create();
             const fiche  = await ficheService.getFicheAdministrativeOnTheLocalDb();
-            console.log("fiche Administrative : ",fiche);
             setFicheAdministrative(fiche);
             setFicheAdministrativeName(fiche?.name ?? null);
             setIsLoading(false);
             return fiche;
-        } catch (error) {
+        } catch (error : any) {
             console.error('Erreur réseau :', error);
             Logger.log('error', 'Error fetching patients by type diabete', { error });
-            setError(error as string);
+            setError(error.message);
             setIsLoading(false);
             return null;
         }
@@ -92,14 +91,14 @@ export const usePatient = () : usePatientReturnType => {
             setIsLoading(true);
             const patientsService = await PatientService.create();
             const patientCreated = await patientsService.insertOnTheLocalDb(patient);
-            setIsLoading(false);
             return patientCreated;
         } catch (error) {
             console.error('Erreur réseau :', error);
             Logger.log('error', 'Error inserting patient on the local db', { error });
             setError(error as string);
-            setIsLoading(false);
             return null;
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -141,7 +140,6 @@ export const usePatient = () : usePatientReturnType => {
             setIsLoading(true);
             const patientsService = await PatientService.create();
             const patient = await patientsService.getPatient(patientId);
-            console.log("patient : ",patient);
             return patient;
         } catch (error) {
             console.error('Erreur réseau :', error);
@@ -158,7 +156,6 @@ export const usePatient = () : usePatientReturnType => {
             setIsLoading(true);
             const patientsService = await PatientService.create();
             const patient = await patientsService.getPatient(patientId);
-            console.log("patient : ",patient);
             return patient;
         } catch (error) {
             console.error('Erreur réseau :', error);
