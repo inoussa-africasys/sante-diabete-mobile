@@ -37,6 +37,8 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
         grouped[date].push(this.modelFactory(row));
       }
 
+      console.log("grouped : ", grouped);
+
       return grouped;
     } catch (error) {
       console.error('Error fetching consultations grouped by date:', error);
@@ -89,6 +91,17 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
     }
   }
 
+
+  public createOrUpdateAll(items: Consultation[]): void {
+    try {
+      for (const item of items) {
+        this.createOrUpdate(item, 'uuid');
+      }
+    } catch (error) {
+      console.error('Error creating or updating consultations:', error);
+      Logger.log('error', 'Error creating or updating consultations', { error });
+    }
+  }
 
 
 

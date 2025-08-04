@@ -163,7 +163,7 @@ export class PatientRepository extends GenericRepository<Patient> {
         const patient = PatientMapper.syncResponseToPatient(item);
         patient.createdAt = new Date().toISOString();
         patient.updatedAt = new Date().toISOString();
-        patient.date = new Date(item.generationDate).toISOString();
+        patient.date = new Date(item.generationDate).toISOString() || 'Non Defini';
         patient.type_diabete = await getDiabetesType();
         patient.synced = true;
         patient.isLocalCreated = false;

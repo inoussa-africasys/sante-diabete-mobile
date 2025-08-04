@@ -26,7 +26,8 @@ export class ConsultationMapper {
             form_name: consultation.ficheName,
             consultation_name: generateConsultationFileName(consultation.fileName),
             uuid: consultation.uuid,
-            content: consultation.data
+            content: consultation.data,
+            date_consultation: consultation.date
         };
     }
 

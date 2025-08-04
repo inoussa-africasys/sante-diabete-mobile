@@ -57,7 +57,8 @@ export interface ConsultationCreatedSyncData {
   form_name: string,
   consultation_name: string,
   uuid: string,
-  content: string
+  content: string,
+  date_consultation?: string
 }
 
 

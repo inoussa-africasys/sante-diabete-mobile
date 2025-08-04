@@ -29,7 +29,9 @@ export default class ConsultationService extends Service {
 
   async createConsultationOnLocalDBAndCreateJson(consultation: ConsultationFormData, patientId: string, coordinates: Coordinates): Promise<Consultation> {
     try {
+      console.log("consultation to create : ", JSON.stringify(consultation));
       const consultationToCreate = ConsultationMapper.toConsultation(consultation);
+      console.log("consultation to create : ", JSON.stringify(consultationToCreate));
       consultationToCreate.id_patient = patientId;
       consultationToCreate.type_diabete = this.getTypeDiabete();
       consultationToCreate.synced = false;
@@ -40,6 +42,7 @@ export default class ConsultationService extends Service {
       consultationToCreate.createdAt = new Date().toISOString();
       consultationToCreate.updatedAt = new Date().toISOString();
       consultationToCreate.date = new Date().toISOString();
+      console.log("consultationToCreate : ", JSON.stringify(consultationToCreate));
       const consultationCreated = this.consultationRepository.insertAndReturn(consultationToCreate);
       if (!consultationCreated) {
         throw new Error('La consultation locale n\'a pas pu etre creer');

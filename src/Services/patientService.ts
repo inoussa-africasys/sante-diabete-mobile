@@ -513,10 +513,10 @@ export default class PatientService extends Service {
       const requests = Object.entries(consultations).map(async ([patientId, consultations]) => {
         const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/medicaldata/synchro/submissions/batch?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patientId}&lat&lon`;
         console.log(`consultations URL: ${url}`);
-        console.log(`Consultations: `,consultations);
         try {
           const consultationsSyncData = consultations.map((consultation) => ConsultationMapper.toConsultationCreatedSyncData(consultation));
           const response = await axios.post(url, { identifier: patientId, dataConsultations: consultationsSyncData });
+          console.log(`consultations data : ${JSON.stringify(consultationsSyncData)}`);
           if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}  : ${response.statusText}`);
           }

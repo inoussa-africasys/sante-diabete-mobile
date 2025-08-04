@@ -111,6 +111,7 @@ export default function PatientDetailScreen() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Date inconnue';
+    if (dateString === 'Non Defini') return 'Non Defini';
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };

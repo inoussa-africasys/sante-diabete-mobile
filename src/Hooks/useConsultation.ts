@@ -51,7 +51,7 @@ export default function useConsultation(): useConsultationReturnType {
             const consultationCreated = await consultationService.createConsultationOnLocalDBAndCreateJson(consultation,patientId,coordinates);
             setConsultations((prevConsultations) => {
                 if (prevConsultations) {
-                    const consultationDate = consultation.date;
+                    const consultationDate = consultation.date || new Date().toISOString();
                     const existingConsultations = prevConsultations[consultationDate] || [];
                     return {
                         ...prevConsultations,
