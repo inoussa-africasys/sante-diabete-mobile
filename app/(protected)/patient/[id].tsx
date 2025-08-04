@@ -20,6 +20,7 @@ export default function PatientDetailScreen() {
   const { getConsultations, isLoading: isLoadingConsultations, error: errorConsultations } = useConsultation();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [consultations, setConsultations] = useState<Record<string, Consultation[]> | null>(null);
+  const [consultationNames, setConsultationNames] = useState<Record<string, string>>({});
   const patientId = params.id as string;
 
 
@@ -35,6 +36,26 @@ export default function PatientDetailScreen() {
             console.log("consultation : ", date);
           });
           setConsultations(consultationsData);
+          
+          // Load consultation names
+          const loadConsultationNames = async () => {
+            const namesMap: Record<string, string> = {};
+            for (const [date, dateConsultations] of Object.entries(consultationsData)) {
+              for (const consultation of dateConsultations) {
+                if (consultation.id) {
+                  try {
+                    namesMap[consultation.id] = await getconsultationName(consultation);
+                  } catch (error) {
+                    console.error('Error getting consultation name:', error);
+                    namesMap[consultation.id] = 'Consultation';
+                  }
+                }
+              }
+            }
+            setConsultationNames(namesMap);
+          };
+          
+          loadConsultationNames();
         }
       };
       fetchPatient();
@@ -179,7 +200,9 @@ export default function PatientDetailScreen() {
                       >
                         <FontAwesome5 name="file-alt" size={20} color="#9E9E9E" />
                         <Text style={styles.consultationText}>
-                          {getconsultationName(consultation)}
+                          {consultation.id && consultationNames[consultation.id] ? 
+                            consultationNames[consultation.id] : 
+                            consultation.fileName || 'Consultation'}
                         </Text>
                       </TouchableOpacity>
                     ))}
