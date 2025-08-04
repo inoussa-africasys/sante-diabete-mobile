@@ -32,7 +32,7 @@ export function getLatestAdminFicheName(ficheNames: string[]): string | null {
 
 export const checkIfConsultationIsAFicheAdministrative = async (consultation: Consultation): Promise<boolean> => {
     const regex = /^dt[12]_.*administrative.*_v([0-9]+)$/;
-    const match = consultation.getFiche().name.match(regex);
+    const match = consultation.ficheName.match(regex);
     if (!match) {
         return false;
     }

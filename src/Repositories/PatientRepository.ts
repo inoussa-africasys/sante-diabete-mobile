@@ -180,7 +180,7 @@ export class PatientRepository extends GenericRepository<Patient> {
         await this.createOrUpdate(patient, 'id_patient');
 
         const consultationRepository = new ConsultationRepository();
-        consultationRepository.insertAll(
+        consultationRepository.createOrUpdateAll(
           item.dataConsultations.map(
             (consultation) => {
               console.log("Consultation created or updated :", consultation.uuid);

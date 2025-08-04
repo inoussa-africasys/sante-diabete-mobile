@@ -47,7 +47,11 @@ export default function PatientDetailScreen() {
                     namesMap[consultation.id] = await getconsultationName(consultation);
                   } catch (error) {
                     console.error('Error getting consultation name:', error);
-                    namesMap[consultation.id] = 'Consultation';
+                    if (await consultation.isFicheAdministrative()) {
+                      namesMap[consultation.id] = consultation.ficheName || 'Fiche administrative';
+                    }else{
+                      namesMap[consultation.id] = 'Consultation ';
+                    }
                   }
                 }
               }
