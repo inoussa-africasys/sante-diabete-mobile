@@ -8,7 +8,7 @@ import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-ico
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PatientDetailScreen() {
@@ -142,6 +142,9 @@ export default function PatientDetailScreen() {
   };
 
 
+
+
+
   return (
     <>
       <SafeAreaView style={styles.container}>
@@ -164,9 +167,9 @@ export default function PatientDetailScreen() {
         </View>
 
         <ScrollView style={styles.scrollContainer}>
-          {isLoadingConsultations ? (
+          {isLoadingConsultations || isLoadingPatient ? (
             <View style={styles.centerMessage}>
-              <Text>Chargement des consultations...</Text>
+              <ActivityIndicator size="large" color="red" />
             </View>
           ) : errorConsultations ? (
             <View style={styles.centerMessage}>

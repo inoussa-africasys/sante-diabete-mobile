@@ -1,3 +1,4 @@
+import { AlertModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
 import useConsultation from "@/src/Hooks/useConsultation";
 import { useFiche } from "@/src/Hooks/useFiche";
@@ -30,9 +31,13 @@ export default function CreateConsultationScreen() {
   const { getPatientOnTheLocalDb, error: getPatientError } = usePatient();
   const { createConsultationOnLocalDB } = useConsultation();
 
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setStartDate(new Date());
 
       try {
         const ficheFetched = await getFicheById(ficheId);
@@ -73,13 +78,18 @@ export default function CreateConsultationScreen() {
     if (!location) {
       return;
     }
+    const endDate = new Date();
+    data.date_consultation = endDate;
+    data.start = startDate;
+    data.end = endDate;
+
     const consultation : ConsultationFormData = {
       data : JSON.stringify(data),  
       id_fiche : ficheId,
     }
     await createConsultationOnLocalDB(consultation,patientId,location.coords);
+    setShowSuccessModal(true);
     //router.push(`/patient/${patientId}`);
-    router.back();
   };
 
 
@@ -122,6 +132,18 @@ export default function CreateConsultationScreen() {
       </View>
 
       <SurveyScreenDom surveyJson={surveyJson} handleSurveyComplete={handleCompletSurveyForm} />
+
+      <AlertModal
+        isVisible={showSuccessModal}
+        type="success"
+        customIcon={<Ionicons name="checkmark-circle-outline" size={76} color="#4CAF50" />}
+        title="Consultation créée avec succès"
+        message="La consultation a été créée avec succès."
+        onClose={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+      />
     </SafeAreaView>
   );
 }

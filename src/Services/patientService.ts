@@ -309,7 +309,9 @@ export default class PatientService extends Service {
         }
       }
 
-      await setLastSyncDate(new Date().toISOString());
+      if(errors.length === 0){
+        await setLastSyncDate(new Date().toISOString());
+      }
 
       Logger.log("info", "Patients synchronisés");
       console.log("Patients synchronisés");
@@ -516,7 +518,8 @@ export default class PatientService extends Service {
         try {
           const consultationsSyncData = consultations.map((consultation) => ConsultationMapper.toConsultationCreatedSyncData(consultation));
           const response = await axios.post(url, { identifier: patientId, dataConsultations: consultationsSyncData });
-          console.log(`consultations data : ${JSON.stringify(consultationsSyncData)}`);
+          //const response = await axios.post(url, consultationsSyncData);
+          console.log(`consultations data : `, consultationsSyncData);
           if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}  : ${response.statusText}`);
           }
@@ -764,8 +767,8 @@ export default class PatientService extends Service {
 
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS);
       
-     /*  // Lancer la création des fichiers JSON en tâche de fond
-      this.saveAllPatientsAndConsultationsAsJson(patients); */
+      // Lancer la création des fichiers JSON en tâche de fond
+      this.saveAllPatientsAndConsultationsAsJson(patients); 
 
       return {
         success: true,
