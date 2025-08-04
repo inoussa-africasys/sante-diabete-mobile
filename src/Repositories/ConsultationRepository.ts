@@ -60,7 +60,7 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
         );
       } else {
         rows = this.db.getAllSync(
-          `SELECT * FROM ${this.tableName} WHERE createdAt >= ? ORDER BY id_patient`,
+          `SELECT * FROM ${this.tableName} WHERE updatedAt >= ? ORDER BY id_patient`,
           [lastSyncDate]
         );
       }

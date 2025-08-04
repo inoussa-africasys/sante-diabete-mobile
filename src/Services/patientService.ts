@@ -180,20 +180,52 @@ export default class PatientService extends Service {
         return;
       }
 
-      const fileContent = await FileSystem.readAsStringAsync(fileUri, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-      const existingPatient = JSON.parse(fileContent);
-      const updatedPatient = { ...existingPatient, ...updatedFields };
+      try {
+        const fileContent = await FileSystem.readAsStringAsync(fileUri, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+        
+        // Vérifier que le contenu est un JSON valide
+        if (!fileContent || fileContent.trim() === '') {
+          throw new Error('Le fichier patient est vide');
+        }
+        
+        // Afficher les premiers caractères pour le débogage
+        console.log(`Premiers caractères du fichier: "${fileContent.substring(0, 20)}..."`);
+        
+        let existingPatient;
+        try {
+          existingPatient = JSON.parse(fileContent);
+        } catch (parseError) {
+          console.error('Erreur de parsing JSON:', parseError);
+          console.log('Contenu problématique:', fileContent.substring(0, 100));
+          
+          // Récupérer le patient depuis la base de données comme solution de secours
+          const patient = await this.patientRepository.findAllByPatientId(id_patient);
+          if (!patient) { throw new Error(`Patient avec l'ID ${id_patient} non trouvé`); }
+          
+          // Recréer le fichier JSON à partir des données de la base
+          await this.savePatientAsJson(patient);
+          
+          // Utiliser les données de la base pour la mise à jour
+          existingPatient = patient.toJson();
+        }
+        
+        const updatedPatient = { ...existingPatient, ...updatedFields };
 
-      const updatedJsonContent = JSON.stringify(updatedPatient, null, 2);
-      await FileSystem.writeAsStringAsync(fileUri, updatedJsonContent, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+        const updatedJsonContent = JSON.stringify(updatedPatient, null, 2);
+        await FileSystem.writeAsStringAsync(fileUri, updatedJsonContent, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
 
-      console.log(`Patient mis à jour dans le fichier : ${fileUri}`);
+        console.log(`Patient mis à jour dans le fichier : ${fileUri}`);
+      } catch (fileError) {
+        console.error("Erreur lors de la lecture ou du parsing du fichier patient:", fileError);
+        throw fileError;
+      }
     } catch (error) {
       console.error("Erreur lors de la mise à jour du fichier JSON :", error);
+      throw new Error(`Erreur lors de la mise à jour du patient: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     }
   }
 
@@ -438,13 +470,11 @@ export default class PatientService extends Service {
 
       const requests = patients.map(async (patient) => {
         const url = `${this.getBaseUrl()}/api/json/mobile/patients/synchro?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
-        console.log("Send created or updated patients to server : ", url);
         try {
           if (!patient.identifier) {
             throw new Error(` Patient avec l'ID ${patient.identifier} non trouvé`);
           }
           const response = await axios.post(url, patient);
-          console.log("Send created or updated patients to server : ", JSON.stringify(patient));
           if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
@@ -511,15 +541,12 @@ export default class PatientService extends Service {
       const errors: ConsultationSyncError[] = [];
       const errorMessages: string[] = [];
       const totalConsultations = Object.values(consultations).flat().length;
-      console.log(`consultations : en cour de synchronisation ....................................................................`);
       const requests = Object.entries(consultations).map(async ([patientId, consultations]) => {
         const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/medicaldata/synchro/submissions/batch?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patientId}&lat&lon`;
-        console.log(`consultations URL: ${url}`);
         try {
           const consultationsSyncData = consultations.map((consultation) => ConsultationMapper.toConsultationCreatedSyncData(consultation));
           const response = await axios.post(url, { identifier: patientId, dataConsultations: consultationsSyncData });
           //const response = await axios.post(url, consultationsSyncData);
-          console.log(`consultations data : `, consultationsSyncData);
           if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}  : ${response.statusText}`);
           }

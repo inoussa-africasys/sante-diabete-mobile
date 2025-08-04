@@ -36,11 +36,13 @@ export default function NouveauPatientScreen() {
 
   const { isLoading: isLoadingConsultation, createConsultationOnLocalDB, updateConsultationByIdOnLocalDB, getConsultationById } = useConsultation();
   const [noAnyFicheAdministrative, setNoAnyFicheAdministrative] = useState(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
 
   useEffect(() => {
     (async () => {
 
       setIsLoading(true);
+      setStartDate(new Date());
 
       const ficheAdministrative = await getFicheAdministrative();
       if (!ficheAdministrative) {
@@ -58,12 +60,13 @@ export default function NouveauPatientScreen() {
             if (!consultation) {
               throw new Error('Les données de la fiche administrative du patient avec l\'ID ' + patientId + ' sont introuvables');
             }
+            console.log("consultation : ", consultation);
             setFormData(consultation.parseDataToJson());
           } else {
             Alert.alert('Erreur', `Patient avec l'ID ${patientId} non trouvé`);
             router.back();
           }
-        } catch (error ) {
+        } catch (error) {
           console.error('Erreur lors du chargement du patient:', error);
           Alert.alert('Erreur', 'Impossible de charger les données du patient');
         } finally {
@@ -74,7 +77,7 @@ export default function NouveauPatientScreen() {
     })();
   }, [patientId, isEditMode]);
 
-  
+
 
 
   async function getCurrentLocation(): Promise<Location.LocationObject> {
@@ -97,6 +100,10 @@ export default function NouveauPatientScreen() {
         if (!patient) {
           throw new Error('Patient avec l\'ID ' + patientId + ' est introuvable ');
         }
+        const endDate = new Date();
+        data.date_consultation = endDate;
+        data.start = startDate;
+        data.end = endDate;
         const consultationFormData: ConsultationFormData = {
           data: JSON.stringify(data),
           id_fiche: ficheAdministrative?.id?.toString() || ''
@@ -105,7 +112,7 @@ export default function NouveauPatientScreen() {
         if (!consultation || !consultation.id) {
           throw new Error('Le patient avec l\'ID ' + patientId + ' n\'a pas de fiche administrative');
         }
-        const patientFormData = PatientMapper.ficheAdminToFormPatient(data,consultation.ficheName);
+        const patientFormData = PatientMapper.ficheAdminToFormPatient(data, consultation.ficheName);
         const patientUpdatedResult = await updatePatientOnTheLocalDb(patient.id_patient, patientFormData);
         if (!patientUpdatedResult) {
           throw new Error('Le patient avec l\'ID ' + patientId + ' n\'a pas pu etre mis à jour ');
@@ -138,12 +145,17 @@ export default function NouveauPatientScreen() {
     } else {
       try {
         setIsCreatingPatient(true);
-        const patientFormData = PatientMapper.ficheAdminToFormPatient(data,ficheAdministrative?.name || '');
+        const patientFormData = PatientMapper.ficheAdminToFormPatient(data, ficheAdministrative?.name || '');
         const patientCreated = await insertPatientOnTheLocalDb(patientFormData);
         if (!patientCreated) {
           throw new Error('Impossible d\'enregistrer le patient');
         }
 
+        const endDate = new Date();
+        data.date_consultation = endDate;
+        data.start = startDate;
+        data.end = endDate;
+        
         const consultationFormData: ConsultationFormData = {
           data: JSON.stringify(data),
           id_fiche: ficheAdministrative?.id?.toString() || ''
@@ -175,11 +187,11 @@ export default function NouveauPatientScreen() {
   if (errorPatient || noAnyFicheAdministrative) {
     return (
       <View style={styles.container}>
-       <FicheDoesntExist
-        ficheName={ficheAdministrativeName ?? ""}
-        gotBack={() => router.back()}
-        text="La creation d'un patient nécessite que vous téléchargez au moins une fiche administrative"
-       />
+        <FicheDoesntExist
+          ficheName={ficheAdministrativeName ?? ""}
+          gotBack={() => router.back()}
+          text="La creation d'un patient nécessite que vous téléchargez au moins une fiche administrative"
+        />
       </View>
     );
   }
@@ -237,6 +249,7 @@ export default function NouveauPatientScreen() {
           title="Patient enregistré"
           type="success"
           message="Patient enregistré avec succès"
+          customIcon={<Ionicons name="checkmark-circle-outline" size={76} color="#4CAF50" />}
           onClose={() => {
             setIsOpenSuccessModal(false);
             router.replace('/liste-patient');

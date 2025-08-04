@@ -183,7 +183,6 @@ export class PatientRepository extends GenericRepository<Patient> {
         consultationRepository.createOrUpdateAll(
           item.dataConsultations.map(
             (consultation) => {
-              console.log("Consultation created or updated :", consultation.uuid);
               countConsultationsSyncedSuccess++;
               return ConsultationMapper.DataConsultationOfGetWithPatientGetAllMedicalDataToConsultation(consultation, patient.id_patient, patient.type_diabete)
             }

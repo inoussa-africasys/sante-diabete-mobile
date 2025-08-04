@@ -1,5 +1,4 @@
 import * as FileSystem from 'expo-file-system';
-import { PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL } from '../Constants/App';
 import { ConsultationMapper } from "../mappers/consultationMapper";
 import { Consultation } from "../models/Consultation";
 import Patient from '../models/Patient';
@@ -9,8 +8,10 @@ import { Coordinates } from "../types";
 import { generateConsultationName, generateFicheAdministrativeNameForJsonSave, generateUUID } from '../utils/consultation';
 import Logger from '../utils/Logger';
 import { TraficFolder } from '../utils/TraficFolder';
-import { ConsultationFormData } from './../types/patient';
+import { PatientMapper } from './../mappers/patientMapper';
+import { ConsultationFormData, FicheAdministrativeFormData } from './../types/patient';
 import Service from "./core/Service";
+import PatientService from './patientService';
 
 export default class ConsultationService extends Service {
 
@@ -29,9 +30,7 @@ export default class ConsultationService extends Service {
 
   async createConsultationOnLocalDBAndCreateJson(consultation: ConsultationFormData, patientId: string, coordinates: Coordinates): Promise<Consultation> {
     try {
-      console.log("consultation to create : ", JSON.stringify(consultation));
       const consultationToCreate = ConsultationMapper.toConsultation(consultation);
-      console.log("consultation to create : ", JSON.stringify(consultationToCreate));
       consultationToCreate.id_patient = patientId;
       consultationToCreate.type_diabete = this.getTypeDiabete();
       consultationToCreate.synced = false;
@@ -42,7 +41,6 @@ export default class ConsultationService extends Service {
       consultationToCreate.createdAt = new Date().toISOString();
       consultationToCreate.updatedAt = new Date().toISOString();
       consultationToCreate.date = new Date().toISOString();
-      console.log("consultationToCreate : ", JSON.stringify(consultationToCreate));
       const consultationCreated = this.consultationRepository.insertAndReturn(consultationToCreate);
       if (!consultationCreated) {
         throw new Error('La consultation locale n\'a pas pu etre creer');
@@ -146,15 +144,28 @@ export default class ConsultationService extends Service {
 
   async deleteConsultationOnTheLocalDb(consultationId: number): Promise<boolean> {
     try {
-      const consultation = await this.consultationRepository.findById(consultationId);
-      if (!consultation) {
-        throw new Error('La consultation locale n\'a pas pu etre recupere');
+      const consultationToDelete = await this.consultationRepository.findById(consultationId);
+      if (!consultationToDelete) {
+        throw new Error('La consultation locale n\'a pas pu être récupérée');
       }
-      await this.consultationRepository.softDelete(consultationId.toString());
-      await this.deleteConsultationFile(consultation.fileName);
+      
+      // Récupérer l'ID du patient depuis la consultation
+      const patientId = consultationToDelete.id_patient;
+      
+      // D'abord supprimer le fichier
+      try {
+        await this.deleteConsultationFile(consultationToDelete.fileName, patientId);
+      } catch (fileError: any) {
+        console.error('Erreur lors de la suppression du fichier de consultation:', fileError);
+        Logger.log('error', 'Error deleting consultation file', { error: fileError });
+        throw new Error(`Erreur lors de la suppression du fichier: ${fileError?.message || 'Erreur inconnue'}`);
+      }
+      
+      // Ensuite supprimer de la base de données
+      await this.consultationRepository.delete(consultationId);
       return true;
     } catch (error) {
-      console.error('Erreur de suppression de la consultation :', error);
+      console.error('Erreur réseau :', error);
       Logger.log('error', 'Error deleting consultation on the local db', { error });
       return false;
     }
@@ -164,14 +175,49 @@ export default class ConsultationService extends Service {
     try {
       const consultationToCreate = await this.consultationRepository.findById(consultationId);
       if (!consultationToCreate) {
-        throw new Error('La consultation locale n\'a pas pu etre recupere');
+        throw new Error('La consultation n\'a pas pu être récupérée de la base de données locale');
       }
+      
+      // Vérifier si le fileName est valide
+      if (!consultationToCreate.fileName || consultationToCreate.fileName.trim() === '') {
+        // Générer un nouveau nom de fichier si nécessaire
+        if (await consultationToCreate.isFicheAdministrative()) {
+          consultationToCreate.fileName = `${generateFicheAdministrativeNameForJsonSave(new Date(), consultationToCreate.ficheName)}`;
+          const patientService = await PatientService.create();
+          const patientData :FicheAdministrativeFormData = JSON.parse(consultationToCreate.data);
+          console.log("patientData fiche admin",patientData);
+          const patientData2 = PatientMapper.ficheAdminToFormPatient(patientData,consultationToCreate.ficheName);
+          console.log("patientData2 fiche admin",patientData2);
+          await patientService.updateOnTheLocalDb(consultationToCreate.id_patient, patientData2);
+          
+        } else {
+          consultationToCreate.fileName = `${generateConsultationName(new Date())}`;
+        }
+      }
+      
+      // Mettre à jour les données de la consultation
       consultationToCreate.data = consultation.data;
       consultationToCreate.updatedAt = new Date().toISOString();
       consultationToCreate.synced = false;
 
+      // D'abord mettre à jour la base de données pour s'assurer que le fileName est enregistré
       await this.consultationRepository.update(consultationId, consultationToCreate);
-      await this.updateConsultationFile(consultationToCreate.fileName, consultationToCreate.toJson());
+      
+      // Ensuite mettre à jour le fichier JSON
+      try {
+        // Vérifier que le fileName n'est pas l'ID du patient
+        if (consultationToCreate.fileName === consultationToCreate.id_patient) {
+          throw new Error(`Le nom du fichier ne peut pas être l'ID du patient: ${consultationToCreate.fileName}`);
+        }
+        
+        console.log(`Mise à jour du fichier: ${consultationToCreate.fileName}`);
+        await this.updateConsultationFile(consultationToCreate.fileName, consultationToCreate.data);
+      } catch (fileError: any) {
+        console.error('Erreur lors de la mise à jour du fichier de consultation:', fileError);
+        Logger.log('error', 'Error updating consultation file', { error: fileError });
+        throw new Error(`Erreur lors de la mise à jour du fichier: ${fileError?.message || 'Erreur inconnue'}`);
+      }
+      
       return true;
     } catch (error) {
       console.error('Erreur de mise à jour de la consultation :', error);
@@ -183,28 +229,79 @@ export default class ConsultationService extends Service {
 
 
   async updateConsultationFile(fileName: string, updatedData: any) {
-    const folderUri = `${FileSystem.documentDirectory}${PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL}/`;
-    const fileUri = `${folderUri}${fileName}`;
-
     try {
+      // Récupérer la consultation depuis updatedData pour obtenir l'ID du patient
+      const consultationData = updatedData;
+      const patientId = consultationData.id_patient;
+      const typeDiabete = this.getTypeDiabete();
+      
+      // Vérifier que fileName n'est pas vide et n'est pas l'ID du patient
+      if (!fileName || fileName.trim() === '') {
+        throw new Error('Le nom du fichier est vide ou invalide');
+      }
+      
+      if (fileName === patientId) {
+        throw new Error(`Le nom du fichier ne peut pas être l'ID du patient: ${fileName}`);
+      }
+      
+      // S'assurer que le nom du fichier a une extension
+      if (!fileName.includes('.')) {
+        fileName = `${fileName}.json`;
+        console.log(`Extension .json ajoutée au nom du fichier: ${fileName}`);
+      }
+      
+      // Utiliser le même chemin que dans saveConsultationAsJson
+      const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(typeDiabete, patientId)}/`;
+      const fileUri = `${folderUri}${fileName}`;
+      
+      console.log(`Chemin du fichier à mettre à jour: ${fileUri}`);
+      
+      // Vérifier si le chemin est un répertoire
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      if (fileInfo.exists && fileInfo.isDirectory) {
+        // Si c'est un répertoire, créer un fichier avec un nom unique à l'intérieur
+        const uniqueFileName = `${fileName.replace(/\.json$/, '')}_${Date.now()}.json`;
+        const newFileUri = `${fileUri}/${uniqueFileName}`;
+        console.log(`Le chemin est un répertoire, utilisation du nouveau chemin: ${newFileUri}`);
+        
+        await FileSystem.writeAsStringAsync(newFileUri, JSON.stringify(updatedData, null, 2));
+        console.log("✅ Fichier consultation mis à jour avec un nouveau nom :", newFileUri);
+        
+        // Mettre à jour le fileName dans la consultation
+        if (consultationData.id) {
+          const updatedConsultation = { ...consultationData, fileName: uniqueFileName };
+          await this.consultationRepository.update(consultationData.id, updatedConsultation);
+          console.log(`✅ Nom du fichier mis à jour dans la base de données: ${uniqueFileName}`);
+        }
+        
+        return;
+      }
+      
+      // Vérifier que le dossier parent existe
       const folderInfo = await FileSystem.getInfoAsync(folderUri);
       if (!folderInfo.exists) {
         await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
       }
+      
+      // Écrire le fichier
       await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(updatedData, null, 2));
       console.log("✅ Fichier consultation mis à jour :", fileUri);
     } catch (err) {
       console.error("❌ Erreur mise à jour consultation file :", err);
       Logger.log('error', 'Error updating consultation file', { error: err });
+      throw err; // Propager l'erreur pour une meilleure gestion
     }
   }
 
 
-  async deleteConsultationFile(fileName: string): Promise<void> {
-    const folderUri = `${FileSystem.documentDirectory}${PATH_OF_CONSULTATIONS_DIR_ON_THE_LOCAL}/`;
-    const fileUri = `${folderUri}${fileName}`;
-
+  async deleteConsultationFile(fileName: string, patientId: string): Promise<void> {
     try {
+      const typeDiabete = this.getTypeDiabete();
+      
+      // Utiliser le même chemin que dans saveConsultationAsJson
+      const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(typeDiabete, patientId)}/`;
+      const fileUri = `${folderUri}${fileName}`;
+
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
       if (fileInfo.exists) {
         await FileSystem.deleteAsync(fileUri);
@@ -215,6 +312,7 @@ export default class ConsultationService extends Service {
     } catch (err) {
       console.error("❌ Erreur lors de la suppression du fichier :", err);
       Logger.log('error', 'Error deleting consultation file', { error: err });
+      throw err; // Propager l'erreur pour une meilleure gestion
     }
   }
 
