@@ -80,7 +80,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   return (
     <>
     
-    <StatusBar backgroundColor="red" barStyle="dark-content" />
+    <StatusBar backgroundColor="red" barStyle="default" />
       <SafeAreaView style={styles.container} >
 
         {/* Slide-out Menu */}
