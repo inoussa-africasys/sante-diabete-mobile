@@ -18,33 +18,23 @@ class Logger {
 
     static async log(level: LogLevel, message: string, meta?: LogMeta): Promise<void> {
       const logEntry = formatLog(level, message, meta);
-    
       try {
         const fileInfo = await FileSystem.getInfoAsync(logFileUri);
-    
-        if (fileInfo.exists) {
-          const existing = await FileSystem.readAsStringAsync(logFileUri);
-          await FileSystem.writeAsStringAsync(logFileUri, existing + logEntry);
-        } else {
-          await FileSystem.writeAsStringAsync(logFileUri, logEntry, {
-            encoding: FileSystem.EncodingType.UTF8,
-          });
-        }
-      } catch (err) {
-        console.error('Erreur lors de l’écriture du log :', err);
-        try {
+        if (!fileInfo.exists) {
+          // Créer le dossier parent si besoin
           const dir = logFileUri.substring(0, logFileUri.lastIndexOf('/'));
           const dirInfo = await FileSystem.getInfoAsync(dir);
           if (!dirInfo.exists) {
             await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
           }
-    
-          await FileSystem.writeAsStringAsync(logFileUri, logEntry, {
-            encoding: FileSystem.EncodingType.UTF8,
-          });
-        } catch (nestedErr) {
-          console.error('Erreur lors de la création du dossier ou du fichier log :', nestedErr);
         }
+        // Ajouter l'entrée de log sans lire tout le fichier (append)
+        await FileSystem.writeAsStringAsync(logFileUri, logEntry, {
+          encoding: FileSystem.EncodingType.UTF8,
+          append: true,
+        } as any); // 'append' est supporté dans expo-file-system SDK 46+, casté pour TypeScript
+      } catch (err) {
+        console.error('Erreur lors de l’écriture du log :', err);
       }
     }
     

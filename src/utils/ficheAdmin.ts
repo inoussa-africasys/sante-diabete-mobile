@@ -1,15 +1,11 @@
+import { Consultation } from "../models/Consultation";
 import FicheService from "../Services/ficheService";
 
 
-export const getFicheAdministrativeName = async (): Promise<string> => {
+export const getFicheAdministrativeName = async (): Promise<string | null> => {
     const ficheService = await FicheService.create();
     const ficheNames = await ficheService.getAllFicheNames();
-    console.log("ficheNames : ",ficheNames);
     const latestFicheName = getLatestAdminFicheName(ficheNames);
-    console.log("latestFicheName : ",latestFicheName);
-    if (!latestFicheName) {
-        throw new Error('No fiche found for type diabete');
-    }
     return latestFicheName;
 };
 
@@ -30,6 +26,17 @@ export function getLatestAdminFicheName(ficheNames: string[]): string | null {
             }
         }
     }
-    console.log("latestFicheName : ",latestFicheName);
     return latestFicheName;
 }
+
+
+export const checkIfConsultationIsAFicheAdministrative = async (consultation: Consultation): Promise<boolean> => {
+    const regex = /^dt[12]_.*administrative.*_v([0-9]+)$/;
+    const match = consultation.ficheName.match(regex);
+    if (!match) {
+        return false;
+    }
+    return true;
+}
+
+

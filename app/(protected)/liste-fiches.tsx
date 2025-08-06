@@ -1,3 +1,4 @@
+import { useAuth } from '@/src/context/AuthContext';
 import Fiche from '@/src/models/Fiche';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -13,7 +14,8 @@ enum Action {
   Edit = 'edit',
   Fill = 'fill',
   Empty = 'empty',
-  EditFormFill = 'editFormFill'
+  EditFormFill = 'editFormFill',
+  Consultation = 'consultation'
 }
 
 export default function ListeFichesScreen() {
@@ -22,8 +24,9 @@ export default function ListeFichesScreen() {
   const { showToast } = useToast();
   const { getAllFicheDownloaded, isLoading, error } = useFiche();
   const [fiches, setFiches] = React.useState<Fiche[]>([]);
+  const { isAuthenticated } = useAuth();
 
-  const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge', 'editFormFill'].includes(params.mode)) ? params.mode : 'remplir';
+  const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge', 'editFormFill','consultation'].includes(params.mode)) ? params.mode : 'remplir';
   const patientId = params.patientId as string;
 
  useEffect(() => {
@@ -32,11 +35,18 @@ export default function ListeFichesScreen() {
   });
  }, []);
 
-
-
+ useEffect(() => {
   if (error) {
     showToast('Erreur lors de la récupération des fiches', 'error', 3000);
   }
+ }, [error, showToast]);
+
+ // Vérification d'authentification déplacée dans un useEffect
+ useEffect(() => {
+  if (!isAuthenticated) {
+    router.replace('/errors/unauthenticated');
+  }
+ }, [isAuthenticated, router]);
 
 
   const getHeaderTitle = () => {
@@ -53,6 +63,8 @@ export default function ListeFichesScreen() {
         return `Téléchargement de fiche `;
       case 'editFormFill':
         return `Éditer une fiche `;
+      case 'consultation':
+        return `Consultation ${patientId}`;
       default:
         return `Liste des fiches `;
     }
@@ -74,6 +86,9 @@ export default function ListeFichesScreen() {
       case Action.EditFormFill:
         router.push(`/edit-fiche?mode=editFormFill&ficheId=${fiche.id}`);
         break;
+      case Action.Consultation:
+        router.push(`/patient/${patientId}/consultations/create?mode=consultation&ficheId=${fiche.id}`);
+        break;
     }
   };
 
@@ -94,6 +109,9 @@ export default function ListeFichesScreen() {
             break;
           case 'editFormFill':
             action = Action.EditFormFill;
+            break;
+          case 'consultation':
+            action = Action.Consultation;
             break;
         }
         handleMakeAction(action, item);

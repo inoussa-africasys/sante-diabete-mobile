@@ -1,26 +1,38 @@
+import { DiabeteType } from '@/src/types';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import AccueilPage from '../src/Components/AccueilPage';
+import { useAuth } from '../src/context/AuthContext';
+import { useDiabetes } from '../src/context/DiabetesContext';
 
 function DT2Page() {
-  // Fonction pour gérer le clic sur un patient
-  const handlePatientPress = (patientId: string) => {
-    // Navigation vers la page de détails du patient
-    console.log(`Patient sélectionné: ${patientId}`);
-    // router.push(`/patient/${patientId}`);
-  };
 
-  // Fonction pour revenir à la page précédente
+  const { setActiveDiabetesType } = useDiabetes();
+  const { refreshDiabetesType } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    setActiveDiabetesType(DiabeteType.DT2).then(() => {
+      console.log('Diabetes type set to DT2');
+      refreshDiabetesType();
+      setIsLoading(false);
+    });
+  }, []);
+
+
   const handleBackPress = () => {
     router.back();
   };
 
-  // Fonction pour ajouter un nouveau patient
-  const handleAddPress = () => {
-    // Navigation vers la page d'ajout de patient
-    console.log('Ajouter un nouveau patient DT2');
-    // router.push('/add-patient/dt2');
-  };
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
     <AccueilPage onBackPress={handleBackPress} />

@@ -67,9 +67,7 @@ async function copyDatabaseToTrafficFolder() {
             } else {
                 console.log(`⚠️ Base de données non trouvée à destination temporaire : ${tempDbPath}`);
             }    
-             await setTimeout(() => {
-                console.log(`✅ Base de données copiée avec succès !`);
-            }, 1000);    
+            console.log(`✅ Base de données copiée avec succès !`);
         } else {
             console.log(`⚠️ Base de données non trouvée à: ${dbPath}`);
         }

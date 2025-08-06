@@ -9,6 +9,7 @@ export interface PatientFormData {
   email: string;
   commentaire: string;
   photo: string | null;
+  fiche_administrative_name: string | null;
 }
 
 
@@ -56,7 +57,8 @@ export interface ConsultationCreatedSyncData {
   form_name: string,
   consultation_name: string,
   uuid: string,
-  content: string
+  content: string,
+  date_consultation?: string
 }
 
 

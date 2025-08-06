@@ -2,22 +2,22 @@ import axios from 'axios';
 import * as FileSystem from 'expo-file-system';
 import uuid from 'react-native-uuid';
 import config from '../Config';
-import { API_HEADER, APP_VERSION, PATH_OF_PATIENTS_DIR_ON_THE_LOCAL } from "../Constants/App";
-import { ConsultationRepository } from '../Repositories/ConsultationRepository';
-import { PatientRepository } from "../Repositories/PatientRepository";
-import { getLastSyncDate } from '../functions';
-import { setLastSyncDate } from '../functions/syncHelpers';
+import { API_HEADER, APP_VERSION, PATH_OF_PATIENTS_DIR_ON_THE_LOCAL } from '../Constants/App';
+import { getDiabetesType } from '../functions/auth';
+import { getLastSyncDate, setLastSyncDate } from '../functions/syncHelpers';
 import { ConsultationMapper } from '../mappers/consultationMapper';
 import { PatientMapper } from '../mappers/patientMapper';
 import { Consultation } from '../models/Consultation';
-import Patient from "../models/Patient";
-import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError, SyncOnlyOnTraitementReturnType, SyncPatientReturnType } from "../types";
+import Patient from '../models/Patient';
+import { ConsultationRepository } from '../Repositories/ConsultationRepository';
+import { PatientRepository } from '../Repositories/PatientRepository';
+import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError, SyncOnlyOnTraitementReturnType, SyncPatientReturnType } from '../types';
+import { generateConsultationName, generateFicheAdministrativeNameForJsonSave } from '../utils/consultation';
 import Logger from '../utils/Logger';
-import { TraficFolder } from '../utils/TraficFolder';
 import { sendTraficAuditEvent } from '../utils/traficAudit';
+import { TraficFolder } from '../utils/TraficFolder';
 import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
 import Service from "./core/Service";
-
 
 export default class PatientService extends Service {
   private patientRepository: PatientRepository;
@@ -63,6 +63,7 @@ export default class PatientService extends Service {
       patientClass.createdBy = this.getConnectedUsername();
       patientClass.type_diabete = this.getTypeDiabete();
       patientClass.date = new Date().toISOString();
+      patientClass.fiche_administrative_name = patientFormData.fiche_administrative_name || undefined;
       const location = await this.getCurrentLocation();
       if (location) {
         patientClass.latitude = location.latitude;
@@ -84,7 +85,7 @@ export default class PatientService extends Service {
       const patient = await this.patientRepository.findAllByPatientId(patientId);
       if (!patient) { throw new Error(` Patient avec l'ID ${patientId} non trouvé`); }
       if (!ficheAdministrative.id) { throw new Error(` Fiche administrative avec l'ID ${ficheAdministrative.id} non trouvé`); }
-      patient.fiche_administrative_id = ficheAdministrative.id.toString();
+      patient.fiche_administrative_name = ficheAdministrative.ficheName;
       await this.patientRepository.update(patient.id!, patient);
       this.updatePatientJson(patientId, patient);
       return true;
@@ -179,20 +180,52 @@ export default class PatientService extends Service {
         return;
       }
 
-      const fileContent = await FileSystem.readAsStringAsync(fileUri, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-      const existingPatient = JSON.parse(fileContent);
-      const updatedPatient = { ...existingPatient, ...updatedFields };
+      try {
+        const fileContent = await FileSystem.readAsStringAsync(fileUri, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+        
+        // Vérifier que le contenu est un JSON valide
+        if (!fileContent || fileContent.trim() === '') {
+          throw new Error('Le fichier patient est vide');
+        }
+        
+        // Afficher les premiers caractères pour le débogage
+        console.log(`Premiers caractères du fichier: "${fileContent.substring(0, 20)}..."`);
+        
+        let existingPatient;
+        try {
+          existingPatient = JSON.parse(fileContent);
+        } catch (parseError) {
+          console.error('Erreur de parsing JSON:', parseError);
+          console.log('Contenu problématique:', fileContent.substring(0, 100));
+          
+          // Récupérer le patient depuis la base de données comme solution de secours
+          const patient = await this.patientRepository.findAllByPatientId(id_patient);
+          if (!patient) { throw new Error(`Patient avec l'ID ${id_patient} non trouvé`); }
+          
+          // Recréer le fichier JSON à partir des données de la base
+          await this.savePatientAsJson(patient);
+          
+          // Utiliser les données de la base pour la mise à jour
+          existingPatient = patient.toJson();
+        }
+        
+        const updatedPatient = { ...existingPatient, ...updatedFields };
 
-      const updatedJsonContent = JSON.stringify(updatedPatient, null, 2);
-      await FileSystem.writeAsStringAsync(fileUri, updatedJsonContent, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+        const updatedJsonContent = JSON.stringify(updatedPatient, null, 2);
+        await FileSystem.writeAsStringAsync(fileUri, updatedJsonContent, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
 
-      console.log(`Patient mis à jour dans le fichier : ${fileUri}`);
+        console.log(`Patient mis à jour dans le fichier : ${fileUri}`);
+      } catch (fileError) {
+        console.error("Erreur lors de la lecture ou du parsing du fichier patient:", fileError);
+        throw fileError;
+      }
     } catch (error) {
       console.error("Erreur lors de la mise à jour du fichier JSON :", error);
+      throw new Error(`Erreur lors de la mise à jour du patient: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     }
   }
 
@@ -308,7 +341,9 @@ export default class PatientService extends Service {
         }
       }
 
-      await setLastSyncDate(new Date().toISOString());
+      if(errors.length === 0){
+        await setLastSyncDate(new Date().toISOString());
+      }
 
       Logger.log("info", "Patients synchronisés");
       console.log("Patients synchronisés");
@@ -435,13 +470,11 @@ export default class PatientService extends Service {
 
       const requests = patients.map(async (patient) => {
         const url = `${this.getBaseUrl()}/api/json/mobile/patients/synchro?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
-        console.log("Send created or updated patients to server : ", url);
         try {
           if (!patient.identifier) {
             throw new Error(` Patient avec l'ID ${patient.identifier} non trouvé`);
           }
           const response = await axios.post(url, patient);
-          console.log("Send created or updated patients to server : ", JSON.stringify(patient));
           if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
@@ -508,13 +541,12 @@ export default class PatientService extends Service {
       const errors: ConsultationSyncError[] = [];
       const errorMessages: string[] = [];
       const totalConsultations = Object.values(consultations).flat().length;
-
       const requests = Object.entries(consultations).map(async ([patientId, consultations]) => {
         const url = `${this.getBaseUrl()}/api/v2/json/mobile/patients/medicaldata/synchro/submissions/batch?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}&patientID=${patientId}&lat&lon`;
-        console.log(`URL: ${url}`);
         try {
           const consultationsSyncData = consultations.map((consultation) => ConsultationMapper.toConsultationCreatedSyncData(consultation));
-          const response = await axios.post(url, { data: JSON.stringify(consultationsSyncData) });
+          const response = await axios.post(url, { identifier: patientId, dataConsultations: consultationsSyncData });
+          //const response = await axios.post(url, consultationsSyncData);
           if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}  : ${response.statusText}`);
           }
@@ -761,6 +793,9 @@ export default class PatientService extends Service {
       const totalPatients = patients.length;
 
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS);
+      
+      // Lancer la création des fichiers JSON en tâche de fond
+      this.saveAllPatientsAndConsultationsAsJson(patients); 
 
       return {
         success: true,
@@ -787,6 +822,91 @@ export default class PatientService extends Service {
       };
     }
   }
+  
+  /**
+   * Sauvegarde tous les patients et leurs consultations en fichiers JSON en tâche de fond
+   * @param patients Liste des patients à sauvegarder
+   */
+  private async saveAllPatientsAndConsultationsAsJson(patients: PatientSyncDataResponseOfGetAllMedicalDataServer[]): Promise<void> {
+    try {
+      console.log(`🔄 Début de la sauvegarde de ${patients.length} patients et leurs consultations en JSON...`);
+      
+      // Traiter en arrière-plan
+      setTimeout(async () => {
+        try {
+          const consultationRepository = new ConsultationRepository();
+          const typeDiabete = await getDiabetesType();
+          
+          for (const patientData of patients) {
+            // Récupérer le patient depuis la base de données
+            const patientId = patientData.identifier;
+            if (patientId) {
+              const patient = await this.patientRepository.findAllByPatientId(patientId);
+              if (patient) {
+                // Sauvegarder le patient en JSON
+                await this.savePatientAsJson(patient);
+                
+                // Récupérer et sauvegarder les consultations du patient
+                const consultations = await consultationRepository.getAllConsultationByPatientIdOnLocalDB(patient.id_patient);
+                for (const consultation of consultations) {
+                  await this.saveConsultationAsJsonBackground(consultation);
+                }
+              }
+            }
+          }
+          console.log(`✅ Sauvegarde des patients et consultations en JSON terminée avec succès`);
+        } catch (error) {
+          console.error("❌ Erreur lors de la sauvegarde des patients et consultations en JSON :", error);
+          Logger.log('error', 'Error saving patients and consultations as json in background', { error });
+        }
+      }, 100); // Délai minimal pour démarrer en arrière-plan
+      
+    } catch (error) {
+      console.error("❌ Erreur lors de l'initialisation de la sauvegarde en tâche de fond :", error);
+      Logger.log('error', 'Error initializing background save of patients and consultations', { error });
+    }
+  }
+  /**
+   * Sauvegarde une consultation en fichier JSON en arrière-plan
+   * @param consultation Consultation à sauvegarder
+   */
+  private async saveConsultationAsJsonBackground(consultation: Consultation): Promise<void> {
+    try {
+      const jsonContent = JSON.stringify(consultation.parseDataToJson());
+      const isFicheAdmin = await consultation.isFicheAdministrative();
+      
+      let fileName;
+      let folderPath;
+      
+      if (isFicheAdmin) {
+        // Si c'est une fiche administrative, utiliser un nom spécifique
+        fileName = generateFicheAdministrativeNameForJsonSave(new Date(), consultation.ficheName || '');
+        // Pour les fiches administratives, on utilise le même dossier que les consultations
+        folderPath = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(), consultation.id_patient)}`;
+      } else {
+        // Si c'est une consultation normale
+        fileName = generateConsultationName(new Date());
+        folderPath = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(), consultation.id_patient)}`;
+      }
+      
+      const fileUri = `${folderPath}/${fileName}`;
+      
+      const dirInfo = await FileSystem.getInfoAsync(folderPath);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(folderPath, { intermediates: true });
+      }
+      
+      await FileSystem.writeAsStringAsync(fileUri, jsonContent, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      
+      console.log(`✅ Consultation ${consultation.id} sauvegardée en JSON: ${fileUri}`);
+    } catch (error) {
+      console.error(`❌ Erreur d'enregistrement de la consultation en JSON en arrière-plan :`, error);
+      Logger.log('error', 'Error saving consultation as json in background', { error });
+    }
+  }
+
 
   private async getAllDeletedPatientOnServer(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
@@ -862,9 +982,14 @@ export default class PatientService extends Service {
   private deleteAllFiles = async (patientIds: string[]): Promise<void> => {
     try {
       const folderUri = `${FileSystem.documentDirectory}${PATH_OF_PATIENTS_DIR_ON_THE_LOCAL}/`;
-      const files = await FileSystem.readDirectoryAsync(folderUri);
-      const filesToDelete = files.filter(file => patientIds.includes(file));
-      await Promise.all(filesToDelete.map(file => FileSystem.deleteAsync(`${folderUri}${file}`)));
+      const folderInfo = await FileSystem.getInfoAsync(folderUri);
+      if (folderInfo.exists) {
+        const files = await FileSystem.readDirectoryAsync(folderUri);
+        const filesToDelete = files.filter(file => patientIds.includes(file));
+        await Promise.all(filesToDelete.map(file => FileSystem.deleteAsync(`${folderUri}${file}`)));
+      } else {
+        console.warn("Le dossier n'existe pas :", folderUri);
+      }
     } catch (error) {
       console.error('Erreur lors de la suppression des fichiers :', error);
       Logger.error('Erreur lors de la suppression des fichiers :', { error });

@@ -8,7 +8,7 @@ import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-ico
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PatientDetailScreen() {
@@ -20,6 +20,7 @@ export default function PatientDetailScreen() {
   const { getConsultations, isLoading: isLoadingConsultations, error: errorConsultations } = useConsultation();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [consultations, setConsultations] = useState<Record<string, Consultation[]> | null>(null);
+  const [consultationNames, setConsultationNames] = useState<Record<string, string>>({});
   const patientId = params.id as string;
 
 
@@ -35,6 +36,30 @@ export default function PatientDetailScreen() {
             console.log("consultation : ", date);
           });
           setConsultations(consultationsData);
+          
+          // Load consultation names
+          const loadConsultationNames = async () => {
+            const namesMap: Record<string, string> = {};
+            for (const [date, dateConsultations] of Object.entries(consultationsData)) {
+              for (const consultation of dateConsultations) {
+                if (consultation.id) {
+                  try {
+                    namesMap[consultation.id] = await getconsultationName(consultation);
+                  } catch (error) {
+                    console.error('Error getting consultation name:', error);
+                    if (await consultation.isFicheAdministrative()) {
+                      namesMap[consultation.id] = consultation.ficheName || 'Fiche administrative';
+                    }else{
+                      namesMap[consultation.id] = 'Consultation ';
+                    }
+                  }
+                }
+              }
+            }
+            setConsultationNames(namesMap);
+          };
+          
+          loadConsultationNames();
         }
       };
       fetchPatient();
@@ -72,7 +97,7 @@ export default function PatientDetailScreen() {
   };
 
   const handleNewConsultation = () => {
-    router.push(`/liste-fiches?patientId=${patientId}&mode=remplir`);
+    router.push(`/liste-fiches?patientId=${patientId}&mode=consultation`);
     setShowOptions(false);
   };
 
@@ -110,11 +135,14 @@ export default function PatientDetailScreen() {
   };
 
   const formatDate = (dateString: string) => {
-    console.log("dateString : ",dateString);
     if (!dateString) return 'Date inconnue';
+    if (dateString === 'Non Defini') return 'Non Defini';
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
+
+
+
 
 
   return (
@@ -139,9 +167,9 @@ export default function PatientDetailScreen() {
         </View>
 
         <ScrollView style={styles.scrollContainer}>
-          {isLoadingConsultations ? (
+          {isLoadingConsultations || isLoadingPatient ? (
             <View style={styles.centerMessage}>
-              <Text>Chargement des consultations...</Text>
+              <ActivityIndicator size="large" color="red" />
             </View>
           ) : errorConsultations ? (
             <View style={styles.centerMessage}>
@@ -179,7 +207,9 @@ export default function PatientDetailScreen() {
                       >
                         <FontAwesome5 name="file-alt" size={20} color="#9E9E9E" />
                         <Text style={styles.consultationText}>
-                          {getconsultationName(consultation)}
+                          {consultation.id && consultationNames[consultation.id] ? 
+                            consultationNames[consultation.id] : 
+                            consultation.fileName || 'Consultation'}
                         </Text>
                       </TouchableOpacity>
                     ))}

@@ -104,6 +104,9 @@ export default class FicheService extends Service {
 
     async getFicheAdministrativeOnTheLocalDb(): Promise<Fiche | null> {
         const ficheAdministrativeName = await getFicheAdministrativeName();
+        if (!ficheAdministrativeName) {
+            return null;
+        }
         return await this.ficheRepository.findByName(ficheAdministrativeName);
     }
 

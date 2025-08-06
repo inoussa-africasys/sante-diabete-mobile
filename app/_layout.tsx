@@ -35,18 +35,16 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function prepare() {
-      // Migration.resetDatabase();  
+      //Migration.resetDatabase();
+      //await resetAllFilesOnTraficFolder();  
       // Simuler un chargement, ex: chargement de polices, données, etc.
 
       try {
         // Initialiser la configuration
         await initConfig();
         console.log('Configuration initialisée avec succès');
-
-        await new Promise(resolve => {
-          setTimeout(resolve, 20);
-          initDB();
-        });
+        
+        await initDB();
 
         setAppReady(true);
       } catch (error) {

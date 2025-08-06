@@ -80,7 +80,7 @@ export class PatientMapper {
     }
 
 
-    static ficheAdminToFormPatient(data: FicheAdministrativeFormData): PatientFormData {
+    static ficheAdminToFormPatient(data: FicheAdministrativeFormData,ficheAdministrativeName: string): PatientFormData {
       
       return {
         nom: data["Donnees_administratives.nom"] || "",
@@ -91,7 +91,8 @@ export class PatientMapper {
         telephone: data["Donnees_administratives.telephone"] || "",
         email: data["Donnees_administratives.mail"] || "",
         commentaire: data["Donnees_administratives.commentaire"] || "",
-        photo: data["Donnees_administratives.photo"] || ""
+        photo: data["Donnees_administratives.photo"] || "",
+        fiche_administrative_name: ficheAdministrativeName || null
       };
     }
 }

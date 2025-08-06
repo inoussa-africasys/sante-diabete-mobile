@@ -13,7 +13,7 @@ export class ConsultationMapper {
 
     static toConsultation(consultationFormData: ConsultationFormData): Consultation {
         const consultation = new Consultation();
-        consultation.data = consultationFormData.data;
+        consultation.data = JSON.stringify(consultationFormData.data);
         consultation.id_fiche = consultationFormData.id_fiche;
         const ficheRepository = new FicheRepository();
         const fiche = ficheRepository.findById(parseInt(consultationFormData.id_fiche));
@@ -26,7 +26,8 @@ export class ConsultationMapper {
             form_name: consultation.ficheName,
             consultation_name: generateConsultationFileName(consultation.fileName),
             uuid: consultation.uuid,
-            content: consultation.data
+            content: consultation.data,
+            date_consultation: consultation.date
         };
     }
 

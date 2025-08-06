@@ -28,7 +28,7 @@ export interface AuthContextType {
     
     // Récupération du token
     getToken: () => Promise<string | null>;
-    user: User | null;
+    refreshDiabetesType: () => void;
 }
 
 export interface AuthProviderProps {

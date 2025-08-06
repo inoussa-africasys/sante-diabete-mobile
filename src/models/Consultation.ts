@@ -1,7 +1,9 @@
-import { getFicheAdministrativeName } from '../utils/ficheAdmin';
+import { PatientRepository } from '../Repositories/PatientRepository';
 import { FicheRepository } from './../Repositories/FicheRepository';
+import { checkIfConsultationIsAFicheAdministrative } from './../utils/ficheAdmin';
 import { BaseModel } from "./BaseModel";
 import Fiche from "./Fiche";
+import Patient from './Patient';
 
 export class Consultation extends BaseModel {
     fileName: string;
@@ -53,7 +55,16 @@ export class Consultation extends BaseModel {
         return JSON.parse(this.data);
     }
 
-    public isFicheAdministrative(): boolean {
-        return this.ficheName === getFicheAdministrativeName(this.type_diabete);
+    public async isFicheAdministrative(): Promise<boolean> {
+        return await checkIfConsultationIsAFicheAdministrative(this);
+    }
+
+    public getPatient() : Patient{
+        const patientRepository = new PatientRepository();
+        const patient = patientRepository.findById(parseInt(this.id_patient));    
+        if (!patient) {
+            throw new Error(`Patient avec l'ID ${this.id_patient} non trouvé`);
+        }
+        return patient;
     }
 }
