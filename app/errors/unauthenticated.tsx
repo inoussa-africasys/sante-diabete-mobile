@@ -1,21 +1,22 @@
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React from 'react'
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+
 
 const Unauthenticated = () => {
   return (
-    <View style={styles.container}>
-     <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-      <Ionicons name="arrow-back" size={24} color="#000" />
-     </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color="#000" />
+      </TouchableOpacity>
       <Ionicons name="shield-outline" size={100} color="#D50000" />
       <Text style={styles.title}>Non authentifié</Text>
       <Text style={styles.text}>Vous devez scanner un QR CODE autorisé pour accéder à cette page</Text>
       <TouchableOpacity style={styles.button} onPress={() => router.push('/scanner')}>
         <Text style={styles.buttonText}>Scanner un QR CODE</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   )
 }
 
