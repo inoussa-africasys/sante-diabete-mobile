@@ -1,3 +1,4 @@
+import { useAuth } from '@/src/context/AuthContext';
 import Fiche from '@/src/models/Fiche';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -23,6 +24,7 @@ export default function ListeFichesScreen() {
   const { showToast } = useToast();
   const { getAllFicheDownloaded, isLoading, error } = useFiche();
   const [fiches, setFiches] = React.useState<Fiche[]>([]);
+  const { isAuthenticated } = useAuth();
 
   const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge', 'editFormFill','consultation'].includes(params.mode)) ? params.mode : 'remplir';
   const patientId = params.patientId as string;
@@ -33,11 +35,18 @@ export default function ListeFichesScreen() {
   });
  }, []);
 
-
-
+ useEffect(() => {
   if (error) {
     showToast('Erreur lors de la récupération des fiches', 'error', 3000);
   }
+ }, [error, showToast]);
+
+ // Vérification d'authentification déplacée dans un useEffect
+ useEffect(() => {
+  if (!isAuthenticated) {
+    router.replace('/errors/unauthenticated');
+  }
+ }, [isAuthenticated, router]);
 
 
   const getHeaderTitle = () => {
