@@ -56,6 +56,8 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     router.push('/scanner');
   };
 
+  const {isAuthenticated} = useAuth();
+
 
   useEffect(() => {
     const repo = new QRCodeRepository();
@@ -86,7 +88,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         {/* Slide-out Menu */}
         <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }] }]}>
           <View style={styles.menuHeader}>
-            <Text style={styles.menuTitle}> {userNameValue ?? 'Menu'} - {diabetesType}</Text>
+            <Text style={styles.menuTitle}> {isAuthenticated ? userNameValue : 'Menu'} - {diabetesType}</Text>
             <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
               <Entypo name="cross" size={28} color="#fff" />
             </TouchableOpacity>
@@ -111,6 +113,11 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
           <TouchableOpacity style={styles.menuItem}
             onPress={() => router.push('/scanner')}>
             <Text style={styles.menuItemText}>CONFIG QR CODE</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}
+            onPress={() => router.push('/consultations')}
+          >
+            <Text style={styles.menuItemText}>CHANGER DE PROFIL</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem}
             onPress={() => router.push('/trafic-assistant')}
