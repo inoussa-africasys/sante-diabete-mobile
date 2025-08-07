@@ -67,7 +67,7 @@ export default function RootLayout() {
     const authenticate = async () => {
       if (!fingerprintEnabled && !pinAtStartup) {
         setAuthenticated(true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
         setLoading(false);
         return;
       }
@@ -98,7 +98,7 @@ export default function RootLayout() {
         setError('Erreur lors de l’authentification.');
       }
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 5000));
       setLoading(false);
     };
 

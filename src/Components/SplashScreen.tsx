@@ -1,51 +1,31 @@
-import React, { useEffect } from "react";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
-import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withTiming
-} from "react-native-reanimated";
+import Constants from "expo-constants";
+import { Image } from "expo-image";
+import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from "react-native";
 import { Images } from "../Constants/Images";
+import CardWithBubbles from "./SplashBloodDrop";
+
 const { width, height } = Dimensions.get("window");
 
 export default function SplashScreen() {
-  const scale = useSharedValue(0.7);
-  const opacity = useSharedValue(0);
-  const textOpacity = useSharedValue(0);
-
-  useEffect(() => {
-    scale.value = withTiming(1, {
-      duration: 1200,
-      easing: Easing.out(Easing.exp),
-    });
-    opacity.value = withDelay(300, withTiming(1, { duration: 800 }));
-    textOpacity.value = withDelay(1000, withTiming(1, { duration: 600 }));
-  }, []);
-
-  const imageStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  const textStyle = useAnimatedStyle(() => ({
-    opacity: textOpacity.value,
-  }));
+ 
+  const version = Constants.expoConfig?.version;
 
   return (
     <View style={styles.container}>
-      <Animated.Image
-        source={Images.splashIcon}
-        resizeMode="contain"
-        style={[styles.image, imageStyle]}
-      />
-
-      <Animated.View style={[styles.textContainer, textStyle]}>
-        <Text style={styles.text}>Santé</Text>
-        <Text style={styles.text}>Diabète</Text>
-      </Animated.View>
-    </View>
+        <Image
+          source={Images.splashIconDecouper}
+          style={styles.image}
+          contentFit="contain"
+        />
+        <View style={styles.bulleSpace}>
+          {/* 3 bulles animées avec rebond */}
+          <CardWithBubbles height={height * 0.4} width={width} />
+        </View>
+        <View style={styles.versionContainer}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.versionText}>Version : {version}</Text>
+        </View>
+      </View>
   );
 }
 
@@ -57,16 +37,29 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   image: {
-    width: width * 0.4,
-    height: width * 0.4,
+    width: width * 0.8,
+    height: width * 0.8,
     marginBottom: 20,
   },
-  textContainer: {
+  versionContainer: {
+    position: "absolute",
+    bottom: 20,
+    justifyContent: "center",
     alignItems: "center",
   },
-  text: {
-    color: "#FFFFFF",
-    fontSize: 34,
+  versionText: {
+    color: "#fff",
+    fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
+  bulleSpace : {
+    width : "100%",
+    height : height * 0.4,
+    backgroundColor : "#f00",
+    zIndex : 1,
+    position: "relative",
+    justifyContent: "flex-end",
+  },
+
 });

@@ -6,5 +6,5 @@ export const Images = {
     userIcon : require('@/assets/images/user-icon.png'),
     traficAssistant : require('@/assets/images/trafic-assistant.png'),
     commingSoon : require('@/assets/images/comming-soon.webp'),
-
+    splashIconDecouper : require('@/assets/images/splash-icon-decouper.png'),
 }
