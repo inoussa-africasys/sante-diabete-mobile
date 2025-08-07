@@ -1,3 +1,4 @@
+import { AlertModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
 import { useFiche } from "@/src/Hooks/useFiche";
 import { useFormFill } from "@/src/Hooks/useFormFill";
@@ -18,6 +19,7 @@ export default function RemplireFiche() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [ficheName, setFicheName] = useState<string>('');
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
 
 
   const { getFicheById } = useFiche();
@@ -41,7 +43,7 @@ export default function RemplireFiche() {
     };
 
     async function getCurrentLocation() {
-      
+
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setErrorMsg('Permission to access location was denied');
@@ -59,10 +61,10 @@ export default function RemplireFiche() {
 
 
   const handleCompletSurveyForm = async (data: any) => {
-    const formFill : FormFillForm = {
-      data : data,  
-      ficheName : ficheName,
-      coordinates : location?.coords || {latitude: 0, longitude: 0},
+    const formFill: FormFillForm = {
+      data: data,
+      ficheName: ficheName,
+      coordinates: location?.coords || { latitude: 0, longitude: 0 },
     }
     const result = await createFormFillOnLocalDB(formFill);
     if (!result) {
@@ -70,7 +72,7 @@ export default function RemplireFiche() {
       setErrorMsg('Erreur lors de la création de la formFill');
       return;
     }
-    router.push(`/liste-fiches`);
+    setShowSuccessModal(true);
   };
 
 
@@ -84,7 +86,7 @@ export default function RemplireFiche() {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centerContent,{justifyContent: 'center', alignItems: 'center',marginTop: 100}]}>
+      <View style={[styles.container, styles.centerContent, { justifyContent: 'center', alignItems: 'center', marginTop: 100 }]}>
         <ActivityIndicator size="large" color="#000" />
         <Text>Chargement en cours...</Text>
       </View>
@@ -93,7 +95,7 @@ export default function RemplireFiche() {
 
 
   return (
-    <SafeAreaView  style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -104,6 +106,17 @@ export default function RemplireFiche() {
       </View>
 
       <SurveyScreenDom surveyJson={surveyJson} handleSurveyComplete={handleCompletSurveyForm} />
+      <AlertModal
+        isVisible={showSuccessModal}
+        title="Fiche Remplie avec succès"
+        type="success"
+        message={`La fiche '${ficheName}' a été remplie avec succès`}
+        customIcon={<Ionicons name="checkmark-circle-outline" size={76} color="#4CAF50"/>}
+        onClose={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+      />
     </SafeAreaView>
   );
 }

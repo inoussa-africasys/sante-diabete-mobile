@@ -180,19 +180,21 @@ export default class ConsultationService extends Service {
       
       // Vérifier si le fileName est valide
       if (!consultationToCreate.fileName || consultationToCreate.fileName.trim() === '') {
-        // Générer un nouveau nom de fichier si nécessaire
+       /*  // Générer un nouveau nom de fichier si nécessaire
         if (await consultationToCreate.isFicheAdministrative()) {
+          console.log("start update Patient");
+          console.log("consultationToCreate.data",consultationToCreate.data);
           consultationToCreate.fileName = `${generateFicheAdministrativeNameForJsonSave(new Date(), consultationToCreate.ficheName)}`;
           const patientService = await PatientService.create();
+          console.log("end update Patient");
+          console.log("consultationToCreate.data",consultationToCreate.data);
           const patientData :FicheAdministrativeFormData = JSON.parse(consultationToCreate.data);
-          console.log("patientData fiche admin",patientData);
           const patientData2 = PatientMapper.ficheAdminToFormPatient(patientData,consultationToCreate.ficheName);
-          console.log("patientData2 fiche admin",patientData2);
           await patientService.updateOnTheLocalDb(consultationToCreate.id_patient, patientData2);
           
         } else {
           consultationToCreate.fileName = `${generateConsultationName(new Date())}`;
-        }
+        } */
       }
       
       // Mettre à jour les données de la consultation
@@ -204,11 +206,12 @@ export default class ConsultationService extends Service {
       await this.consultationRepository.update(consultationId, consultationToCreate);
 
       if(await consultationToCreate.isFicheAdministrative()){
-        const patientService = await PatientService.create();
-        const patientData :FicheAdministrativeFormData = JSON.parse(consultationToCreate.data);
-        console.log("patientData fiche admin",patientData);
+        console.log("start update Patient");
+        const patientService = await PatientService.create(); 
+        console.log("consultationToCreate",consultationToCreate.data);
+        const patientData  :FicheAdministrativeFormData =consultationToCreate.data as unknown as FicheAdministrativeFormData;
         const patientData2 = PatientMapper.ficheAdminToFormPatient(patientData,consultationToCreate.ficheName);
-        console.log("patientData2 fiche admin",patientData2);
+        console.log("end update Patient");
         await patientService.updateOnTheLocalDb(consultationToCreate.id_patient, patientData2);
       }
       
