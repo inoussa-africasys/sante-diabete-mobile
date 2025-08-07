@@ -94,7 +94,7 @@ export default function RootLayout() {
         } else {
           setError('Échec ou annulation de l’authentification.');
         }
-      } catch (err) {
+      } catch (err ) {
         setError('Erreur lors de l’authentification.');
       }
 
@@ -103,7 +103,7 @@ export default function RootLayout() {
     };
 
     authenticate();
-  }, []);
+  }, [fingerprintEnabled, pinAtStartup]);
 
   if (loading) {
     return (

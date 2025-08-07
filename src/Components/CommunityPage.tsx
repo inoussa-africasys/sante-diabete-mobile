@@ -1,5 +1,4 @@
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Dimensions, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -32,33 +31,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onOpenPress }) => {
         <Text style={styles.description}>
           Accéder au portail{'\n'}de la communauuté
         </Text>
-
-
         
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => router.push('/dt/test')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>got to test</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => router.push('/dt/test2')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>got to test2</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => router.push('/questionnaire')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>got to questionnaire</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity 
           style={styles.button}
           onPress={onOpenPress}

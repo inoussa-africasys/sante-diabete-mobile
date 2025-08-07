@@ -202,6 +202,15 @@ export default class ConsultationService extends Service {
 
       // D'abord mettre à jour la base de données pour s'assurer que le fileName est enregistré
       await this.consultationRepository.update(consultationId, consultationToCreate);
+
+      if(await consultationToCreate.isFicheAdministrative()){
+        const patientService = await PatientService.create();
+        const patientData :FicheAdministrativeFormData = JSON.parse(consultationToCreate.data);
+        console.log("patientData fiche admin",patientData);
+        const patientData2 = PatientMapper.ficheAdminToFormPatient(patientData,consultationToCreate.ficheName);
+        console.log("patientData2 fiche admin",patientData2);
+        await patientService.updateOnTheLocalDb(consultationToCreate.id_patient, patientData2);
+      }
       
       // Ensuite mettre à jour le fichier JSON
       try {
