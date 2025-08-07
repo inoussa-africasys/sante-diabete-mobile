@@ -1,6 +1,8 @@
 import { FontAwesome5 } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Images } from '../Constants/Images';
 
 interface ConsultationsPageProps {
   onOptionPress: (option: string) => void;
@@ -10,41 +12,48 @@ interface ConsultationsPageProps {
 const ConsultationsPage: React.FC<ConsultationsPageProps> = ({ onOptionPress, onBackPress }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light"/>
-      
+      <StatusBar style="light" />
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={onBackPress}
         >
           <FontAwesome5 name="arrow-left" size={20} color="white" />
         </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Image
+            source={Images.goutteSangBlanc}
+            style={styles.logo}
+            contentFit="contain"
+          />
         <Text style={styles.headerTitle}>Consultations</Text>
+        </View>
       </View>
-      
+
       {/* Main Content */}
       <View style={styles.content}>
         {/* DT1 Option */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.optionCard}
           onPress={() => onOptionPress('dt1')}
           activeOpacity={0.7}
         >
           <View style={styles.iconContainer}>
-            <FontAwesome5 name="tachometer-alt" size={48} color="#D50000" />
+            <FontAwesome5 name="tachometer-alt" size={76} color="#D50000" />
           </View>
           <Text style={styles.optionText}>DT1</Text>
         </TouchableOpacity>
-        
+
         {/* DT2 Option */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.optionCard}
           onPress={() => onOptionPress('dt2')}
           activeOpacity={0.7}
         >
           <View style={styles.iconContainer}>
-            <FontAwesome5 name="syringe" size={24} color="#D50000" />
+            <FontAwesome5 name="syringe" size={76} color="#D50000" />
           </View>
           <Text style={styles.optionText}>DT2</Text>
         </TouchableOpacity>
@@ -82,6 +91,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
   },
+  headerCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    width: 40,
+  },
+  logo: {
+    width: 30,
+    height: 30,
+    tintColor: '#FFFFFF',
+  },
   content: {
     flex: 1,
     padding: 20,
@@ -92,8 +114,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
-    paddingVertical : 20,
-    marginBottom: 20,
+    paddingVertical: 20,
+    marginBottom: 40,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -103,17 +125,18 @@ const styles = StyleSheet.create({
     borderColor: '#FFCDD2',
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 2999,
     backgroundColor: '#FFEBEE',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   optionText: {
-    fontSize: 24,
-    fontWeight: '600',
+    paddingTop: 20,
+    fontSize: 32,
+    fontWeight: 'bold',
     color: '#212121',
   },
 });

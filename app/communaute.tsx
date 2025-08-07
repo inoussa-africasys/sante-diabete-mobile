@@ -8,8 +8,13 @@ const communaute = () => {
     router.push('/portal');
   };
 
+  const handleBackPress = () => {
+    // Navigation vers la page d'accueil de l'application
+    router.push('/');
+  };
+
   return (
-    <CommunityPage onOpenPress={handleOpenPortal} />
+    <CommunityPage onOpenPress={handleOpenPortal} onBackPress={handleBackPress} />
   )
 }
 
