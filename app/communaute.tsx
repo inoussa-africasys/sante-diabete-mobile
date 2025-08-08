@@ -1,20 +1,19 @@
 import CommunityPage from '@/src/Components/CommunityPage';
 import { router } from 'expo-router';
 import React from 'react';
+import { Linking } from 'react-native';
 
 const communaute = () => {
-  const handleOpenPortal = () => {
-    // Navigation vers la page portal de l'application
-    router.push('/portal');
+  const handleOpenCommunauteLink = () => {
+    Linking.openURL('https://www.djekulu.org/');
   };
 
   const handleBackPress = () => {
-    // Navigation vers la page d'accueil de l'application
     router.push('/');
   };
 
   return (
-    <CommunityPage onOpenPress={handleOpenPortal} onBackPress={handleBackPress} />
+    <CommunityPage onOpenPress={handleOpenCommunauteLink} onBackPress={handleBackPress} />
   )
 }
 

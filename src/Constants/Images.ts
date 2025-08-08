@@ -7,4 +7,10 @@ export const Images = {
     traficAssistant : require('@/assets/images/trafic-assistant.png'),
     commingSoon : require('@/assets/images/comming-soon.webp'),
     splashIconDecouper : require('@/assets/images/splash-icon-decouper.png'),
+
+    SiteSanteDiabeteLogo : require('@/assets/images/site_sante_diabete_logo.png'),
+    VenusSanteDiabeteLogo : require('@/assets/images/logo-venus-sante-diabete.png'),
+    SDPlannerLogo : require('@/assets/images/sd-planner-logo.png'),
+    CentreDeRessourcesLogo : require('@/assets/images/lien-utile-default-logo.png'),
+    
 }

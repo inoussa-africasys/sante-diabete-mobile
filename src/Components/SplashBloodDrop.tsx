@@ -122,7 +122,7 @@ export default function CardWithBubbles({ height, width }: { height: number; wid
       <Animated.View 
         style={[
           styles.bubble,
-          {backgroundColor: '#6200ee66'},
+          {backgroundColor: '#FFFFFF99'},
           {
             transform: [
               { translateX: bubble1.x },
@@ -134,7 +134,7 @@ export default function CardWithBubbles({ height, width }: { height: number; wid
       <Animated.View 
         style={[
           styles.bubble,
-          {backgroundColor: '#AEC1F266'},
+          {backgroundColor: '#FFFFFF99'},
           {
             transform: [
               { translateX: bubble2.x },
@@ -146,7 +146,7 @@ export default function CardWithBubbles({ height, width }: { height: number; wid
       <Animated.View 
         style={[
           styles.bubble,
-          {backgroundColor: '#F2F2F266'},
+          {backgroundColor: '#FFFFFF99'},
           {
             transform: [
               { translateX: bubble3.x },
