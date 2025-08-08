@@ -223,6 +223,76 @@ export default class FormFillService extends Service {
     }
 
 
+    async updateFormFillAndReturn(id: number,formFill: FormFillForm): Promise<FormFill | null> {
+        try {
+            const formFillToUpdate = this.formFillRepository.findById(id);
+            if (!formFillToUpdate) {
+                throw new Error('Form fill with id ' + id + ' not found');
+            }
+            formFillToUpdate.data = formFill.data;
+            formFillToUpdate.updatedAt = new Date().toISOString();
+            formFillToUpdate.synced = false;
+            await this.formFillRepository.update(id,formFillToUpdate);
+            return formFillToUpdate;
+        } catch (error) {
+            console.error('Error updating form fill:', error);
+            Logger.log('error', 'Error updating form fill:', { error });
+            return null;
+        }
+    }
+
+    async updateFormFillAsJson(formFill: FormFill): Promise<boolean> {
+        try {
+            // S'assurer que le dossier de destination existe
+            const folderUri = `${FileSystem.documentDirectory}${TraficFolder.getFormsInstancesFolderPath(
+                formFill.type_diabete,
+                formFill.ficheName
+            )}`;
+            await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
+
+            // Construire le chemin du fichier et écrire le JSON (mise à jour/écrasement)
+            // Assurer un nom de fichier valide (éviter d'écrire sur un répertoire si fileName est vide)
+            let fileName = (formFill.fileName || '').trim();
+            if (!fileName) {
+                const base = generateFormFillName(formFill.ficheName);
+                fileName = `${base}.json`;
+                // Persister le nouveau nom de fichier dans la base pour cohérence
+                try {
+                    formFill.fileName = fileName;
+                    await this.formFillRepository.update(formFill.id as number, formFill);
+                } catch (e) {
+                    console.warn('Impossible de mettre à jour fileName en base, on continue quand même:', e);
+                }
+            } else if (!fileName.toLowerCase().endsWith('.json')) {
+                fileName = `${fileName}.json`;
+            } else {
+                fileName = `${fileName}`;
+            }
+
+            const fileUri = `${folderUri}/${fileName}`;
+            const jsonContent = typeof formFill.data === 'string' ? formFill.data : JSON.stringify(formFill.data);
+            const info = await FileSystem.getInfoAsync(fileUri);
+            if (!info.exists) {
+                // Le fichier n'existe pas: le créer puis écrire le contenu
+                await FileSystem.writeAsStringAsync(fileUri, jsonContent, {
+                    encoding: FileSystem.EncodingType.UTF8,
+                });
+                console.log(`Form fill: fichier créé puis écrit -> ${fileUri}`);
+            } else {
+                // Le fichier existe: écraser pour mettre à jour
+                await FileSystem.writeAsStringAsync(fileUri, jsonContent, {
+                    encoding: FileSystem.EncodingType.UTF8,
+                });
+                console.log(`Form fill: fichier existant mis à jour -> ${fileUri}`);
+            }
+            return true;
+        } catch (error) {
+            Logger.error("Erreur d'enregistrement du fichier JSON form fill :", error as Error);
+            console.error("Erreur d'enregistrement du fichier JSON form fill :", error);
+            return false;
+        }
+    }
+
 
 
 }

@@ -1,3 +1,4 @@
+import { AlertModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
 import { parseSurveyData } from "@/src/functions/helpers";
 import { useFormFill } from "@/src/Hooks/useFormFill";
@@ -14,7 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function RemplireFiche() {
   const params = useLocalSearchParams<{ id?: string }>();
   const id = params.id || '';
-  console.log('id', params);
   const [surveyJson, setSurveyJson] = useState({});
   const [loading, setLoading] = useState<boolean>(false);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
@@ -23,7 +23,9 @@ export default function RemplireFiche() {
   const [ficheName, setFicheName] = useState<string>('');
   const [data, setData] = useState<any>({});
 
-  const { createFormFillOnLocalDB,getFormFillById } = useFormFill();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  const { getFormFillById,updateFormFillOnLocalDB } = useFormFill();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,7 +40,6 @@ export default function RemplireFiche() {
           setFicheName(ficheFetched.name);
         }
 
-        console.log('formFillFetched', formFillFetched);
       } catch (e) {
         console.error('Erreur lors du chargement des données :', e);
         setErrorMsg('Erreur lors du chargement des données');
@@ -62,7 +63,7 @@ export default function RemplireFiche() {
     getCurrentLocation();
 
     fetchData();
-  }, []);
+  }, [id]);
 
 
   const handleCompletSurveyForm = async (data: any) => {
@@ -71,23 +72,23 @@ export default function RemplireFiche() {
       ficheName : ficheName,
       coordinates : location?.coords || {latitude: 0, longitude: 0},
     }
-    const result = await createFormFillOnLocalDB(formFill);
+    const result = await updateFormFillOnLocalDB(id,formFill);
     if (!result) {
-      console.error('Erreur lors de la création de la formFill');
-      setErrorMsg('Erreur lors de la création de la formFill');
+      console.error('Erreur lors de la modification de la formFill');
+      setErrorMsg('Erreur lors de la modification de la formFill');
       return;
     }
-    router.push(`/liste-fiches`);
+    setShowSuccessModal(true);
   };
 
 
-  if (errorMsg) {
+/*   if (errorMsg) {
     return (
-      <View>
-        <Text>Erreur : {errorMsg}</Text>
+      <View style={[styles.container, styles.centerContent,{justifyContent: 'center', alignItems: 'center',marginTop: 100}]}>
+        <Text style={{color: 'red', fontSize: 18, fontWeight: 'bold',textAlign: 'center'}}>Erreur : {errorMsg}</Text>
       </View>
     );
-  }
+  } */
 
   if (loading) {
     return (
@@ -106,7 +107,7 @@ export default function RemplireFiche() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          Remplir une fiche
+          Modifier une fiche
         </Text>
       </View>
 
@@ -114,6 +115,31 @@ export default function RemplireFiche() {
         surveyJson={surveyJson} 
         handleSurveyComplete={handleCompletSurveyForm} 
         data={parseSurveyData(data)}
+      />
+
+      <AlertModal 
+        isVisible={showSuccessModal}
+        onClose={() =>{
+          setShowSuccessModal(false); 
+          router.back();
+        }}
+        title="Fiche modifiée avec succès"
+        message="La fiche a été modifiée avec succès."
+        customIcon={
+          <Ionicons name="checkmark-circle-outline" size={76} color="#4CAF50"/>
+        }
+        type="success"
+      />
+
+      <AlertModal 
+        isVisible={errorMsg !== null}
+        onClose={() => {setErrorMsg(null); router.back();}}
+        title="Erreur"
+        message={errorMsg || ''}
+        customIcon={
+          <Ionicons name="alert-circle-outline" size={76} color="#F44336"/>
+        }
+        type="error"
       />
     </SafeAreaView>
   );
