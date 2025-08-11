@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Santé Diabète Mobile",
+    "name": "Santé Diabète",
     "slug": "sante-diabet-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,24 +8,22 @@
     "scheme": "santediabetmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "backgroundColor": "#FF0000",
     "assetBundlePatterns": [
       "**/*"
     ],
-    "splash": {
-      "image": "./assets/images/splash-icon-v2.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#E50000"
-    },
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/sd_logo.png",
+        "backgroundColor": "#FF0000"
+      },
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "android.permission.RECORD_AUDIO"
       ],
       "package": "com.africasys_cloudlyyours.santediabete.mobile"
     },
