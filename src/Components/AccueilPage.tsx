@@ -9,9 +9,13 @@ import { useAuth } from '../context/AuthContext';
 import { useDiabetes } from '../context/DiabetesContext';
 import useConfigStore from '../core/zustand/configStore';
 import { getLastSyncDate } from '../functions/syncHelpers';
+import { useSyncPatientsUI } from '../Hooks/useSyncPatientsUI';
 import { QRCodeRepository } from '../Repositories/QRCodeRepository';
 import { DiabeteType } from '../types/enums';
+import Logger from '../utils/Logger';
 import { ConfirmModal } from './Modal';
+import SyncLoader from './SyncLoader';
+import SyncStatsModal from './SyncStatsModal';
 import { useToast } from './Toast/ToastProvider';
 
 
@@ -39,6 +43,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const showFicheRemplieButton = useConfigStore((state) => state.showFicheRemplieButton);
   const showSyncButton = useConfigStore((state) => state.showSyncButton);
   const showFicheEditerButton = useConfigStore((state) => state.showFicheEditerButton);
+
+
+
 
   const toggleMenu = () => {
     const toValue = menuOpen ? -300 : 0;
@@ -70,13 +77,17 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 
   const showSyncAlertToast = (message: string) => {
     showConfirm(message, {
-      type: 'warning',
+      type: 'info',
       confirmLabel: 'Oui',
       cancelLabel: 'Non',
       persistent: true,
       showClose: true,
-      onConfirm: () => {
-        router.push('/sync');
+      onConfirm: async () => {
+        await handleSync();
+      },
+      onCancel: () => {
+        Logger.info('Sync cancelled by user ');
+        console.log('Sync cancelled by user ');
       },
     });
   }
@@ -122,6 +133,24 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const handleCloseLogoutModal = () => {
     setLogoutModalVisible(false);
   };
+
+  const {
+    isSyncing,
+    syncSuccess,
+    isSyncError,
+    syncStats,
+    showSyncStats,
+    handleSync,
+    closeStats,
+  } = useSyncPatientsUI({
+    onAfterSuccess: async (stats) => {
+      // Exemple: recharger la liste des patients après succès
+    },
+    onAfterError: (stats, err) => {
+      // Optionnel: logger/alerter
+      console.log('Sync error', err, stats);
+    }
+  });
 
   return (
     <>
@@ -187,6 +216,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
           </TouchableOpacity>
         </View>
         <View style={styles.allContent}>
+
 
           <View style={styles.gridContainer}>
 
@@ -283,7 +313,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
               </TouchableOpacity>
             )}
           </View>
+
         </View>
+
       </SafeAreaView>
 
       <ConfirmModal
@@ -295,6 +327,18 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         message="Vous avez ete deconnecte"
         confirmText="OK"
       />
+
+
+      <View style={{  position: 'absolute'}}>
+        <SyncLoader isSyncing={isSyncing} />
+
+        <SyncStatsModal
+          visible={showSyncStats}
+          stats={syncStats}
+          onClose={closeStats}
+        />
+      </View>
+
     </>
   );
 };
@@ -484,3 +528,7 @@ const styles = StyleSheet.create({
 });
 
 export default AccueilPage;
+function getAllOnTheLocalDbPatients() {
+  throw new Error('Function not implemented.');
+}
+
