@@ -314,7 +314,14 @@ export default function NouveauPatientScreen() {
         <ConfirmDualModal
           title="Patient existant"
           type="warning"
-          message={`Le patient semble déjà exister son ID est \n ${getLastElement(doublonIdsResponse)} \n Merci de vous assurer qu’il ne s’agit pas d’une création en doublon`}
+          message={
+            `${doublonIdsResponse.length > 1
+              ? `${doublonIdsResponse.length} patients correspondants ont été trouvés. Le dernier enregistré a pour ID :\n${getLastElement(doublonIdsResponse)}`
+              : `Un patient correspondant a été trouvé avec l'ID :\n${getLastElement(doublonIdsResponse)}`
+            }
+              \nVeuillez vous assurer qu’il ne s’agit pas d’une création en doublon.`
+
+          }
           customIcon={<Ionicons name="alert-circle-outline" size={76} color="#FFC107" />}
           onClose={() => setShowConfirmCreateDoublonModal(false)}
           onPrimary={handleCreatePatientDoublon}
@@ -327,7 +334,7 @@ export default function NouveauPatientScreen() {
 
 
       )}
-              {/* <ConfirmModal
+      {/* <ConfirmModal
           title="Patient existant"
           type="warning"
           message={`Le patient semble déjà exister son ID est \n ${doublonIdsResponse[0]} \n Merci de vous assurer qu’il ne s’agit pas d’une création en doublon`}

@@ -218,51 +218,103 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
             <FontAwesome5 name="qrcode" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
-        <View style={styles.allContent}>
+        <View style={[styles.allContent, 
+          // Si un seul bouton est visible (Patients) et pas de synchronisation
+          (!showFicheRemplieButton && !showFicheEditerButton && !showDownload && !showDelete && !showSyncButton) ? 
+            styles.singleButtonContainer : styles.multiButtonContainer
+        ]}>
 
 
           <View style={styles.gridContainer}>
+            {showFicheRemplieButton && showFicheEditerButton ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.mediumButton]}
+                  onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
+                >
+                  <Feather
+                    name="edit"
+                    size={32}
+                    color="#2196F3"
+                  />
+                  <Text style={styles.buttonText}>Remplir{"\n"}une fiche</Text>
+                </TouchableOpacity>
 
-            {showFicheRemplieButton && (
+                <TouchableOpacity
+                  style={styles.mediumButton}
+                  onPress={() => router.push(`/liste-fiche-edition`)}
+                >
+                  <MaterialIcons
+                    name="edit"
+                    size={32}
+                    color="#FFA000"
+                  />
+                  <Text style={[styles.buttonText, styles.amberText]}>Editer{"\n"}une fiche</Text>
+                </TouchableOpacity>
+              </>
+            ) : showFicheRemplieButton ? (
               <TouchableOpacity
-                style={[styles.mediumButton]}
+                style={[styles.fullWidthButton, styles.singleVisibleButton]}
                 onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
               >
                 <Feather
                   name="edit"
-                  size={32}
+                  size={48}
                   color="#2196F3"
+                  style={styles.singleVisibleButtonIcon}
                 />
-                <Text style={styles.buttonText}>Remplir{"\n"}une fiche</Text>
+                <Text style={[styles.buttonText, styles.singleVisibleButtonText]}>Remplir une fiche</Text>
               </TouchableOpacity>
-            )}
-
-            {showFicheEditerButton && (
+            ) : showFicheEditerButton ? (
               <TouchableOpacity
-                style={styles.mediumButton}
+                style={[styles.fullWidthButton, styles.singleVisibleButton]}
                 onPress={() => router.push(`/liste-fiche-edition`)}
               >
                 <MaterialIcons
                   name="edit"
-                  size={32}
+                  size={48}
                   color="#FFA000"
+                  style={styles.singleVisibleButtonIcon}
                 />
-                <Text style={[styles.buttonText, styles.amberText]}>Editer{"\n"}une fiche</Text>
+                <Text style={[styles.buttonText, styles.amberText, styles.singleVisibleButtonText]}>Editer une fiche</Text>
               </TouchableOpacity>
-            )}
+            ) : null}
           </View>
 
 
           {/* Gros boutons */}
-          <View style={styles.bigButtonsContainer}>
-
+          <View style={[
+            styles.bigButtonsContainer, 
+            { flexDirection: showSyncButton ? 'column' : 'row' }
+          ]}>
             <TouchableOpacity
-              style={styles.bigButton}
+              style={[
+                styles.bigButton,
+                { 
+                  flex: showSyncButton ? undefined : 1, 
+                  height: (!showFicheRemplieButton && !showFicheEditerButton && !showDownload && !showDelete && !showSyncButton) ? 220 : 
+                          (showSyncButton ? undefined : 140)
+                }
+              ]}
               onPress={handlePatientPress}
             >
               <View style={styles.buttonContent}>
-                <FontAwesome5 name="user-injured" size={40} color="#2196F3" />
-                <Text style={styles.bigButtonText}>Patients</Text>
+                <FontAwesome5 
+                  name="user-injured" 
+                  size={(!showFicheRemplieButton && !showFicheEditerButton && !showDownload && !showDelete && !showSyncButton) ? 80 : 
+                        (showSyncButton ? 40 : 56)} 
+                  color="#2196F3" 
+                />
+                <Text 
+                  style={[
+                    styles.bigButtonText, 
+                    (!showFicheRemplieButton && !showFicheEditerButton && !showDownload && !showDelete && !showSyncButton) ? 
+                      { fontSize: 32, marginTop: 24, fontWeight: 'bold' } : 
+                      (!showSyncButton && { fontSize: 24, marginTop: 16 })
+                  ]}
+                >
+                  Patients
+                </Text>
               </View>
             </TouchableOpacity>
 
@@ -281,40 +333,66 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
                 </View>
               </TouchableOpacity>
             )}
-
           </View>
           {/* Grille de petits boutons */}
           <View style={styles.gridContainer}>
+            {showDownload && showDelete ? (
+              <>
+                <TouchableOpacity
+                  style={styles.mediumButton}
+                  onPress={() => {
+                    return router.push(`/download-fiche`)
+                  }}
+                >
+                  <Entypo
+                    name="download"
+                    size={32}
+                    color="#2196F3"
+                  />
+                  <Text style={styles.buttonText}>Fiche vierge</Text>
+                </TouchableOpacity>
 
-            {showDownload && (
+                <TouchableOpacity
+                  style={[styles.mediumButton, styles.deleteButton]}
+                  onPress={() => router.push('/errors/comming-soon')}
+                >
+                  <MaterialIcons
+                    name="delete"
+                    size={32}
+                    color="#D32F2F"
+                  />
+                  <Text style={[styles.buttonText, styles.redText]}>Supprimer{"\n"}une fiche</Text>
+                </TouchableOpacity>
+              </>
+            ) : showDownload ? (
               <TouchableOpacity
-                style={styles.mediumButton}
+                style={[styles.fullWidthButton, styles.singleVisibleButton]}
                 onPress={() => {
                   return router.push(`/download-fiche`)
                 }}
               >
                 <Entypo
                   name="download"
-                  size={32}
+                  size={48}
                   color="#2196F3"
+                  style={styles.singleVisibleButtonIcon}
                 />
-                <Text style={styles.buttonText}>Fiche vierge</Text>
+                <Text style={[styles.buttonText, styles.singleVisibleButtonText]}>Télécharger une fiche vierge</Text>
               </TouchableOpacity>
-            )}
-
-            {showDelete && (
+            ) : showDelete ? (
               <TouchableOpacity
-                style={[styles.mediumButton, styles.deleteButton]}
+                style={[styles.fullWidthButton, styles.deleteButton, styles.singleVisibleButton, styles.singleVisibleDeleteButton]}
                 onPress={() => router.push('/errors/comming-soon')}
               >
                 <MaterialIcons
                   name="delete"
-                  size={32}
+                  size={48}
                   color="#D32F2F"
+                  style={styles.singleVisibleButtonIcon}
                 />
-                <Text style={[styles.buttonText, styles.redText]}>Supprimer{"\n"}une fiche</Text>
+                <Text style={[styles.buttonText, styles.redText, styles.singleVisibleButtonText]}>Supprimer une fiche</Text>
               </TouchableOpacity>
-            )}
+            ) : null}
           </View>
 
         </View>
@@ -413,24 +491,38 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 16
+    paddingBottom: 16,
+    paddingTop: 16
+  },
+  singleButtonContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  multiButtonContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
   bigButtonsContainer: {
     marginBottom: 24,
-    gap: 16
+    gap: 16,
+    flexDirection: 'column',
+    width: '100%'
   },
   bigButton: {
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
     borderWidth: 2,
     borderColor: '#2196F3',
-    marginHorizontal: 8
+    marginHorizontal: 8,
+    width: '90%',
+    alignSelf: 'center'
   },
   buttonContent: {
     alignItems: 'center'
@@ -471,6 +563,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     width: '31%'
+  },
+  fullWidthButton: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    alignItems: 'center',
+    marginBottom: 20,
+    width: '100%'
+  },
+  singleVisibleButton: {
+    height: 120,
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#2196F3',
+  },
+  singleVisibleDeleteButton: {
+    borderColor: '#DC2626',
+    borderWidth: 2,
+  },
+  singleVisibleButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 12,
+  },
+  singleVisibleButtonIcon: {
+    marginBottom: 8,
   },
   deleteButton: {
     borderWidth: 1,

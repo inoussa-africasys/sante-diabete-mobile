@@ -67,7 +67,8 @@ export class PatientRepository extends GenericRepository<Patient> {
   public async getDeletedPatientsOnLocalDB(): Promise<Patient[]> {
     try {
       const diabetesType = await getDiabetesType();
-      const result = this.db.getAllSync(`SELECT * FROM ${this.tableName} WHERE deletedAt IS NOT NULL AND type_diabete = ? AND deletedAt IS NOT NULL ORDER BY createdAt DESC`, [diabetesType.toString()]);
+      // TODO:  je dois revoir cette requete
+      const result = this.db.getAllSync(`SELECT * FROM ${this.tableName} WHERE deletedAt IS NOT NULL AND type_diabete = ? AND (isLocalCreated = ? OR synced = ?) ORDER BY createdAt DESC`, [diabetesType.toString(), true, true]);
 
       return result.map((item) => this.modelFactory(item));
     } catch (error) {
