@@ -26,5 +26,5 @@ export const NAME_OF_TRAFIC_ZIP_FILE = `trafic_archive.zip`;
 export const LAST_SYNC_DATE_KEY = 'last_sync_date';
 
 
-export const DAY_OF_SYNC_ALERT_TO_DECLANCHE = 0.01; 
+export const DAY_OF_SYNC_ALERT_TO_DECLANCHE = 0.000; 
 

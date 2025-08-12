@@ -98,6 +98,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
       let toastMessage = `Vous n’avez pas synchronisé depuis au moins ${DAY_OF_SYNC_ALERT_TO_DECLANCHE} jours !\nCela permet de ne pas perdre les données et récupérer les nouvelles.`
 
       const last = await getLastSyncDate();
+      console.log('Last sync date:', last);
       if (!last) {
         // jamais synchronisé => afficher
         toastMessage = `Vous n'avez jamais synchronisé les données des patients. Voulez-vous synchroniser maintenant ?`
@@ -105,6 +106,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         return;
       }
       const lastDate = new Date(last);
+      console.log('Last sync date:', lastDate);
       if (isNaN(lastDate.getTime())) {
         toastMessage = "La date de synchonisation n'est pas au bon format alors veuiller synchroniser"
         showSyncAlertToast(toastMessage)
@@ -113,6 +115,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
       const now = new Date();
       const diffMs = now.getTime() - lastDate.getTime();
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      console.log('Diff days:', diffDays);
       if (diffDays >= DAY_OF_SYNC_ALERT_TO_DECLANCHE) {
         showSyncAlertToast(toastMessage)
       }
