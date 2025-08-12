@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDiabetes } from "../context/DiabetesContext";
+import { PatientMapper } from "../mappers/patientMapper";
 import { Consultation } from "../models/Consultation";
 import Fiche from "../models/Fiche";
 import Patient from "../models/Patient";
@@ -25,6 +26,7 @@ type usePatientReturnType = {
     ficheAdministrative : Fiche | null;
     ficheAdministrativeName : string | null;
     associateFicheAdministrativeToPatient : (patientId: string, ficheAdministrative: Consultation) => Promise<boolean>;
+    doublonIds : (patient: PatientFormData) => Promise<string[]>;
 }
 
 export const usePatient = () : usePatientReturnType => {
@@ -229,6 +231,22 @@ export const usePatient = () : usePatientReturnType => {
         }
     };
 
+    const doublonIds = async (patient: PatientFormData)  => {
+        try {
+            setIsLoading(true);
+            const patientsService = await PatientService.create();
+            const doublonIds = await patientsService.doublonIds(PatientMapper.toPatient(patient));
+            return doublonIds;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            Logger.log('error', 'Error checking if patient is a doublon', { error });
+            setError(error as string);
+            return [];
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return {
         ficheAdministrativeName,
         getAllOnTheLocalDbPatients,
@@ -244,6 +262,7 @@ export const usePatient = () : usePatientReturnType => {
         error,
         getFicheAdministrative,
         ficheAdministrative,
-        associateFicheAdministrativeToPatient
+        associateFicheAdministrativeToPatient,
+        doublonIds
     };
 }

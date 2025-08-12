@@ -996,6 +996,22 @@ export default class PatientService extends Service {
     }
   };
 
+  public async doublonIds(patient: Patient): Promise<string[]> {
+    try {
+      console.log('Checking if patient is a doublon', { patient });
+      const doublon = await this.patientRepository.getDoublon(patient, this.getTypeDiabete());
+      console.log('Doublon : ', doublon);
+      if (!doublon) {
+        return [];
+      }
+      return doublon.map((item) => item.id_patient);
+    } catch (error) {
+      console.error('Erreur lors de la vérification des doublons :', error);
+      Logger.error('Erreur lors de la vérification des doublons :', { error });
+      return [];
+    }
+  }
+
 }
 
 

@@ -3,28 +3,34 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Modal } from './Modal';
 
-interface ConfirmModalProps {
+interface ConfirmDualModalProps {
     isVisible: boolean;
     onClose: () => void;
-    onConfirm: () => void;
+    onPrimary: () => void;
+    onSecondary: () => void;
     title: string;
     message: string;
     type?: 'danger' | 'warning' | 'info';
-    confirmText?: string;
+    primaryText?: string;
+    secondaryText?: string;
     cancelText?: string;
     customIcon?: React.ReactNode;
+    showCancel?: boolean;
 }
 
-export const ConfirmModal: React.FC<ConfirmModalProps> = ({
+export const ConfirmDualModal: React.FC<ConfirmDualModalProps> = ({
     isVisible,
     onClose,
-    onConfirm,
+    onPrimary,
+    onSecondary,
     title,
     message,
     type = 'info',
-    confirmText = 'Confirmer',
+    primaryText = 'Action 1',
+    secondaryText = 'Action 2',
     cancelText = 'Annuler',
     customIcon,
+    showCancel = true,
 }) => {
     const getTypeConfig = () => {
         switch (type) {
@@ -57,7 +63,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     return (
         <Modal isVisible={isVisible} onClose={onClose}>
             <View style={styles.container}>
-                <View style={[styles.header, { backgroundColor: colors.background }]}>
+                <View style={[styles.header, { backgroundColor: colors.background }]}> 
                     <Text style={styles.title}>{title}</Text>
                 </View>
                 <View style={styles.iconAndTextContainer}>
@@ -67,20 +73,31 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     <Text style={styles.message}>{message}</Text>
                 </View>
                 <View style={styles.buttonContainer}>
+                    {showCancel && (
+                        <TouchableOpacity
+                            style={[styles.button, styles.cancelButton]}
+                            onPress={onClose}
+                        >
+                            <Text style={styles.cancelButtonText}>{cancelText}</Text>
+                        </TouchableOpacity>
+                    )}
                     <TouchableOpacity
-                        style={[styles.button, styles.cancelButton]}
-                        onPress={onClose}
-                    >
-                        <Text style={styles.cancelButtonText}>{cancelText}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.button, styles.confirmButton, { backgroundColor: colors.button }]}
+                        style={[styles.button, styles.secondaryButton]}
                         onPress={() => {
-                            onConfirm();
+                            onSecondary();
                             onClose();
                         }}
                     >
-                        <Text style={styles.confirmButtonText}>{confirmText}</Text>
+                        <Text style={styles.secondaryButtonText}>{secondaryText}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.button, styles.primaryButton, { backgroundColor: colors.button }]}
+                        onPress={() => {
+                            onPrimary();
+                            onClose();
+                        }}
+                    >
+                        <Text style={styles.primaryButtonText}>{primaryText}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -135,7 +152,10 @@ const styles = StyleSheet.create({
     cancelButton: {
         backgroundColor: '#E0E0E0',
     },
-    confirmButton: {
+    secondaryButton: {
+        backgroundColor: '#9E9E9E',
+    },
+    primaryButton: {
         backgroundColor: '#4CAF50',
     },
     cancelButtonText: {
@@ -143,7 +163,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
-    confirmButtonText: {
+    secondaryButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    primaryButtonText: {
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',

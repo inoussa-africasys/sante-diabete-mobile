@@ -131,7 +131,7 @@ export default function PatientDetailScreen() {
 
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
-    router.replace('/liste-patient');
+    router.back();
   };
 
   const formatDate = (dateString: string) => {
@@ -268,6 +268,7 @@ export default function PatientDetailScreen() {
         isVisible={showConfirmModal}
         title="Confirmation"
         message="Êtes-vous sûr de vouloir supprimer ce patient ? Cette action est irréversible."
+        customIcon={<Ionicons name="trash" size={76} color="#FF0000" />}
         onConfirm={confirmDeletePatient}
         onClose={() => setShowConfirmModal(false)}
         type="danger"

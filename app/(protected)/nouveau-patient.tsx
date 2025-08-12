@@ -1,10 +1,11 @@
 import FicheDoesntExist from '@/src/Components/FicheDoesntExist';
-import { AlertModal, LoadingModal } from '@/src/Components/Modal';
+import { AlertModal, ConfirmDualModal, LoadingModal } from '@/src/Components/Modal';
 import SurveyScreenDom from '@/src/Components/Survey/SurveyScreenDom';
+import { getLastElement } from '@/src/functions/helpers';
 import useConsultation from '@/src/Hooks/useConsultation';
 import { usePatient } from '@/src/Hooks/usePatient';
 import { PatientMapper } from '@/src/mappers/patientMapper';
-import { ConsultationFormData, FicheAdministrativeFormData } from '@/src/types/patient';
+import { ConsultationFormData, FicheAdministrativeFormData, PatientFormData } from '@/src/types/patient';
 import Logger from '@/src/utils/Logger';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -32,11 +33,15 @@ export default function NouveauPatientScreen() {
     insertPatientOnTheLocalDb,
     associateFicheAdministrativeToPatient,
     updatePatientOnTheLocalDb,
+    doublonIds,
   } = usePatient();
 
   const { isLoading: isLoadingConsultation, createConsultationOnLocalDB, updateConsultationByIdOnLocalDB, getConsultationById } = useConsultation();
   const [noAnyFicheAdministrative, setNoAnyFicheAdministrative] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(null);
+  const [showConfirmCreateDoublonModal, setShowConfirmCreateDoublonModal] = useState(false);
+  const [doublonIdsResponse, setDoublonIdsResponse] = useState<string[]>([]);
+  const [createPatientFicheAdminData, setCreatePatientFicheAdminData] = useState<FicheAdministrativeFormData>();
 
   useEffect(() => {
     (async () => {
@@ -93,6 +98,7 @@ export default function NouveauPatientScreen() {
 
 
   const handleSaveDataFicheAdministrative = async (data: FicheAdministrativeFormData) => {
+    setCreatePatientFicheAdminData(data);
     if (isEditMode && patientId) {
       try {
         setIsCreatingPatient(true);
@@ -146,32 +152,14 @@ export default function NouveauPatientScreen() {
       try {
         setIsCreatingPatient(true);
         const patientFormData = PatientMapper.ficheAdminToFormPatient(data, ficheAdministrative?.name || '');
-        const patientCreated = await insertPatientOnTheLocalDb(patientFormData);
-        if (!patientCreated) {
-          throw new Error('Impossible d\'enregistrer le patient');
+        const doublonIdsResult = await doublonIds(patientFormData);
+        if (doublonIdsResult.length > 0) {
+          setDoublonIdsResponse(doublonIdsResult);
+          setShowConfirmCreateDoublonModal(true);
+          setIsCreatingPatient(false);
+          return;
         }
-
-        const endDate = new Date();
-        data.date_consultation = endDate;
-        data.start = startDate;
-        data.end = endDate;
-        
-        const consultationFormData: ConsultationFormData = {
-          data: JSON.stringify(data),
-          id_fiche: ficheAdministrative?.id?.toString() || ''
-        }
-        const coordinates = await getCurrentLocation();
-        const consultation = await createConsultationOnLocalDB(consultationFormData, patientCreated.id_patient, coordinates.coords);
-        if (consultation) {
-          const result = await associateFicheAdministrativeToPatient(patientCreated.id_patient, consultation);
-          if (!result) {
-            throw new Error('Impossible d\'associer la fiche administrative au patient');
-          }
-          setIsOpenSuccessModal(true);
-        } else {
-          throw new Error('Impossible d\'enregistrer la fiche administrative');
-        }
-        setIsCreatingPatient(false);
+        await createNewPatientWithFicheAdministrative(data, patientFormData, startDate ?? new Date());
 
       } catch (error) {
         console.error('Erreur lors de l\'enregistrement du patient:', error);
@@ -183,6 +171,63 @@ export default function NouveauPatientScreen() {
     }
 
   }
+
+
+  const createNewPatientWithFicheAdministrative = async (data: FicheAdministrativeFormData, patientFormData: PatientFormData, startDate: Date) => {
+    const patientCreated = await insertPatientOnTheLocalDb(patientFormData);
+    if (!patientCreated) {
+      throw new Error('Impossible d\'enregistrer le patient');
+    }
+
+    const endDate = new Date();
+    data.date_consultation = endDate;
+    data.start = startDate;
+    data.end = endDate;
+
+    const consultationFormData: ConsultationFormData = {
+      data: JSON.stringify(data),
+      id_fiche: ficheAdministrative?.id?.toString() || ''
+    }
+    const coordinates = await getCurrentLocation();
+    const consultation = await createConsultationOnLocalDB(consultationFormData, patientCreated.id_patient, coordinates.coords);
+    if (consultation) {
+      const result = await associateFicheAdministrativeToPatient(patientCreated.id_patient, consultation);
+      if (!result) {
+        throw new Error('Impossible d\'associer la fiche administrative au patient');
+      }
+      setIsOpenSuccessModal(true);
+    } else {
+      throw new Error('Impossible d\'enregistrer la fiche administrative');
+    }
+    setIsCreatingPatient(false);
+  }
+
+
+  const handleCreatePatientDoublon = async () => {
+    setShowConfirmCreateDoublonModal(false);
+    setIsCreatingPatient(true);
+    try {
+      if (!createPatientFicheAdminData) {
+        throw new Error('Impossible de créer le patient car les données de la fiche administrative sont introuvables');
+      }
+      const patientFormData = PatientMapper.ficheAdminToFormPatient(createPatientFicheAdminData, ficheAdministrative?.name || '');
+      await createNewPatientWithFicheAdministrative(createPatientFicheAdminData, patientFormData, startDate ?? new Date());
+
+      setIsOpenSuccessModal(true);
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement du patient doublon :', error);
+      Alert.alert('Erreur', 'Impossible d\'enregistrer le patient doublon');
+      Logger.log('error', 'Error inserting patient doublon on the local db', { error });
+    } finally {
+      setIsCreatingPatient(false);
+    }
+  }
+
+  const handleOpenPatientDoublon = () => {
+    setShowConfirmCreateDoublonModal(false);
+    router.replace(`/patient/${doublonIdsResponse[0]}`);
+  }
+
 
   if (errorPatient || noAnyFicheAdministrative) {
     return (
@@ -263,6 +308,39 @@ export default function NouveauPatientScreen() {
           isVisible={isCreatingPatient}
         />
       )}
+
+      {showConfirmCreateDoublonModal && (
+
+        <ConfirmDualModal
+          title="Patient existant"
+          type="warning"
+          message={`Le patient semble déjà exister son ID est \n ${getLastElement(doublonIdsResponse)} \n Merci de vous assurer qu’il ne s’agit pas d’une création en doublon`}
+          customIcon={<Ionicons name="alert-circle-outline" size={76} color="#FFC107" />}
+          onClose={() => setShowConfirmCreateDoublonModal(false)}
+          onPrimary={handleCreatePatientDoublon}
+          onSecondary={handleOpenPatientDoublon}
+          primaryText="Sauvegarder"
+          secondaryText="Annuler"
+          showCancel={false}
+          isVisible={showConfirmCreateDoublonModal}
+        />
+
+
+      )}
+              {/* <ConfirmModal
+          title="Patient existant"
+          type="warning"
+          message={`Le patient semble déjà exister son ID est \n ${doublonIdsResponse[0]} \n Merci de vous assurer qu’il ne s’agit pas d’une création en doublon`}
+          customIcon={<Ionicons name="alert-circle-outline" size={76} color="#FFC107" />}
+          onClose={handleOpenPatientDoublon}
+          onConfirm={async () => {
+            await handleCreatePatientDoublon();
+            setShowConfirmCreateDoublonModal(false);
+          }}
+          cancelText="Ouvrir"
+          confirmText="Sauvegarder"
+          isVisible={showConfirmCreateDoublonModal}
+        /> */}
     </SafeAreaView>
   );
 }

@@ -212,4 +212,25 @@ export class PatientRepository extends GenericRepository<Patient> {
   }
 
 
+  async getDoublon(patient: Patient, typeDiabete: string): Promise<Patient[] | null> {
+    try {
+    const result = this.db.getAllSync(
+      `SELECT * FROM ${this.tableName} 
+        WHERE type_diabete = ? 
+        AND first_name = ? 
+        AND last_name = ? 
+        AND date_of_birth = ? 
+        AND genre = ? 
+        AND deletedAt IS NULL`,
+      [typeDiabete, patient.first_name, patient.last_name, patient.date_of_birth, patient.genre]
+    );
+    return result.map((item) => this.modelFactory(item));
+    } catch (error) {
+      console.error('Error checking if patient is a doublon:', error);
+      Logger.log('error', 'Error checking if patient is a doublon', { error });
+      return null;
+    }
+  }
+
+
 }

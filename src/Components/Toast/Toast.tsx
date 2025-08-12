@@ -1,6 +1,6 @@
 import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
-import React, { useEffect } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -10,6 +10,16 @@ interface ToastProps {
     type?: ToastType;
     duration?: number;
     onHide?: () => void;
+    // Actions optionnelles pour confirmation
+    onConfirm?: () => void;
+    onCancel?: () => void;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    // Bouton de fermeture manuel (croix)
+    showClose?: boolean;
+    onClose?: () => void;
+    // Si true, désactive l'auto-hide jusqu'à action utilisateur
+    persistent?: boolean;
 }
 
 export const Toast: React.FC<ToastProps> = ({
@@ -18,9 +28,16 @@ export const Toast: React.FC<ToastProps> = ({
     type = 'info',
     duration = 3000,
     onHide,
+    onConfirm,
+    onCancel,
+    confirmLabel = 'Oui',
+    cancelLabel = 'Non',
+    showClose = false,
+    onClose,
+    persistent = false,
 }) => {
-    const translateY = new Animated.Value(-100);
-    const opacity = new Animated.Value(0);
+    const translateY = useRef(new Animated.Value(-100)).current;
+    const opacity = useRef(new Animated.Value(0)).current;
 
     const getTypeConfig = () => {
         switch (type) {
@@ -49,6 +66,7 @@ export const Toast: React.FC<ToastProps> = ({
 
     useEffect(() => {
         if (visible) {
+            // Animate in
             Animated.parallel([
                 Animated.timing(translateY, {
                     toValue: 0,
@@ -62,28 +80,28 @@ export const Toast: React.FC<ToastProps> = ({
                 }),
             ]).start();
 
-            const timer = setTimeout(() => {
-                Animated.parallel([
-                    Animated.timing(translateY, {
-                        toValue: -100,
-                        duration: 300,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(opacity, {
-                        toValue: 0,
-                        duration: 300,
-                        useNativeDriver: true,
-                    }),
-                ]).start(() => {
-                    if (onHide) {
-                        onHide();
-                    }
-                });
-            }, duration);
-
-            return () => clearTimeout(timer);
+            // Auto-hide uniquement si non persistant
+            if (!persistent) {
+                const timer = setTimeout(() => {
+                    Animated.parallel([
+                        Animated.timing(translateY, {
+                            toValue: -100,
+                            duration: 300,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(opacity, {
+                            toValue: 0,
+                            duration: 300,
+                            useNativeDriver: true,
+                        }),
+                    ]).start(() => {
+                        onHide?.();
+                    });
+                }, duration);
+                return () => clearTimeout(timer);
+            }
         }
-    }, [visible, duration, onHide]);
+    }, [visible, duration, onHide, persistent, translateY, opacity]);
 
     const typeConfig = getTypeConfig();
 
@@ -100,10 +118,95 @@ export const Toast: React.FC<ToastProps> = ({
                 },
             ]}
         >
+            {showClose && (
+                <TouchableOpacity
+                    onPress={() => {
+                        // animate out puis callbacks
+                        Animated.parallel([
+                            Animated.timing(translateY, {
+                                toValue: -100,
+                                duration: 300,
+                                useNativeDriver: true,
+                            }),
+                            Animated.timing(opacity, {
+                                toValue: 0,
+                                duration: 300,
+                                useNativeDriver: true,
+                            }),
+                        ]).start(() => {
+                            onClose?.();
+                            onHide?.();
+                        });
+                    }}
+                    style={styles.closeButton}
+                    accessibilityRole="button"
+                    accessibilityLabel="Fermer"
+                >
+                    <AntDesign name="close" size={18} color="white" />
+                </TouchableOpacity>
+            )}
+
             <View style={styles.content}>
                 <View style={styles.iconContainer}>{typeConfig.icon}</View>
                 <Text style={styles.message}>{message}</Text>
             </View>
+
+            {(onConfirm || onCancel) && (
+                <View style={styles.actions}>
+                    {onCancel && (
+                        <TouchableOpacity
+                            style={[styles.actionBtn, styles.cancelBtn]}
+                            onPress={() => {
+                                Animated.parallel([
+                                    Animated.timing(translateY, {
+                                        toValue: -100,
+                                        duration: 300,
+                                        useNativeDriver: true,
+                                    }),
+                                    Animated.timing(opacity, {
+                                        toValue: 0,
+                                        duration: 300,
+                                        useNativeDriver: true,
+                                    }),
+                                ]).start(() => {
+                                    onCancel?.();
+                                    onHide?.();
+                                });
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel={cancelLabel}
+                        >
+                            <Text style={styles.actionText}>{cancelLabel}</Text>
+                        </TouchableOpacity>
+                    )}
+                    {onConfirm && (
+                        <TouchableOpacity
+                            style={[styles.actionBtn, styles.confirmBtn]}
+                            onPress={() => {
+                                Animated.parallel([
+                                    Animated.timing(translateY, {
+                                        toValue: -100,
+                                        duration: 300,
+                                        useNativeDriver: true,
+                                    }),
+                                    Animated.timing(opacity, {
+                                        toValue: 0,
+                                        duration: 300,
+                                        useNativeDriver: true,
+                                    }),
+                                ]).start(() => {
+                                    onConfirm?.();
+                                    onHide?.();
+                                });
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel={confirmLabel}
+                        >
+                            <Text style={styles.actionText}>{confirmLabel}</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            )}
         </Animated.View>
     );
 };
@@ -136,7 +239,38 @@ const styles = StyleSheet.create({
     },
     message: {
         color: 'white',
-        fontSize: 16,
+        fontSize: 14,
         flex: 1,
+    },
+    actions: {
+        marginTop: 12,
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 8,
+    },
+    actionBtn: {
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.7)',
+        marginLeft: 8,
+    },
+    confirmBtn: {
+        backgroundColor: 'rgba(255,255,255,0.15)',
+    },
+    cancelBtn: {
+        backgroundColor: 'transparent',
+    },
+    actionText: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        padding: 4,
     },
 });

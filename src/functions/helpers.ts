@@ -53,3 +53,12 @@ export const formatDate = (dateString: string): string => {
       return dateString;
     }
   };
+
+
+  export function getLastElement<T>(arr: T[]): T | undefined {
+    if (arr.length === 0) {
+      return undefined; // retourne undefined si le tableau est vide
+    }
+    return arr[arr.length - 1];
+  }
+  
