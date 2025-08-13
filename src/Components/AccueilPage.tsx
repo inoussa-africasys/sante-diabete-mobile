@@ -77,7 +77,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 
   const showSyncAlertToast = (message: string) => {
     showConfirm(message, {
-      type: 'info',
+      type: 'warning',
       confirmLabel: 'Oui',
       cancelLabel: 'Non',
       persistent: true,
@@ -405,7 +405,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         isVisible={logoutModalVisible}
         onClose={handleCloseLogoutModal}
         title="Deconnexion reussie"
-        message="Vous avez ete deconnecte"
+        message="Vous avez été deconnecté"
         confirmText="OK"
       />
 
