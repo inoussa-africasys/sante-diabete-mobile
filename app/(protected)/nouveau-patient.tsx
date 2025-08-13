@@ -327,7 +327,7 @@ export default function NouveauPatientScreen() {
           onPrimary={handleCreatePatientDoublon}
           onSecondary={handleOpenPatientDoublon}
           primaryText="Sauvegarder"
-          secondaryText="Annuler"
+          secondaryText="Ouvrir"
           showCancel={false}
           isVisible={showConfirmCreateDoublonModal}
         />
