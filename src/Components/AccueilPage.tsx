@@ -4,12 +4,18 @@ import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DAY_OF_SYNC_ALERT_TO_DECLANCHE } from '../Constants/App';
 import { useAuth } from '../context/AuthContext';
 import { useDiabetes } from '../context/DiabetesContext';
 import useConfigStore from '../core/zustand/configStore';
+import { getLastSyncDate } from '../functions/syncHelpers';
+import { useSyncPatientsUI } from '../Hooks/useSyncPatientsUI';
 import { QRCodeRepository } from '../Repositories/QRCodeRepository';
 import { DiabeteType } from '../types/enums';
+import Logger from '../utils/Logger';
 import { ConfirmModal } from './Modal';
+import SyncLoader from './SyncLoader';
+import SyncStatsModal from './SyncStatsModal';
 import { useToast } from './Toast/ToastProvider';
 
 
@@ -26,17 +32,20 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const { logout } = useAuth();
   const [logoutModalVisible, setLogoutModalVisible] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
-  const { showToast } = useToast();
+  const { showToast, showConfirm } = useToast();
   const { userName } = useAuth();
   const [userNameValue, setUserNameValue] = React.useState<string | null>(null);
 
 
   // les donnees de config
-    const showDownload = useConfigStore((state) => state.showDownload);
-    const showDelete = useConfigStore((state) => state.showDelete);
-    const showFicheRemplieButton = useConfigStore((state) => state.showFicheRemplieButton);
-    const showSyncButton = useConfigStore((state) => state.showSyncButton);
-    const showFicheEditerButton = useConfigStore((state) => state.showFicheEditerButton);
+  const showDownload = useConfigStore((state) => state.showDownload);
+  const showDelete = useConfigStore((state) => state.showDelete);
+  const showFicheRemplieButton = useConfigStore((state) => state.showFicheRemplieButton);
+  const showSyncButton = useConfigStore((state) => state.showSyncButton);
+  const showFicheEditerButton = useConfigStore((state) => state.showFicheEditerButton);
+
+
+
 
   const toggleMenu = () => {
     const toValue = menuOpen ? -300 : 0;
@@ -56,12 +65,63 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     router.push('/scanner');
   };
 
+  const { isAuthenticated } = useAuth();
+
 
   useEffect(() => {
     const repo = new QRCodeRepository();
     const qrCode = repo.findAll();
     console.log('QR Code:', qrCode);
     userName().then((name) => setUserNameValue(name));
+  }, []);
+
+  const showSyncAlertToast = (message: string) => {
+    showConfirm(message, {
+      type: 'info',
+      confirmLabel: 'Oui',
+      cancelLabel: 'Non',
+      persistent: true,
+      showClose: true,
+      onConfirm: async () => {
+        await handleSync();
+      },
+      onCancel: () => {
+        Logger.info('Sync cancelled by user ');
+        console.log('Sync cancelled by user ');
+      },
+    });
+  }
+
+
+  useEffect(() => {
+    const checkLastSync = async () => {
+      let toastMessage = `Vous n’avez pas synchronisé depuis au moins ${DAY_OF_SYNC_ALERT_TO_DECLANCHE} jours !\nCela permet de ne pas perdre les données et récupérer les nouvelles.`
+
+      const last = await getLastSyncDate();
+      console.log('Last sync date:', last);
+      if (!last) {
+        // jamais synchronisé => afficher
+        toastMessage = `Vous n'avez jamais synchronisé les données des patients. Voulez-vous synchroniser maintenant ?`
+        showSyncAlertToast(toastMessage)
+        return;
+      }
+      const lastDate = new Date(last);
+      console.log('Last sync date:', lastDate);
+      if (isNaN(lastDate.getTime())) {
+        toastMessage = "La date de synchonisation n'est pas au bon format alors veuiller synchroniser"
+        showSyncAlertToast(toastMessage)
+        return;
+      }
+      const now = new Date();
+      const diffMs = now.getTime() - lastDate.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      console.log('Diff days:', diffDays);
+      if (diffDays >= DAY_OF_SYNC_ALERT_TO_DECLANCHE) {
+        showSyncAlertToast(toastMessage)
+      }
+
+    };
+    checkLastSync();
   }, []);
 
   const handleLogout = () => {
@@ -77,16 +137,34 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     setLogoutModalVisible(false);
   };
 
+  const {
+    isSyncing,
+    syncSuccess,
+    isSyncError,
+    syncStats,
+    showSyncStats,
+    handleSync,
+    closeStats,
+  } = useSyncPatientsUI({
+    onAfterSuccess: async (stats) => {
+      // Exemple: recharger la liste des patients après succès
+    },
+    onAfterError: (stats, err) => {
+      // Optionnel: logger/alerter
+      console.log('Sync error', err, stats);
+    }
+  });
+
   return (
     <>
-    
-    <StatusBar backgroundColor="red" barStyle="dark-content" />
+
+      <StatusBar backgroundColor="red" barStyle="default" />
       <SafeAreaView style={styles.container} >
 
         {/* Slide-out Menu */}
         <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }] }]}>
           <View style={styles.menuHeader}>
-            <Text style={styles.menuTitle}> {userNameValue ?? 'Menu'} - {diabetesType}</Text>
+            <Text style={styles.menuTitle}> {isAuthenticated ? userNameValue : 'Menu'} - {diabetesType}</Text>
             <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
               <Entypo name="cross" size={28} color="#fff" />
             </TouchableOpacity>
@@ -113,6 +191,11 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
             <Text style={styles.menuItemText}>CONFIG QR CODE</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem}
+            onPress={() => router.push('/consultations')}
+          >
+            <Text style={styles.menuItemText}>CHANGER DE PROFIL</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}
             onPress={() => router.push('/trafic-assistant')}
           >
             <Text style={styles.menuItemText}>TRAFIC ASSISTANT</Text>
@@ -135,105 +218,185 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
             <FontAwesome5 name="qrcode" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
-        <View style={styles.allContent}>
+        <View style={[styles.allContent, 
+          // Si un seul bouton est visible (Patients) et pas de synchronisation
+          (!showFicheRemplieButton && !showFicheEditerButton && !showDownload && !showDelete && !showSyncButton) ? 
+            styles.singleButtonContainer : styles.multiButtonContainer
+        ]}>
+
 
           <View style={styles.gridContainer}>
+            {showFicheRemplieButton && showFicheEditerButton ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.mediumButton]}
+                  onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
+                >
+                  <Feather
+                    name="edit"
+                    size={32}
+                    color="#2196F3"
+                  />
+                  <Text style={styles.buttonText}>Remplir{"\n"}une fiche</Text>
+                </TouchableOpacity>
 
-            {showFicheRemplieButton && (
-            <TouchableOpacity
-              style={[styles.mediumButton]}
-              onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
-            >
-              <Feather
-                name="edit"
-                size={32}
-                color="#2196F3"
-              />
-              <Text style={styles.buttonText}>Remplir{"\n"}une fiche</Text>
-            </TouchableOpacity>
-            )}
-
-            {showFicheEditerButton && (
-            <TouchableOpacity
-              style={styles.mediumButton}
-              onPress={() => router.push(`/liste-fiche-edition`)}
-            >
-              <MaterialIcons
-                name="edit"
-                size={32}
-                color="#FFA000"
-              />
-              <Text style={[styles.buttonText, styles.amberText]}>Editer{"\n"}une fiche</Text>
-            </TouchableOpacity>
-            )}
+                <TouchableOpacity
+                  style={styles.mediumButton}
+                  onPress={() => router.push(`/liste-fiche-edition`)}
+                >
+                  <MaterialIcons
+                    name="edit"
+                    size={32}
+                    color="#FFA000"
+                  />
+                  <Text style={[styles.buttonText, styles.amberText]}>Editer{"\n"}une fiche</Text>
+                </TouchableOpacity>
+              </>
+            ) : showFicheRemplieButton ? (
+              <TouchableOpacity
+                style={[styles.fullWidthButton, styles.singleVisibleButton]}
+                onPress={() => router.push(`/liste-fiches?dt=${diabetesType}&mode=remplir`)}
+              >
+                <Feather
+                  name="edit"
+                  size={48}
+                  color="#2196F3"
+                  style={styles.singleVisibleButtonIcon}
+                />
+                <Text style={[styles.buttonText, styles.singleVisibleButtonText]}>Remplir une fiche</Text>
+              </TouchableOpacity>
+            ) : showFicheEditerButton ? (
+              <TouchableOpacity
+                style={[styles.fullWidthButton, styles.singleVisibleButton]}
+                onPress={() => router.push(`/liste-fiche-edition`)}
+              >
+                <MaterialIcons
+                  name="edit"
+                  size={48}
+                  color="#FFA000"
+                  style={styles.singleVisibleButtonIcon}
+                />
+                <Text style={[styles.buttonText, styles.amberText, styles.singleVisibleButtonText]}>Editer une fiche</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
 
 
           {/* Gros boutons */}
-          <View style={styles.bigButtonsContainer}>
-           
+          <View style={[
+            styles.bigButtonsContainer, 
+            { flexDirection: showSyncButton ? 'column' : 'row' }
+          ]}>
             <TouchableOpacity
-              style={styles.bigButton}
+              style={[
+                styles.bigButton,
+                { 
+                  flex: showSyncButton ? undefined : 1, 
+                  height: (!showFicheRemplieButton && !showFicheEditerButton && !showDownload && !showDelete && !showSyncButton) ? 220 : 
+                          (showSyncButton ? undefined : 140)
+                }
+              ]}
               onPress={handlePatientPress}
             >
               <View style={styles.buttonContent}>
-                <FontAwesome5 name="user-injured" size={40} color="#2196F3" />
-                <Text style={styles.bigButtonText}>Patients</Text>
+                <FontAwesome5 
+                  name="user-injured" 
+                  size={(!showFicheRemplieButton && !showFicheEditerButton && !showDownload && !showDelete && !showSyncButton) ? 80 : 
+                        (showSyncButton ? 40 : 56)} 
+                  color="#2196F3" 
+                />
+                <Text 
+                  style={[
+                    styles.bigButtonText, 
+                    (!showFicheRemplieButton && !showFicheEditerButton && !showDownload && !showDelete && !showSyncButton) ? 
+                      { fontSize: 32, marginTop: 24, fontWeight: 'bold' } : 
+                      (!showSyncButton && { fontSize: 24, marginTop: 16 })
+                  ]}
+                >
+                  Patients
+                </Text>
               </View>
             </TouchableOpacity>
 
             {showSyncButton && (
-            <TouchableOpacity
-              style={styles.bigButton}
-              onPress={() => router.push('/sync')}
-            >
-              <View style={styles.buttonContent}>
-                <Ionicons
-                  name="sync"
-                  size={40}
-                  color="#2196F3"
-                />
-                <Text style={styles.bigButtonText}>Synchroniser</Text>
-              </View>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.bigButton}
+                onPress={() => router.push('/sync')}
+              >
+                <View style={styles.buttonContent}>
+                  <Ionicons
+                    name="sync"
+                    size={40}
+                    color="#2196F3"
+                  />
+                  <Text style={styles.bigButtonText}>Synchroniser</Text>
+                </View>
+              </TouchableOpacity>
             )}
-
           </View>
           {/* Grille de petits boutons */}
           <View style={styles.gridContainer}>
+            {showDownload && showDelete ? (
+              <>
+                <TouchableOpacity
+                  style={styles.mediumButton}
+                  onPress={() => {
+                    return router.push(`/download-fiche`)
+                  }}
+                >
+                  <Entypo
+                    name="download"
+                    size={32}
+                    color="#2196F3"
+                  />
+                  <Text style={styles.buttonText}>Fiche vierge</Text>
+                </TouchableOpacity>
 
-            {showDownload && (
-            <TouchableOpacity
-              style={styles.mediumButton}
-              onPress={() => {
-                return router.push(`/download-fiche`)
-                /* return router.push(`/liste-fiches?dt=${diabetesType}&mode=vierge`) */
-              }}
-            >
-              <Entypo
-                name="download"
-                size={32}
-                color="#2196F3"
-              />
-              <Text style={styles.buttonText}>Fiche vierge</Text>
-            </TouchableOpacity>
-            )}
-
-            {showDelete && (
-            <TouchableOpacity
-              style={[styles.mediumButton, styles.deleteButton]}
-              onPress={() => router.push('/errors/comming-soon')}
-            >
-              <MaterialIcons
-                name="delete"
-                size={32}
-                color="#D32F2F"
-              />
-              <Text style={[styles.buttonText, styles.redText]}>Supprimer{"\n"}une fiche</Text>
-            </TouchableOpacity>
-            )}
+                <TouchableOpacity
+                  style={[styles.mediumButton, styles.deleteButton]}
+                  onPress={() => router.push('/errors/comming-soon')}
+                >
+                  <MaterialIcons
+                    name="delete"
+                    size={32}
+                    color="#D32F2F"
+                  />
+                  <Text style={[styles.buttonText, styles.redText]}>Supprimer{"\n"}une fiche</Text>
+                </TouchableOpacity>
+              </>
+            ) : showDownload ? (
+              <TouchableOpacity
+                style={[styles.fullWidthButton, styles.singleVisibleButton]}
+                onPress={() => {
+                  return router.push(`/download-fiche`)
+                }}
+              >
+                <Entypo
+                  name="download"
+                  size={48}
+                  color="#2196F3"
+                  style={styles.singleVisibleButtonIcon}
+                />
+                <Text style={[styles.buttonText, styles.singleVisibleButtonText]}>Télécharger une fiche vierge</Text>
+              </TouchableOpacity>
+            ) : showDelete ? (
+              <TouchableOpacity
+                style={[styles.fullWidthButton, styles.deleteButton, styles.singleVisibleButton, styles.singleVisibleDeleteButton]}
+                onPress={() => router.push('/errors/comming-soon')}
+              >
+                <MaterialIcons
+                  name="delete"
+                  size={48}
+                  color="#D32F2F"
+                  style={styles.singleVisibleButtonIcon}
+                />
+                <Text style={[styles.buttonText, styles.redText, styles.singleVisibleButtonText]}>Supprimer une fiche</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
+
         </View>
+
       </SafeAreaView>
 
       <ConfirmModal
@@ -245,6 +408,18 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         message="Vous avez ete deconnecte"
         confirmText="OK"
       />
+
+
+      <View style={{  position: 'absolute'}}>
+        <SyncLoader isSyncing={isSyncing} />
+
+        <SyncStatsModal
+          visible={showSyncStats}
+          stats={syncStats}
+          onClose={closeStats}
+        />
+      </View>
+
     </>
   );
 };
@@ -315,25 +490,39 @@ const styles = StyleSheet.create({
   allContent: {
     flex: 1,
     justifyContent: 'center',
-    marginTop: 32,
-    padding: 16
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 16
+  },
+  singleButtonContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  multiButtonContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
   bigButtonsContainer: {
     marginBottom: 24,
-    gap: 16
+    gap: 16,
+    flexDirection: 'column',
+    width: '100%'
   },
   bigButton: {
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
     borderWidth: 2,
     borderColor: '#2196F3',
-    marginHorizontal: 8
+    marginHorizontal: 8,
+    width: '90%',
+    alignSelf: 'center'
   },
   buttonContent: {
     alignItems: 'center'
@@ -375,6 +564,37 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     width: '31%'
   },
+  fullWidthButton: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    alignItems: 'center',
+    marginBottom: 20,
+    width: '100%'
+  },
+  singleVisibleButton: {
+    height: 120,
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#2196F3',
+  },
+  singleVisibleDeleteButton: {
+    borderColor: '#DC2626',
+    borderWidth: 2,
+  },
+  singleVisibleButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 12,
+  },
+  singleVisibleButtonIcon: {
+    marginBottom: 8,
+  },
   deleteButton: {
     borderWidth: 1,
     borderColor: '#DC2626'
@@ -391,7 +611,50 @@ const styles = StyleSheet.create({
   },
   redText: {
     color: '#DC2626'
-  }
+  },
+  syncAlertContainer: {
+    backgroundColor: '#FFC107',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  syncAlertText: {
+    color: '#1f2937',
+    textAlign: 'center',
+    marginLeft: 16
+  },
+  syncAlertActions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 12,
+  },
+  syncAlertButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  syncAlertYes: {
+    backgroundColor: '#2563EB',
+  },
+  syncAlertNo: {
+    backgroundColor: '#E5E7EB',
+  },
+  syncAlertButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  syncAlertNoText: {
+    color: '#111827',
+    fontWeight: 'bold',
+  },
 });
 
 export default AccueilPage;
+function getAllOnTheLocalDbPatients() {
+  throw new Error('Function not implemented.');
+}
+

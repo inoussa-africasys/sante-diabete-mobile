@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 50,
-    backgroundColor: '#D50000',
+    backgroundColor: '#FF0000',
     
   },
   logo: {

@@ -1,17 +1,18 @@
 import PatientScanner from '@/app/(protected)/patient/scanner';
+import { useSyncPatientsUI } from '@/src/Hooks/useSyncPatientsUI';
 import { formatPatientDate } from '@/src/functions/helpers';
 import Patient from '@/src/models/Patient';
-import { SyncPatientReturnType } from '@/src/types/patient';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePatient } from '../../Hooks/usePatient';
 import { useDiabetes } from '../../context/DiabetesContext';
 import Empty from '../Empty';
 import SyncLoader from '../SyncLoader';
+import SyncStatsModal from '../SyncStatsModal';
 
 
 interface PatientListPageProps {
@@ -35,17 +36,33 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const diabetesType = useDiabetes().diabetesType;
   const [showSearchbar, setShowSearchbar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncSuccess, setSyncSuccess] = useState(false);
-  const [isSyncError, setIsSyncError] = useState(false);
   const [isLoadingFetch, setIsLoadingFetch] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [syncStats, setSyncStats] = useState<SyncPatientReturnType | null>(null);
-  const [showSyncStats, setShowSyncStats] = useState(false);
   const [showPatientScanner, setShowPatientScanner] = useState(false);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const { getAllOnTheLocalDbPatients, syncPatients } = usePatient();
 
+
+  const {
+    isSyncing,
+    syncSuccess,
+    isSyncError,
+    syncStats,
+    showSyncStats,
+    handleSync,
+    closeStats,
+  } = useSyncPatientsUI({
+    onAfterSuccess: async (stats) => {
+      // Exemple: recharger la liste des patients après succès
+      const p = await getAllOnTheLocalDbPatients();
+      setPatients(p);
+      setFilteredPatients(p);
+    },
+    onAfterError: (stats, err) => {
+      // Optionnel: logger/alerter
+      console.log('Sync error', err, stats);
+    }
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -76,7 +93,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     setShowPatientScanner(false);
     setShowSearchbar(true);
     handleSearch(data);
-    
+
   };
 
   const openPatientScanner = () => {
@@ -103,7 +120,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   };
 
 
-  const handleSync = async () => {
+  /* const handleSync = async () => {
     setIsSyncing(true);
     try {
       const syncResult = await syncPatients();
@@ -126,7 +143,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       setIsSyncError(true);
       console.error('Erreur lors de la synchronisation:', error);
     }
-  };
+  }; */
 
 
 
@@ -151,11 +168,6 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     </TouchableOpacity>
   );
 
-
-
-
-
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" hidden={false} />
@@ -174,7 +186,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                   setShowSearchbar(false);
                   setSearchQuery('');
                   handleSearch('');
-                  }}
+                }}
               >
                 <Ionicons name="arrow-back" size={24} color="white" />
               </TouchableOpacity>
@@ -249,11 +261,9 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
           />
         )}
 
-
-        {/* Modals */}
+        {/* 
         <SyncLoader isSyncing={isSyncing} />
 
-        {/* Sync Stats Modal */}
         <Modal
           visible={showSyncStats}
           transparent={true}
@@ -267,10 +277,8 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
               </Text>
 
               <ScrollView style={styles.statsScrollView}>
-                {/* Message global */}
                 <Text style={styles.modalMessage}>{syncStats?.message}</Text>
 
-                {/* Statistiques globales */}
                 <View style={styles.statsSection}>
                   <Text style={styles.statsSectionTitle}>Résumé de la synchronisation</Text>
 
@@ -329,7 +337,6 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                   )}
                 </View>
 
-                {/* Erreurs */}
                 {syncStats?.errors && syncStats.errors.length > 0 && (
                   <View style={styles.errorsSection}>
                     <Text style={styles.errorsSectionTitle}>Erreurs rencontrées</Text>
@@ -348,7 +355,16 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-        </Modal>
+        </Modal> */}
+
+        <SyncLoader isSyncing={isSyncing} />
+
+        <SyncStatsModal
+          visible={showSyncStats}
+          stats={syncStats}
+          onClose={closeStats}
+        />
+
 
         {/* Add Button */}
         <TouchableOpacity

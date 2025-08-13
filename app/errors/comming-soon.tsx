@@ -2,15 +2,15 @@ import { Images } from '@/src/Constants/Images'
 import { Ionicons } from '@expo/vector-icons'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
-import React from 'react'
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 type CommingSoonProps = {
     onBack: () => void
 }
 const CommingSoon = ({ onBack }: CommingSoonProps) => {
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <TouchableOpacity style={styles.headerBackButton} onPress={onBack || (() => { router.back() })}>
                 <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
@@ -19,7 +19,7 @@ const CommingSoon = ({ onBack }: CommingSoonProps) => {
             <TouchableOpacity style={styles.backButton} onPress={onBack || (() => { router.back() })}>
                 <Text style={styles.backText}>Retour</Text>
             </TouchableOpacity>
-        </View>
+        </SafeAreaView>
     )
 }
 

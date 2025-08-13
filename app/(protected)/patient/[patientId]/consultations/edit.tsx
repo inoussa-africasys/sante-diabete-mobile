@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+
 export default function EditConsultationScreen() {
   const params = useLocalSearchParams<{ patientId?: string; consultationId?: string }>();
   const patientId = params.patientId || '';

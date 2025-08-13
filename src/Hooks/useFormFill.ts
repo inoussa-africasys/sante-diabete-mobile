@@ -13,6 +13,7 @@ type useFormFillType = {
     formFills: FormFill[];
     loadFormFills: () => Promise<void>;
     getFormFillById: (id: string) => Promise<FormFill | null>;
+    updateFormFillOnLocalDB: (id: string,formFill: FormFillForm) => Promise<boolean>;
 }
 export const useFormFill = (): useFormFillType => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -98,9 +99,40 @@ export const useFormFill = (): useFormFillType => {
         }
     };
 
+    const updateFormFillOnLocalDB = async (id: string,formFill: FormFillForm): Promise<boolean> => {
+        try {
+            setIsLoading(true);
+            const formFillService = await FormFillService.create();
+            console.log('updateFormFillOnLocalDB id', id);
+            const result = await formFillService.updateFormFillAndReturn(parseInt(id),formFill);
+            console.info('formFill modifiée :', result);
+            if (!result) {
+                console.error('Erreur lors de la modification de la formFill');
+                setError('Erreur lors de la modification de la formFill');
+                Logger.error('Erreur lors de la modification de la formFill');
+                return false;
+            }
+            if (isOnline && isAutoSyncActive) {
+                const resultSync = await formFillService.autoSyncFormFill(result);
+                return resultSync;
+            }
+            const resultJson = await formFillService.updateFormFillAsJson(result);
+            console.info('formFill json modifiée :', resultJson);
+            return true;
+        } catch (error) {
+            console.error('Erreur réseau :', error);
+            setError(error as string);
+            setIsLoading(false);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return {
         getFicheListWithFormFill,
         createFormFillOnLocalDB,
+        updateFormFillOnLocalDB,
         isLoading,
         error,
         formFills,

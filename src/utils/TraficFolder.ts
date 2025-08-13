@@ -19,8 +19,8 @@ export class TraficFolder {
         return `${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}${dt}/forms/definitions`
     }
 
-    static getFormsInstancesFolderPath(dt: string,fileName: string) : string {
-        return `${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}${dt}/forms/instances/${fileName}`
+    static getFormsInstancesFolderPath(dt: string,ficheName: string) : string {
+        return `${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}${dt}/forms/instances/${ficheName}`
     }
 
 

@@ -1,14 +1,14 @@
+import SplashScreen from '@/src/Components/SplashScreen';
 import { AuthProvider } from '@/src/context/AuthContext';
 import { Migration } from '@/src/core/database/migrations';
 import useConfigStore from '@/src/core/zustand/configStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Constants from 'expo-constants';
-import { Image } from 'expo-image';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Button, Dimensions, StyleSheet, Text, View } from "react-native";
+import { Button, Dimensions, StyleSheet, Text, View } from "react-native";
 import "../assets/css/global.css";
 import FullScreenSplash from "../src/Components/FullScreenSplash";
 import { ToastProvider } from '../src/Components/Toast/ToastProvider';
@@ -67,7 +67,7 @@ export default function RootLayout() {
     const authenticate = async () => {
       if (!fingerprintEnabled && !pinAtStartup) {
         setAuthenticated(true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
         setLoading(false);
         return;
       }
@@ -94,20 +94,21 @@ export default function RootLayout() {
         } else {
           setError('Échec ou annulation de l’authentification.');
         }
-      } catch (err) {
+      } catch (err ) {
         setError('Erreur lors de l’authentification.');
       }
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 5000));
       setLoading(false);
     };
 
     authenticate();
-  }, []);
+  }, [fingerprintEnabled, pinAtStartup]);
 
   if (loading) {
     return (
-      <View style={styles.content}>
+      <SplashScreen />
+     /*  <View style={styles.content}>
         <Image
           source={require('../assets/images/splash-icon-v2.png')}
           style={styles.image}
@@ -117,7 +118,7 @@ export default function RootLayout() {
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.versionText}>Version : {version}</Text>
         </View>
-      </View>
+      </View> */
     );
   }
 

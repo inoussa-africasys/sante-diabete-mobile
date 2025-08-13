@@ -1,19 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const NoNetwork = () => {
     const router = useRouter();
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Ionicons style={styles.icon} name="wifi" size={150} color="#D50000" />
       <Text style={styles.title}>Pas d'Internet</Text>
       <Text style={styles.text}>Veuillez vérifier votre connexion et réessayez</Text>
       <TouchableOpacity style={styles.button} onPress={() => router.back()}>
         <Text style={styles.buttonText}>Retour</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   )
 }
 

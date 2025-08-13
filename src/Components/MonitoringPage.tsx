@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 50,
     paddingHorizontal: 15,
-    backgroundColor: '#D50000',
+    backgroundColor: '#FF0000',
   },
   backButton: {
     width: 40,
@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     position: 'relative',
-    width: '80%',
-    height: 200,
+    width: '100%',
+    height: 250,
     marginBottom: 30,
     alignItems: 'center',
     justifyContent: 'center',
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   mapMarker: {
     position: 'absolute',
     top: '30%',
-    left: '40%',
+    left: '45%',
     zIndex: 1,
   },
   statsContainer: {
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   button: {
-    backgroundColor: '#D50000',
+    backgroundColor: '#FF0000',
     borderRadius: 25,
     paddingVertical: 12,
     paddingHorizontal: 40,
