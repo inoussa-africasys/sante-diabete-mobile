@@ -24,7 +24,7 @@ async function validateTokenOnLine(baseUrl: string, token: string): Promise<bool
     return response.status === 200;
 }
 
-async function validateToken(activeDiabetesType :DiabeteType ): Promise<boolean> {    
+async function validateTokenOffline(activeDiabetesType :DiabeteType ): Promise<boolean> {    
     const AUTH_TOKEN_KEY = getAuthTokenKey(activeDiabetesType as DiabeteType);
     const USER_NAME_KEY = getUserNameKey(activeDiabetesType as DiabeteType);
     
@@ -49,6 +49,7 @@ async function validateToken(activeDiabetesType :DiabeteType ): Promise<boolean>
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const queryClient = useQueryClient();
     const [activeDiabetesType, setActiveDiabetesType] = useState<DiabeteType | null>(null);
+    const [isAuthenticatedState, setIsAuthenticatedState] = useState(false);
 
     const checkActiveDiabetesType = async () => {
         try {
@@ -77,10 +78,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (!activeDiabetesType) {
                 console.error('No active diabetes type found');
                 Logger.error('No active diabetes type found');
+                setIsAuthenticatedState(false);
                 return false;
             }
-
-            return validateToken(activeDiabetesType);
+            setIsAuthenticatedState(true);
+            return validateTokenOffline(activeDiabetesType);
         },
         enabled: activeDiabetesType !== null,
         // Force un re-check à chaque montage d'un écran/composant
@@ -108,6 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 await SecureStore.setItemAsync(getAuthTokenKey(diabetesType), token);
                 await SecureStore.setItemAsync(AUTH_BASE_URL_KEY, baseUrl);
                 await SecureStore.setItemAsync(getUserNameKey(diabetesType), userName);
+                setIsAuthenticatedState(true);
                 return true;
             }            
             return false;
@@ -123,6 +126,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await SecureStore.deleteItemAsync(AUTH_BASE_URL_KEY);
             await SecureStore.deleteItemAsync(getUserNameKey(diabetesType));
             await SecureStore.deleteItemAsync(ACTIVE_DIABETE_TYPE_KEY); 
+            
+            setIsAuthenticatedState(false);
             return true;
         },
         onSuccess: () => {
@@ -216,7 +221,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         logout,
         getToken,
         userName,
-        refreshDiabetesType
+        refreshDiabetesType,
+        isAuthenticatedState
     };
 
     return (
