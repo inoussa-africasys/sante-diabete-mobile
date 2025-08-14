@@ -1,4 +1,5 @@
 import { AlertModal } from "@/src/Components/Modal";
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
 import { parseSurveyData } from "@/src/functions/helpers";
 import useConsultation from "@/src/Hooks/useConsultation";
@@ -113,6 +114,7 @@ export default function EditConsultationScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{patient.first_name} {patient.last_name}</Text>
       </View>
+      <DiabetesTypeBadge />
 
       <SurveyScreenDom
         surveyJson={fiche?.data}

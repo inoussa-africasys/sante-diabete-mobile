@@ -1,3 +1,4 @@
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { AlertModal, LoadingModal } from '@/src/Components/Modal';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -102,6 +103,7 @@ export default function DownloadFicheScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Téléchargement de fiche</Text>
         </View>
+        <DiabetesTypeBadge />
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color="#2196F3" />
         </View>
@@ -122,6 +124,7 @@ export default function DownloadFicheScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Téléchargement de fiche</Text>
         </View>
+        <DiabetesTypeBadge />
         <View style={[styles.centerContent,]}>
           <MaterialIcons name="error-outline" size={48} color="#f44336" />
           <Text style={styles.errorText}>Une erreur est survenue</Text>
@@ -142,7 +145,7 @@ export default function DownloadFicheScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Téléchargement de fiche</Text>
         </View>
-
+        <DiabetesTypeBadge />
         <FlatList
           data={fiches || []}
         renderItem={(item) => renderItem({item: item.item,ficheDownloadingName: ficheDownloadingName,isDownloading: isLoadingDownloadFiche})}

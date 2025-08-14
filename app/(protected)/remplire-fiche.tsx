@@ -1,4 +1,5 @@
 import { AlertModal } from "@/src/Components/Modal";
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
 import { useFiche } from "@/src/Hooks/useFiche";
 import { useFormFill } from "@/src/Hooks/useFormFill";
@@ -104,6 +105,7 @@ export default function RemplireFiche() {
           Remplir une fiche
         </Text>
       </View>
+      <DiabetesTypeBadge />
 
       <SurveyScreenDom surveyJson={surveyJson} handleSurveyComplete={handleCompletSurveyForm} />
       <AlertModal

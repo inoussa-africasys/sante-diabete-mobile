@@ -1,7 +1,7 @@
 import { Entypo, Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DAY_OF_SYNC_ALERT_TO_DECLANCHE } from '../Constants/App';
@@ -13,6 +13,7 @@ import { useSyncPatientsUI } from '../Hooks/useSyncPatientsUI';
 import { QRCodeRepository } from '../Repositories/QRCodeRepository';
 import { DiabeteType } from '../types/enums';
 import Logger from '../utils/Logger';
+import DiabetesTypeBadge from './DiabetesTypeBadge';
 import { ConfirmModal } from './Modal';
 import SyncLoader from './SyncLoader';
 import SyncStatsModal from './SyncStatsModal';
@@ -221,6 +222,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
             <FontAwesome5 name="qrcode" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
+        <DiabetesTypeBadge />
         <View style={[styles.allContent, 
           // Si un seul bouton est visible (Patients) et pas de synchronisation
           (!showFicheRemplieButton && !showFicheEditerButton && !showDownload && !showDelete && !showSyncButton) ? 

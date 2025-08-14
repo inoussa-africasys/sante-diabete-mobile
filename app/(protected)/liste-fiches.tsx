@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '../../src/Components/Toast';
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { useFiche } from '../../src/Hooks/useFiche';
 
 
@@ -141,6 +142,7 @@ export default function ListeFichesScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
         </View>
+        <DiabetesTypeBadge />
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color="#2196F3" />
         </View>
@@ -160,6 +162,7 @@ export default function ListeFichesScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
         </View>
+        <DiabetesTypeBadge />
         <View style={styles.centerContent}>
           <MaterialIcons name="error-outline" size={48} color="#f44336" />
           <Text style={styles.errorText}>Une erreur est survenue</Text>
@@ -179,6 +182,7 @@ export default function ListeFichesScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
       </View>
+      <DiabetesTypeBadge />
       <FlatList
         data={fiches}
         renderItem={renderItemFiche}

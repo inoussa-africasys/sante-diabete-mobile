@@ -10,6 +10,7 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePatient } from '../../Hooks/usePatient';
 import { useDiabetes } from '../../context/DiabetesContext';
+import DiabetesTypeBadge from '../DiabetesTypeBadge';
 import Empty from '../Empty';
 import SyncLoader from '../SyncLoader';
 import SyncStatsModal from '../SyncStatsModal';
@@ -226,9 +227,10 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
         </View>
 
         {/* Type de diabète */}
-        <View style={styles.diabetesTypeContainer}>
+        {/* <View style={styles.diabetesTypeContainer}>
           <Text style={styles.diabetesTypeText}>Type: {diabetesType}</Text>
-        </View>
+        </View> */}
+        <DiabetesTypeBadge />
 
         {/* Actions Bar */}
         <View style={styles.actionsBar}>

@@ -1,3 +1,4 @@
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { AlertModal, ConfirmModal, LoadingModal } from '@/src/Components/Modal';
 import useConsultation from '@/src/Hooks/useConsultation';
 import { usePatient } from '@/src/Hooks/usePatient';
@@ -165,6 +166,8 @@ export default function PatientDetailScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        <DiabetesTypeBadge />
 
         <ScrollView style={styles.scrollContainer}>
           {isLoadingConsultations || isLoadingPatient ? (
