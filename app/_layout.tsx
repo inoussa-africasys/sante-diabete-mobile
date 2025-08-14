@@ -3,7 +3,6 @@ import { AuthProvider } from '@/src/context/AuthContext';
 import { Migration } from '@/src/core/database/migrations';
 import useConfigStore from '@/src/core/zustand/configStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Constants from 'expo-constants';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -21,12 +20,11 @@ const queryClient = new QueryClient();
 export default function RootLayout() {
   const [isAppReady, setAppReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
-
-
   const [authenticated, setAuthenticated] = useState(false);
   const fingerprintEnabled = useConfigStore((state) => state.fingerprint);
   const pinAtStartup = useConfigStore((state) => state.pinAtStartup);
-  const version = Constants.expoConfig?.version;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
 
   const handleSplashComplete = () => {
@@ -54,14 +52,6 @@ export default function RootLayout() {
 
     prepare();
   }, []);
-
-
-
-
-
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     const authenticate = async () => {

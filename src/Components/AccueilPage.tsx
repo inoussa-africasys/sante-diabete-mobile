@@ -1,7 +1,7 @@
 import { Entypo, Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DAY_OF_SYNC_ALERT_TO_DECLANCHE } from '../Constants/App';
@@ -36,6 +36,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const { userName } = useAuth();
   const [userNameValue, setUserNameValue] = React.useState<string | null>(null);
 
+  const { isAuthenticated,checkAuthOffline } = useAuth();
 
   // les donnees de config
   const showDownload = useConfigStore((state) => state.showDownload);
@@ -43,8 +44,6 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const showFicheRemplieButton = useConfigStore((state) => state.showFicheRemplieButton);
   const showSyncButton = useConfigStore((state) => state.showSyncButton);
   const showFicheEditerButton = useConfigStore((state) => state.showFicheEditerButton);
-
-
 
 
   const toggleMenu = () => {
@@ -65,9 +64,6 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     router.push('/scanner');
   };
 
-  const { isAuthenticated } = useAuth();
-
-
   useEffect(() => {
     const repo = new QRCodeRepository();
     const qrCode = repo.findAll();
@@ -75,7 +71,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     userName().then((name) => setUserNameValue(name));
   }, []);
 
-  const showSyncAlertToast = (message: string) => {
+
+
+  const showSyncAlertToast = useCallback((message: string) => {
     showConfirm(message, {
       type: 'warning',
       confirmLabel: 'Oui',
@@ -90,43 +88,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         console.log('Sync cancelled by user ');
       },
     });
-  }
+  }, [showConfirm, handleSync]);
 
 
-  useEffect(() => {
-    const checkLastSync = async () => {
-      let toastMessage = `Vous n’avez pas synchronisé depuis au moins ${DAY_OF_SYNC_ALERT_TO_DECLANCHE} jours !\nCela permet de ne pas perdre les données et récupérer les nouvelles.`
-
-      const last = await getLastSyncDate();
-      if (!last ) {
-        if(isAuthenticated){
-            // jamais synchronisé => afficher
-            toastMessage = `Vous n'avez jamais synchronisé les données des patients. Voulez-vous synchroniser maintenant ?`
-            showSyncAlertToast(toastMessage)
-        }
-        return;
-      }
-      const lastDate = new Date(last);
-      if (isNaN(lastDate.getTime())) {
-        if(isAuthenticated){
-            toastMessage = "La date de synchonisation n'est pas au bon format alors veuiller synchroniser"
-            showSyncAlertToast(toastMessage)
-        }
-        return;
-      }
-      const now = new Date();
-      const diffMs = now.getTime() - lastDate.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      if (diffDays >= DAY_OF_SYNC_ALERT_TO_DECLANCHE) {
-        if(isAuthenticated){
-            toastMessage = `Vous n'avez pas synchronisé depuis au moins ${DAY_OF_SYNC_ALERT_TO_DECLANCHE} jours !\nCela permet de ne pas perdre les données et récupérer les nouvelles.`
-            showSyncAlertToast(toastMessage)
-        }
-      }
-
-    };
-    checkLastSync();
-  }, [isAuthenticate]);
 
   const handleLogout = () => {
     setIsLoading(true);
@@ -140,6 +104,41 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const handleCloseLogoutModal = () => {
     setLogoutModalVisible(false);
   };
+
+
+  useEffect(() => {
+    const checkLastSync = async () => {
+      let toastMessage = `Vous n’avez pas synchronisé depuis au moins ${DAY_OF_SYNC_ALERT_TO_DECLANCHE} jours !\nCela permet de ne pas perdre les données et récupérer les nouvelles.`
+
+      const last = await getLastSyncDate();
+      if (!last ) {
+        // jamais synchronisé => afficher (auth déjà validée en amont)
+        toastMessage = `Vous n'avez jamais synchronisé les données des patients. Voulez-vous synchroniser maintenant ?`
+        showSyncAlertToast(toastMessage)
+        return;
+      }
+      const lastDate = new Date(last);
+      if (isNaN(lastDate.getTime())) {
+        toastMessage = "La date de synchonisation n'est pas au bon format alors veuiller synchroniser"
+        showSyncAlertToast(toastMessage)
+        return;
+      }
+      const now = new Date();
+      const diffMs = now.getTime() - lastDate.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      if (diffDays >= DAY_OF_SYNC_ALERT_TO_DECLANCHE) {
+        toastMessage = `Vous n'avez pas synchronisé depuis au moins ${DAY_OF_SYNC_ALERT_TO_DECLANCHE} jours !\nCela permet de ne pas perdre les données et récupérer les nouvelles.`
+        showSyncAlertToast(toastMessage)
+      }
+
+    };
+    (async () => {
+      const ok = await checkAuthOffline();
+      if (!ok) return; // ne pas afficher le toast si non authentifié
+      await checkLastSync();
+    })();
+  }, [diabetesType, checkAuthOffline, showSyncAlertToast]);
+
 
   const {
     isSyncing,

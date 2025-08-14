@@ -7,7 +7,7 @@ interface DiabetesContextType {
   diabetesType: DiabetesType;
   setDiabetesType: (type: DiabetesType) => void;
   setActiveDiabetesType: (type: DiabetesType) => Promise<void>;
-  loading: boolean;
+  loading: boolean; 
 }
 
 const DiabetesContext = createContext<DiabetesContextType | undefined>(undefined);
