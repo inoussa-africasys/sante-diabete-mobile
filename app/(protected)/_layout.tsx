@@ -3,19 +3,19 @@ import { Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 
 export default function ProtectedLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated,getIsAuthenticated } = useAuth();
   const router = useRouter();
 
 
   useEffect(() => {
-    console.log('isAuthenticated: '+isAuthenticated);
-    if (!isAuthenticated) {
-      console.log('Non authentifié dans le layout ; isAuthenticated : '+isAuthenticated);
-      console.log('isAuthenticated : '+isAuthenticated);
+    console.log('isAuthenticated: '+getIsAuthenticated());
+    if (!getIsAuthenticated()) {
+      console.log('Non authentifié dans le layout ; isAuthenticated : '+getIsAuthenticated());
+      console.log('isAuthenticated : '+getIsAuthenticated());
       router.replace('/errors/unauthenticated');
     }
 
-  }, [isAuthenticated]);
+  }, []);
 
   return(
     <Stack screenOptions={{ headerShown: false }} />

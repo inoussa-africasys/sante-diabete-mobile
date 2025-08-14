@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     // Requête pour vérifier l'état d'authentification
-    const { data: isAuthenticated = false } = useQuery({
+    const { data: isAuthenticated = false, refetch: refetchAuth } = useQuery({
         queryKey: [AUTH_QUERY_KEY, activeDiabetesType],
         queryFn: async () => {
             if (!activeDiabetesType) {
@@ -83,7 +83,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             return validateToken(activeDiabetesType);
         },
         enabled: activeDiabetesType !== null,
+        // Force un re-check à chaque montage d'un écran/composant
+        staleTime: 0,
+        refetchOnMount: 'always',
+        refetchOnReconnect: 'always',
     });
+
+    // Permet de forcer la vérification à la demande
+    const getIsAuthenticated = async (): Promise<boolean> => {
+        try {
+            const result = await refetchAuth();
+            return Boolean(result.data);
+        } catch (e) {
+            Logger.error('Erreur lors de la vérification d\'authentification', { error: e });
+            return false;
+        }
+    };
 
     // Mutation pour la connexion
     const { mutateAsync: login } = useMutation({
@@ -196,6 +211,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const value : AuthContextType = {
         isAuthenticated,
+        getIsAuthenticated,
         login,
         logout,
         getToken,

@@ -48,7 +48,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
 
 
   const toggleMenu = () => {
-    const toValue = menuOpen ? -300 : 0;
+    const toValue = menuOpen ? - 300 : 0;
     Animated.timing(slideAnim, {
       toValue,
       duration: 300,
@@ -98,31 +98,35 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
       let toastMessage = `Vous n’avez pas synchronisé depuis au moins ${DAY_OF_SYNC_ALERT_TO_DECLANCHE} jours !\nCela permet de ne pas perdre les données et récupérer les nouvelles.`
 
       const last = await getLastSyncDate();
-      console.log('Last sync date:', last);
-      if (!last) {
-        // jamais synchronisé => afficher
-        toastMessage = `Vous n'avez jamais synchronisé les données des patients. Voulez-vous synchroniser maintenant ?`
-        showSyncAlertToast(toastMessage)
+      if (!last ) {
+        if(isAuthenticated){
+            // jamais synchronisé => afficher
+            toastMessage = `Vous n'avez jamais synchronisé les données des patients. Voulez-vous synchroniser maintenant ?`
+            showSyncAlertToast(toastMessage)
+        }
         return;
       }
       const lastDate = new Date(last);
-      console.log('Last sync date:', lastDate);
       if (isNaN(lastDate.getTime())) {
-        toastMessage = "La date de synchonisation n'est pas au bon format alors veuiller synchroniser"
-        showSyncAlertToast(toastMessage)
+        if(isAuthenticated){
+            toastMessage = "La date de synchonisation n'est pas au bon format alors veuiller synchroniser"
+            showSyncAlertToast(toastMessage)
+        }
         return;
       }
       const now = new Date();
       const diffMs = now.getTime() - lastDate.getTime();
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      console.log('Diff days:', diffDays);
       if (diffDays >= DAY_OF_SYNC_ALERT_TO_DECLANCHE) {
-        showSyncAlertToast(toastMessage)
+        if(isAuthenticated){
+            toastMessage = `Vous n'avez pas synchronisé depuis au moins ${DAY_OF_SYNC_ALERT_TO_DECLANCHE} jours !\nCela permet de ne pas perdre les données et récupérer les nouvelles.`
+            showSyncAlertToast(toastMessage)
+        }
       }
 
     };
     checkLastSync();
-  }, []);
+  }, [isAuthenticate]);
 
   const handleLogout = () => {
     setIsLoading(true);
@@ -166,7 +170,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
           <View style={styles.menuHeader}>
             <Text style={styles.menuTitle}> {isAuthenticated ? userNameValue : 'Menu'} - {diabetesType}</Text>
             <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
-              <Entypo name="cross" size={28} color="#fff" />
+              <Entypo name="cross" size={32} color="#fff" />
             </TouchableOpacity>
           </View>
           <View style={{

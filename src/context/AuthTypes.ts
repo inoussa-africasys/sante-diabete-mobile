@@ -20,6 +20,8 @@ export interface GetTokenParams {
 export interface AuthContextType {
     // État d'authentification
     isAuthenticated: boolean;
+    // Récupérer l'état d'authentification en forçant une nouvelle vérification
+    getIsAuthenticated: () => Promise<boolean>;
     
     // Mutations pour login/logout avec leurs états
     login: (params: LoginParams) => Promise<boolean>;

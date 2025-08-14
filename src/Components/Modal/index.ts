@@ -4,3 +4,4 @@ export * from './ConfirmModal';
 export * from './LoadingModal';
 export * from './Modal';
 
+export * from './AlertModalRich';
