@@ -17,7 +17,8 @@ async function validateTokenOnLine(baseUrl: string, token: string): Promise<bool
     try {
         const url = `${baseUrl}/api/json/mobile/authenticate?app_version=${VERSION_NAME}&token=${token}`;
         const response = await axios.post(url, undefined, { headers: { 'Content-Type': 'application/json' } });
-        console.log('↔️ Token validated on line', response);
+        Logger.info('↔️ Token validated on line', {status: response.status, statusText: response.statusText,data: response.data});
+        console.log('↔️ Token validated on line', {status: response.status, statusText: response.statusText,data: response.data});
         return response.status === 200;
 
     } catch (e) {

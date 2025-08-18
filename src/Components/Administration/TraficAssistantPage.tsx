@@ -1,8 +1,10 @@
 import { Images } from '@/src/Constants';
 import useTraficAssistant from '@/src/Hooks/useTraficAssistant';
+import Logger from '@/src/utils/Logger';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AlertModal } from '../Modal';
 
 type TraficAssistantPageProps = {
     goBack: () => void
@@ -12,12 +14,15 @@ const { width: screenWidth } = Dimensions.get('window')
 
 
 const TraficAssistantPage = ({ goBack }: TraficAssistantPageProps) => {
+  const [isSendSuccess, setIsSendSuccess] = useState(false);
   
   const { handleSendData : handleSendDataTraficAssistant, isLoading } = useTraficAssistant();
 
     const handleSendData = async () => {
       const zipUri = await handleSendDataTraficAssistant();
-      console.log('✅ page Trafic Assistant :', zipUri);
+      console.log('✅ Trafic Assistant reussi :', zipUri);
+      Logger.info('✅ Trafic Assistant reussi :', {zipUri});
+      setIsSendSuccess(true);
     }
   
   return (
@@ -31,7 +36,7 @@ const TraficAssistantPage = ({ goBack }: TraficAssistantPageProps) => {
       </View>
       <Image source={Images.traficAssistant} style={styles.image} resizeMode="cover" />
       <View style={styles.textContainer}>
-        <Text style={styles.text}>En appuyant sur ce bouton, les données de votre application Trafic seront envoyées à l'equipe support pour vous debloquer.</Text>
+        <Text style={styles.text}>{"En appuyant sur ce bouton, les données de votre application Trafic seront envoyées à l'equipe support pour vous debloquer."}</Text>
       </View>
       <TouchableOpacity style={styles.button} onPress={handleSendData} disabled={isLoading}>
         {isLoading ? (
@@ -43,6 +48,15 @@ const TraficAssistantPage = ({ goBack }: TraficAssistantPageProps) => {
           <Text style={styles.buttonText}>Envoyer les données</Text>
         )}
       </TouchableOpacity>
+
+      <AlertModal 
+        isVisible={isSendSuccess}
+        type='success'
+        onClose={() => setIsSendSuccess(false)}
+        customIcon={<Ionicons name="cloud-done-sharp" size={76} color="#4CAF50" />}
+        title="Envoi des données"
+        message={"L'equipe de support a bien reçu les données de votre appareil et va les traiter. Merci!."}
+      />
       
     </View>
   )

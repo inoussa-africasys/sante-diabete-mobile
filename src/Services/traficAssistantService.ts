@@ -90,12 +90,13 @@ export default class TraficAssistantService {
         const baseUrl = await getBaseUrl();
         const version = Constants.expoConfig?.version;
         const userName = await getConnectedUsername();
-        const subject = "Données via Trafic Assistant | Santé Diabète Mobile Test Trafic Assistant";
+        const subject = "Données via Trafic Assistant ";
         const message = `
             <h1>Santé Diabète Mobile Test Trafic Assistant</h1> \n\n <br/>
 
+            Application : Santé Diabète Mobile
             Nom d'utilisateur : ${userName}\n <br/>
-            Version Trafic : ${version}\n <br/>
+            Version : ${version}\n <br/>
             URL Serveur Trafic : ${baseUrl}\n <br/>
             <br/>
             <b>Informations appareil utilisateur</b>\n <br/>

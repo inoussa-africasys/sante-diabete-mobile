@@ -143,6 +143,14 @@ export default function PatientDetailScreen() {
   };
 
 
+  if(errorPatient){
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.errorText}>Erreur: {errorPatient}</Text>
+      </SafeAreaView>
+    )
+  }
+
 
 
 
