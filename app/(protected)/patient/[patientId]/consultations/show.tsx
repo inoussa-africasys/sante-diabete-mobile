@@ -30,7 +30,7 @@ export default function ShowConsultationScreen() {
 
   const { getConsultationById,deleteConsultationOnTheLocalDb } = useConsultation();
   const { getPatientByIdOnTheLocalDb } = usePatient();
-  const { getFicheById ,getFicheByName} = useFiche();
+  const { getFicheByName } = useFiche();
 
   useEffect(() => {
     const fetchData = async () => {

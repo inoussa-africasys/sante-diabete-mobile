@@ -158,8 +158,14 @@ export default class PatientService extends Service {
       if (!patientToDelete?.id) { throw new Error(` Patient avec l'ID ${patientId} non trouvé`); }
       const shouldSoftDelete = patientToDelete.synced || !patientToDelete.isLocalCreated;
       if (shouldSoftDelete) {
-        this.patientRepository.softDelete(patientToDelete.id.toString());
+        // D'abord supprimer (soft) toutes les consultations du patient
+        await this.consultationRepository.softDeleteByPatientId(patientToDelete.id_patient);
+        // Puis soft-delete le patient
+        await this.patientRepository.softDelete(patientToDelete.id.toString());
       } else {
+        // D'abord supprimer définitivement les consultations du patient
+        await this.consultationRepository.deleteByPatientId(patientToDelete.id_patient);
+        // Puis suppression définitive du patient
         this.patientRepository.delete(patientToDelete.id);
       }
 

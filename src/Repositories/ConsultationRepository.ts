@@ -92,6 +92,32 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
   }
 
 
+  /**
+   * Soft delete all consultations for a given patient by setting deletedAt.
+   */
+  public async softDeleteByPatientId(id_patient: string): Promise<void> {
+    try {
+      const deletedAt = new Date().toISOString();
+      await this.db.runAsync(`UPDATE ${this.tableName} SET deletedAt = ? WHERE id_patient = ?`, [deletedAt, id_patient]);
+    } catch (error) {
+      console.error('Error soft-deleting consultations by patient id:', error);
+      Logger.log('error', 'Error soft-deleting consultations by patient id', { error, id_patient });
+    }
+  }
+
+  /**
+   * Hard delete all consultations for a given patient (irrevocable).
+   */
+  public async deleteByPatientId(id_patient: string): Promise<void> {
+    try {
+      await this.db.runAsync(`DELETE FROM ${this.tableName} WHERE id_patient = ?`, [id_patient]);
+    } catch (error) {
+      console.error('Error hard-deleting consultations by patient id:', error);
+      Logger.log('error', 'Error hard-deleting consultations by patient id', { error, id_patient });
+    }
+  }
+
+
   public createOrUpdateAll(items: Consultation[]): void {
     try {
       for (const item of items) {
