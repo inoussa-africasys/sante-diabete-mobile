@@ -73,6 +73,7 @@ export default class TraficAssistantService {
                 const response = await axios.post(url, data);
                 if(response.status === 200) {
                     console.log("✅ Fichier ZIP envoyé au backend :", {status : response.status, statusText : response.statusText});
+                    Logger.info("✅ Fichier ZIP envoyé au backend :", {status : response.status, statusText : response.statusText});
                 }
             } catch (error) {
                 Logger.log('error', 'Erreur lors de l\'envoi du fichier ZIP au backend', { error });
@@ -89,20 +90,21 @@ export default class TraficAssistantService {
     private static formatTraficAssistantMailMessage = async ({ brand, modelName, osVersion }: FormatTraficAssistantMailMessageType): Promise<{ subject: string, message: string }> => {
         const baseUrl = await getBaseUrl();
         const version = Constants.expoConfig?.version;
+        const name = Constants.expoConfig?.name;
         const userName = await getConnectedUsername();
         const subject = "Données via Trafic Assistant ";
         const message = `
-            <h1>Santé Diabète Mobile Test Trafic Assistant</h1> \n\n <br/>
+            <h1>${name}</h1> <br/>
 
-            Application : Santé Diabète Mobile
-            Nom d'utilisateur : ${userName}\n <br/>
-            Version : ${version}\n <br/>
-            URL Serveur Trafic : ${baseUrl}\n <br/>
+            Application : ${name}  <br/>
+            Nom d'utilisateur : ${userName} <br/>
+            Version : ${version} <br/>
+            URL Serveur Trafic : ${baseUrl} <br/>
             <br/>
-            <b>Informations appareil utilisateur</b>\n <br/>
-            Version android : ${osVersion}\n <br/>
-            Nom de l'appareil : ${modelName}\n <br/>
-            Model : ${brand}\n <br/>
+            <b>Informations appareil utilisateur</b> <br/>
+            Version android : ${osVersion} <br/>
+            Nom de l'appareil : ${modelName} <br/>
+            Model : ${brand} <br/>
             <br/>
             `;
         return { subject, message };

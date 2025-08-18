@@ -52,7 +52,10 @@ const TraficAssistantPage = ({ goBack }: TraficAssistantPageProps) => {
       <AlertModal 
         isVisible={isSendSuccess}
         type='success'
-        onClose={() => setIsSendSuccess(false)}
+        onClose={() => {
+          setIsSendSuccess(false);
+          goBack();
+        }}
         customIcon={<Ionicons name="cloud-done-sharp" size={76} color="#4CAF50" />}
         title="Envoi des données"
         message={"L'equipe de support a bien reçu les données de votre appareil et va les traiter. Merci!."}
