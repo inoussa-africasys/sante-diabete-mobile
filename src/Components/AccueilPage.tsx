@@ -98,6 +98,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     logout({ diabetesType: diabetesType as DiabeteType });
     setIsLoading(false);
     router.replace('/' + diabetesType.toLowerCase());
+    Logger.info('User logged out');
     showToast('Deconnexion reussie', 'success', 3000);
   };
 
@@ -410,8 +411,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         isVisible={logoutModalVisible}
         onClose={handleCloseLogoutModal}
         title="Deconnexion reussie"
-        message="Vous avez été deconnecté"
-        confirmText="OK"
+        customIcon={<MaterialIcons name="logout" size={76} color="#D32F2F" />}
+        message="Voulez-vous vous vraiment vous deconnecter ?"
+        confirmText="Oui"
       />
 
 
