@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { ACTIVE_DIABETE_TYPE_KEY, AUTH_BASE_URL_KEY, VERSION_NAME } from '../Constants/App';
+import { ACTIVE_DIABETE_TYPE_KEY, AUTH_BASE_URL_KEY, LAST_SYNC_DATE_KEY, USER_PREFERENCES_KEY, VERSION_NAME } from '../Constants/App';
 import { getAuthTokenKey } from '../functions';
 import { getUserNameKey } from '../functions/qrcodeFunctions';
 import { DiabeteType } from '../types/enums';
@@ -111,6 +111,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await SecureStore.deleteItemAsync(AUTH_BASE_URL_KEY);
         await SecureStore.deleteItemAsync(getUserNameKey(diabetesType));
         await SecureStore.deleteItemAsync(ACTIVE_DIABETE_TYPE_KEY);
+        await SecureStore.deleteItemAsync(LAST_SYNC_DATE_KEY);
+        await SecureStore.deleteItemAsync(USER_PREFERENCES_KEY);
+
         setIsAuthenticated(false);
         setIsAuthenticatedState(false);
         return true;

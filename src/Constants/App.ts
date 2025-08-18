@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
 
-export const APP_NAME = process.env.APP_NAME
+export const APP_NAME = Constants.expoConfig?.name
 
 export const VERSION_NAME = Constants.expoConfig?.version
 export const APP_VERSION = Constants.expoConfig?.version
