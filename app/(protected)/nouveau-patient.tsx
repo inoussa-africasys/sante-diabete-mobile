@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     backgroundColor: 'red',
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
+    borderBottomColor: 'red',
   },
   backButton: {
     padding: 5,

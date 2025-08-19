@@ -10,7 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PatientDetailScreen() {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function PatientDetailScreen() {
   const [consultations, setConsultations] = useState<Record<string, Consultation[]> | null>(null);
   const [consultationNames, setConsultationNames] = useState<Record<string, string>>({});
   const patientId = params.id as string;
+  const {bottom} = useSafeAreaInsets();
 
 
   useFocusEffect(
@@ -263,7 +264,7 @@ export default function PatientDetailScreen() {
             </View>
           )}
           <TouchableOpacity
-            style={[styles.addButton, showOptions && styles.addButtonActive]}
+            style={[styles.addButton, showOptions && styles.addButtonActive,{bottom: bottom + 20}]}
             onPress={handleAddPress}
           >
             {showOptions ? (
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     backgroundColor: 'red',
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
+    borderBottomColor: 'red',
   },
   backButton: {
     padding: 5,
@@ -409,7 +410,7 @@ const styles = StyleSheet.create({
     minWidth: 200,
   },
   optionIconContainer: {
-    backgroundColor: '#E91E63',
+    backgroundColor: 'red',
     borderRadius: 8,
     padding: 10,
     alignItems: 'center',
@@ -445,7 +446,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#E91E63',
+    backgroundColor: 'red',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
@@ -455,6 +456,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   addButtonActive: {
-    backgroundColor: '#C2185B',
+    backgroundColor: 'red',
   },
 });

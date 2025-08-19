@@ -17,24 +17,24 @@ const DiabetesTypeBadge: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#4CAF50',
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#C8E6C9',
+    borderBottomColor: '#4CAF50',
     flexDirection: 'row',
     
   },
   label: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: '#FFFFFF',
     marginHorizontal: 5,
   },
   value: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: '#FFFFFF',
     marginHorizontal: 5,
   },
 });
