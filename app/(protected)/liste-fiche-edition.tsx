@@ -1,6 +1,7 @@
 import { formatDate } from '@/src/functions/helpers';
 import { useFormFill } from '@/src/Hooks/useFormFill';
 import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -34,6 +35,7 @@ const { isLoading, error, formFills ,loadFormFills} = useFormFill();
             Modifier les fiches remplis
           </Text>
         </View>
+        <DiabetesTypeBadge />
   
         {/* Content */}
         <View style={styles.content}>

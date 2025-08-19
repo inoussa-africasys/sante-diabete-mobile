@@ -1,14 +1,17 @@
 import Constants from "expo-constants";
 import { Image } from "expo-image";
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Images } from "../Constants/Images";
 import CardWithBubbles from "./SplashBloodDrop";
+
 
 const { width, height } = Dimensions.get("window");
 
 export default function SplashScreen() {
  
   const version = Constants.expoConfig?.version;
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
@@ -21,7 +24,7 @@ export default function SplashScreen() {
           {/* 3 bulles animées avec rebond */}
           <CardWithBubbles height={height * 0.4} width={width} />
         </View>
-        <View style={styles.versionContainer}>
+        <View style={[styles.versionContainer,{ bottom: 20 + insets.bottom}]}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.versionText}>Version : {version}</Text>
         </View>
@@ -43,7 +46,6 @@ const styles = StyleSheet.create({
   },
   versionContainer: {
     position: "absolute",
-    bottom: 20,
     justifyContent: "center",
     alignItems: "center",
   },

@@ -1,7 +1,7 @@
 import { Entypo, Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DAY_OF_SYNC_ALERT_TO_DECLANCHE } from '../Constants/App';
@@ -13,6 +13,7 @@ import { useSyncPatientsUI } from '../Hooks/useSyncPatientsUI';
 import { QRCodeRepository } from '../Repositories/QRCodeRepository';
 import { DiabeteType } from '../types/enums';
 import Logger from '../utils/Logger';
+import DiabetesTypeBadge from './DiabetesTypeBadge';
 import { ConfirmModal } from './Modal';
 import SyncLoader from './SyncLoader';
 import SyncStatsModal from './SyncStatsModal';
@@ -36,6 +37,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const { userName } = useAuth();
   const [userNameValue, setUserNameValue] = React.useState<string | null>(null);
 
+  const { isAuthenticated,checkAuthOffline } = useAuth();
 
   // les donnees de config
   const showDownload = useConfigStore((state) => state.showDownload);
@@ -45,10 +47,8 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const showFicheEditerButton = useConfigStore((state) => state.showFicheEditerButton);
 
 
-
-
   const toggleMenu = () => {
-    const toValue = menuOpen ? -300 : 0;
+    const toValue = menuOpen ? - 300 : 0;
     Animated.timing(slideAnim, {
       toValue,
       duration: 300,
@@ -65,9 +65,6 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     router.push('/scanner');
   };
 
-  const { isAuthenticated } = useAuth();
-
-
   useEffect(() => {
     const repo = new QRCodeRepository();
     const qrCode = repo.findAll();
@@ -75,9 +72,11 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     userName().then((name) => setUserNameValue(name));
   }, []);
 
-  const showSyncAlertToast = (message: string) => {
+
+
+  const showSyncAlertToast = useCallback((message: string) => {
     showConfirm(message, {
-      type: 'info',
+      type: 'warning',
       confirmLabel: 'Oui',
       cancelLabel: 'Non',
       persistent: true,
@@ -90,7 +89,23 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         console.log('Sync cancelled by user ');
       },
     });
-  }
+  }, [showConfirm, handleSync]);
+
+
+
+  const handleLogout = () => {
+    setIsLoading(true);
+    logout({ diabetesType: diabetesType as DiabeteType });
+    setIsLoading(false);
+    router.replace('/' + diabetesType.toLowerCase());
+    Logger.info('User logged out');
+    showToast('Deconnexion reussie', 'success', 3000);
+  };
+
+
+  const handleCloseLogoutModal = () => {
+    setLogoutModalVisible(false);
+  };
 
 
   useEffect(() => {
@@ -98,15 +113,13 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
       let toastMessage = `Vous n’avez pas synchronisé depuis au moins ${DAY_OF_SYNC_ALERT_TO_DECLANCHE} jours !\nCela permet de ne pas perdre les données et récupérer les nouvelles.`
 
       const last = await getLastSyncDate();
-      console.log('Last sync date:', last);
-      if (!last) {
-        // jamais synchronisé => afficher
+      if (!last ) {
+        // jamais synchronisé => afficher (auth déjà validée en amont)
         toastMessage = `Vous n'avez jamais synchronisé les données des patients. Voulez-vous synchroniser maintenant ?`
         showSyncAlertToast(toastMessage)
         return;
       }
       const lastDate = new Date(last);
-      console.log('Last sync date:', lastDate);
       if (isNaN(lastDate.getTime())) {
         toastMessage = "La date de synchonisation n'est pas au bon format alors veuiller synchroniser"
         showSyncAlertToast(toastMessage)
@@ -115,27 +128,19 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
       const now = new Date();
       const diffMs = now.getTime() - lastDate.getTime();
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      console.log('Diff days:', diffDays);
       if (diffDays >= DAY_OF_SYNC_ALERT_TO_DECLANCHE) {
+        toastMessage = `Vous n'avez pas synchronisé depuis au moins ${DAY_OF_SYNC_ALERT_TO_DECLANCHE} jours !\nCela permet de ne pas perdre les données et récupérer les nouvelles.`
         showSyncAlertToast(toastMessage)
       }
 
     };
-    checkLastSync();
-  }, []);
+    (async () => {
+      const ok = await checkAuthOffline();
+      if (!ok) return; // ne pas afficher le toast si non authentifié
+      await checkLastSync();
+    })();
+  }, [diabetesType, checkAuthOffline, showSyncAlertToast]);
 
-  const handleLogout = () => {
-    setIsLoading(true);
-    logout({ diabetesType: diabetesType as DiabeteType });
-    setIsLoading(false);
-    router.replace('/' + diabetesType.toLowerCase());
-    showToast('Deconnexion reussie', 'success', 3000);
-  };
-
-
-  const handleCloseLogoutModal = () => {
-    setLogoutModalVisible(false);
-  };
 
   const {
     isSyncing,
@@ -166,7 +171,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
           <View style={styles.menuHeader}>
             <Text style={styles.menuTitle}> {isAuthenticated ? userNameValue : 'Menu'} - {diabetesType}</Text>
             <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
-              <Entypo name="cross" size={28} color="#fff" />
+              <Entypo name="cross" size={32} color="#fff" />
             </TouchableOpacity>
           </View>
           <View style={{
@@ -218,6 +223,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
             <FontAwesome5 name="qrcode" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
+        <DiabetesTypeBadge />
         <View style={[styles.allContent, 
           // Si un seul bouton est visible (Patients) et pas de synchronisation
           (!showFicheRemplieButton && !showFicheEditerButton && !showDownload && !showDelete && !showSyncButton) ? 
@@ -405,8 +411,9 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         isVisible={logoutModalVisible}
         onClose={handleCloseLogoutModal}
         title="Deconnexion reussie"
-        message="Vous avez ete deconnecte"
-        confirmText="OK"
+        customIcon={<MaterialIcons name="logout" size={76} color="#D32F2F" />}
+        message="Voulez-vous vous vraiment vous deconnecter ?"
+        confirmText="Oui"
       />
 
 

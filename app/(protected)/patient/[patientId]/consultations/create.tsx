@@ -1,3 +1,4 @@
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { AlertModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
 import useConsultation from "@/src/Hooks/useConsultation";
@@ -96,6 +97,13 @@ export default function CreateConsultationScreen() {
   if (!patientId) {
     return (
       <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Erreur</Text>
+        </View>
+        <DiabetesTypeBadge />
         <Text>Erreur : ID du patient manquant</Text>
       </View>
     );
@@ -104,6 +112,13 @@ export default function CreateConsultationScreen() {
   if (getFicheError || getPatientError) {
     return (
       <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Erreur</Text>
+        </View>
+        <DiabetesTypeBadge />
         <Text>Erreur : {getFicheError}</Text>
         <Text>Erreur : {getPatientError}</Text>
       </View>
@@ -113,6 +128,13 @@ export default function CreateConsultationScreen() {
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent,{justifyContent: 'center', alignItems: 'center',marginTop: 100}]}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Chargement en cours</Text>
+        </View>
+        <DiabetesTypeBadge />
         <ActivityIndicator size="large" color="#000" />
         <Text>Chargement en cours...</Text>
       </View>
@@ -130,6 +152,7 @@ export default function CreateConsultationScreen() {
           {fiche?.name}
         </Text>
       </View>
+      <DiabetesTypeBadge />
 
       <SurveyScreenDom surveyJson={surveyJson} handleSurveyComplete={handleCompletSurveyForm} />
 

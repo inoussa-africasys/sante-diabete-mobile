@@ -1,8 +1,14 @@
 import HomePage from '@/src/Components/HomePage';
+import { useIsOnline } from '@/src/Hooks/useIsOnline';
+import { useAuth } from '@/src/context/AuthContext';
+import Logger from '@/src/utils/Logger';
 import { router } from 'expo-router';
 import React from 'react';
 
 export default function Index() {
+
+  const isOnline = useIsOnline()
+  const {splashScreenCheckOnlineAuth} = useAuth()
   const handleOptionPress = (option: string) => {
     console.log(`Option sélectionnée: ${option}`);
     
@@ -27,6 +33,16 @@ export default function Index() {
         console.log('Option non reconnue');
     }
   };
+
+  if (isOnline) {
+    try {
+      splashScreenCheckOnlineAuth()
+    } catch (error) {
+      console.error('Error checking online auth', error);
+      Logger.error('Error checking online auth', { error });
+      
+    }
+  }
 
   return (
    <>

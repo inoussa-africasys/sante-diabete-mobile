@@ -8,6 +8,7 @@ import { PatientMapper } from '@/src/mappers/patientMapper';
 import { ConsultationFormData, FicheAdministrativeFormData, PatientFormData } from '@/src/types/patient';
 import Logger from '@/src/utils/Logger';
 import { Ionicons } from '@expo/vector-icons';
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -264,6 +265,7 @@ export default function NouveauPatientScreen() {
         <Text style={styles.headerTitle}>{isEditMode ? 'Modifier Patient' : 'Nouveau Patient'}</Text>
         <View style={styles.headerRight} />
       </View>
+      <DiabetesTypeBadge />
 
       {
         ficheAdministrative && ficheAdministrative.data ? (
@@ -368,7 +370,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     backgroundColor: 'red',
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
+    borderBottomColor: 'red',
   },
   backButton: {
     padding: 5,

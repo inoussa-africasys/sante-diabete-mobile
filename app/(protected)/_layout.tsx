@@ -15,7 +15,7 @@ export default function ProtectedLayout() {
       router.replace('/errors/unauthenticated');
     }
 
-  }, [isAuthenticated]);
+  }, []);
 
   return(
     <Stack screenOptions={{ headerShown: false }} />

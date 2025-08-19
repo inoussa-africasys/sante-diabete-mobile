@@ -5,11 +5,11 @@ import Patient from '@/src/models/Patient';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePatient } from '../../Hooks/usePatient';
-import { useDiabetes } from '../../context/DiabetesContext';
+import DiabetesTypeBadge from '../DiabetesTypeBadge';
 import Empty from '../Empty';
 import SyncLoader from '../SyncLoader';
 import SyncStatsModal from '../SyncStatsModal';
@@ -33,14 +33,15 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   onQRCodeScan
 }) => {
   const router = useRouter();
-  const diabetesType = useDiabetes().diabetesType;
   const [showSearchbar, setShowSearchbar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingFetch, setIsLoadingFetch] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [showPatientScanner, setShowPatientScanner] = useState(false);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  const { getAllOnTheLocalDbPatients, syncPatients } = usePatient();
+  const { getAllOnTheLocalDbPatients } = usePatient();
+  const {bottom} = useSafeAreaInsets();
+  const searchInputRef = useRef<TextInput | null>(null);
 
 
   const {
@@ -120,33 +121,6 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   };
 
 
-  /* const handleSync = async () => {
-    setIsSyncing(true);
-    try {
-      const syncResult = await syncPatients();
-      setIsSyncing(false);
-      setSyncStats(syncResult);
-
-      if (syncResult.success) {
-        setSyncSuccess(true);
-        setShowSyncStats(true);
-        // Recharger la liste des patients après une synchronisation réussie
-        const p = await getAllOnTheLocalDbPatients();
-        setPatients(p);
-        setFilteredPatients(p);
-      } else {
-        setIsSyncError(true);
-        setShowSyncStats(true);
-      }
-    } catch (error) {
-      setIsSyncing(false);
-      setIsSyncError(true);
-      console.error('Erreur lors de la synchronisation:', error);
-    }
-  }; */
-
-
-
 
   const renderPatientItem = ({ item }: { item: Patient }) => (
     <TouchableOpacity
@@ -170,7 +144,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" hidden={false} />
+      <StatusBar style="light" hidden={false} backgroundColor="red" />
 
       <>
         {showPatientScanner ? <PatientScanner onScan={handleScan} /> : null}
@@ -194,7 +168,8 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                 style={styles.searchInput}
                 placeholder="Rechercher un patient..."
                 placeholderTextColor="white"
-
+                ref={searchInputRef}
+                autoFocus
                 value={searchQuery}
                 onChangeText={handleSearch}
               />
@@ -216,7 +191,10 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                 >
                   <FontAwesome5 name="qrcode" size={20} color="#CCC" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.headerButton} onPress={() => setShowSearchbar(true)}>
+                <TouchableOpacity style={styles.headerButton} onPress={() => {
+                  setShowSearchbar(true);
+                  searchInputRef.current?.focus();
+                }}>
                   <Ionicons name="search" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
@@ -226,9 +204,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
         </View>
 
         {/* Type de diabète */}
-        <View style={styles.diabetesTypeContainer}>
-          <Text style={styles.diabetesTypeText}>Type: {diabetesType}</Text>
-        </View>
+        <DiabetesTypeBadge />
 
         {/* Actions Bar */}
         <View style={styles.actionsBar}>
@@ -241,7 +217,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
           </TouchableOpacity>
           <View style={styles.actionDivider} />
           <TouchableOpacity style={styles.actionButton}>
-            <FontAwesome5 name="trash" size={20} color="#E91E63" />
+            <FontAwesome5 name="trash" size={20} color="red" />
           </TouchableOpacity>
         </View>
 
@@ -368,7 +344,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
         {/* Add Button */}
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton,{bottom: bottom + 20}]}
           onPress={gotoNewPatient}
         >
           <Ionicons name="add" size={30} color="#FFFFFF" />
@@ -496,8 +472,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 15,
     backgroundColor: 'red',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
   },
   backButton: {
     padding: 5,
@@ -610,7 +584,6 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: 'absolute',
-    bottom: 20,
     alignSelf: 'center',
     width: 56,
     height: 56,
@@ -632,11 +605,11 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 40,
-    borderColor: '#EEEEEE',
+    borderColor: '#fff',
     backgroundColor: 'red',
     color: 'white',
     paddingHorizontal: 10,
-    borderBottomWidth: 4,
+    borderBottomWidth: 1,
     marginRight: 10,
   },
   searchButton: {

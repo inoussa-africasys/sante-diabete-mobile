@@ -154,9 +154,21 @@ export default class PatientService extends Service {
 
   async deleteOnTheLocalDb(patientId: string): Promise<void> {
     try {
-      const id = (await this.patientRepository.findAllByPatientId(patientId))?.id;
-      if (!id) { throw new Error(` Patient avec l'ID ${patientId} non trouvé`); }
-      this.patientRepository.softDelete(id.toString());
+      const patientToDelete = await this.patientRepository.findAllByPatientId(patientId);
+      if (!patientToDelete?.id) { throw new Error(` Patient avec l'ID ${patientId} non trouvé`); }
+      const shouldSoftDelete = patientToDelete.synced || !patientToDelete.isLocalCreated;
+      if (shouldSoftDelete) {
+        // D'abord supprimer (soft) toutes les consultations du patient
+        await this.consultationRepository.softDeleteByPatientId(patientToDelete.id_patient);
+        // Puis soft-delete le patient
+        await this.patientRepository.softDelete(patientToDelete.id.toString());
+      } else {
+        // D'abord supprimer définitivement les consultations du patient
+        await this.consultationRepository.deleteByPatientId(patientToDelete.id_patient);
+        // Puis suppression définitive du patient
+        this.patientRepository.delete(patientToDelete.id);
+      }
+
       this.deletePatientJson(patientId);
       console.log(`Patient supprimé : ${patientId}`);
     } catch (error) {
@@ -184,33 +196,33 @@ export default class PatientService extends Service {
         const fileContent = await FileSystem.readAsStringAsync(fileUri, {
           encoding: FileSystem.EncodingType.UTF8,
         });
-        
+
         // Vérifier que le contenu est un JSON valide
         if (!fileContent || fileContent.trim() === '') {
           throw new Error('Le fichier patient est vide');
         }
-        
+
         // Afficher les premiers caractères pour le débogage
         console.log(`Premiers caractères du fichier: "${fileContent.substring(0, 20)}..."`);
-        
+
         let existingPatient;
         try {
           existingPatient = JSON.parse(fileContent);
         } catch (parseError) {
           console.error('Erreur de parsing JSON:', parseError);
           console.log('Contenu problématique:', fileContent.substring(0, 100));
-          
+
           // Récupérer le patient depuis la base de données comme solution de secours
           const patient = await this.patientRepository.findAllByPatientId(id_patient);
           if (!patient) { throw new Error(`Patient avec l'ID ${id_patient} non trouvé`); }
-          
+
           // Recréer le fichier JSON à partir des données de la base
           await this.savePatientAsJson(patient);
-          
+
           // Utiliser les données de la base pour la mise à jour
           existingPatient = patient.toJson();
         }
-        
+
         const updatedPatient = { ...existingPatient, ...updatedFields };
 
         const updatedJsonContent = JSON.stringify(updatedPatient, null, 2);
@@ -232,18 +244,44 @@ export default class PatientService extends Service {
 
   async deletePatientJson(id_patient: string): Promise<void> {
     try {
-      const folderUri = `${FileSystem.documentDirectory}${PATH_OF_PATIENTS_DIR_ON_THE_LOCAL}/`;
-      const fileUri = `${folderUri}${id_patient}.json`;
+      // Chemin du fichier JSON patient (instances)
+      const patientsFolderUri = `${FileSystem.documentDirectory}${TraficFolder.getPatientsFolderPath(this.getTypeDiabete())}/`;
+      const fileUri = `${patientsFolderUri}${id_patient}`;
 
-      const fileInfo = await FileSystem.getInfoAsync(fileUri);
-      if (!fileInfo.exists) {
-        console.warn("Le fichier n'existe pas :", fileUri);
-        return;
+      // Supprimer le fichier JSON du patient s'il existe
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(fileUri);
+        if (fileInfo.exists) {
+          await FileSystem.deleteAsync(fileUri, { idempotent: true });
+          Logger.info("Fichier patient supprimé :", { fileUri });
+          console.log(`Fichier patient supprimé : ${fileUri}`);
+        } else {
+          Logger.warn("Le fichier patient n'existe pas :", { fileUri });
+          console.warn("Le fichier patient n'existe pas :", fileUri);
+        }
+      } catch (fileDeleteError) {
+        console.error("Erreur lors de la suppression du fichier JSON patient :", fileDeleteError);
+        Logger.error("Erreur lors de la suppression du fichier JSON patient :", { error: fileDeleteError });
       }
 
-      await FileSystem.deleteAsync(fileUri);
-      console.log(`Fichier supprimé : ${fileUri}`);
+      // Chemin du dossier DMP du patient: Trafic/{dt}/patients/dmp/{id_patient}
+      const dmpFolderUri = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(), id_patient)}`;
+      try {
+        const dmpInfo = await FileSystem.getInfoAsync(dmpFolderUri);
+        if (dmpInfo.exists) {
+          await FileSystem.deleteAsync(dmpFolderUri, { idempotent: true });
+          Logger.info("Dossier DMP supprimé :", { dmpFolderUri });
+          console.log(`Dossier DMP supprimé : ${dmpFolderUri}`);
+        } else {
+          Logger.warn("Le dossier DMP n'existe pas :", { dmpFolderUri });
+          console.warn("Le dossier DMP n'existe pas :", dmpFolderUri);
+        }
+      } catch (dmpDeleteError) {
+        console.error("Erreur lors de la suppression du dossier DMP :", dmpDeleteError);
+        Logger.error("Erreur lors de la suppression du dossier DMP :", { error: dmpDeleteError });
+      }
     } catch (error) {
+      Logger.error("Erreur lors de la suppression du fichier JSON :", { error });
       console.error("Erreur lors de la suppression du fichier JSON :", error);
     }
   }
@@ -252,11 +290,13 @@ export default class PatientService extends Service {
     try {
       const patient = await this.patientRepository.findByPatientId(id_patient);
       if (!patient) {
+        Logger.error("Patient non trouvé :", { id_patient });
         console.error("Patient non trouvé :", id_patient);
         return null;
       }
       return patient;
     } catch (error) {
+      Logger.error("Erreur lors de la lecture du fichier JSON :", { error });
       console.error("Erreur lors de la lecture du fichier JSON :", error);
       return null;
     }
@@ -270,9 +310,10 @@ export default class PatientService extends Service {
       // Synchroniser les patients supprimés
       const syncDeletedPatientsResult = await this.syncDeletedPatients();
       console.log("Patients supprimés synchronisés in local db:", syncDeletedPatientsResult.success);
+      Logger.info("Patients supprimés synchronisés in local db:", { success: syncDeletedPatientsResult.success });
       if (!syncDeletedPatientsResult.success) {
+        Logger.error("Erreur lors de la synchronisation des patients supprimés");
         console.error("Erreur lors de la synchronisation des patients supprimés");
-        Logger.log("error", "Erreur lors de la synchronisation des patients supprimés");
         if (syncDeletedPatientsResult.errors) {
           errors.push(...syncDeletedPatientsResult.errors);
         }
@@ -281,9 +322,10 @@ export default class PatientService extends Service {
       // Envoyer les patients créés ou mis à jour au serveur
       const sendCreatedOrUpdatedPatientsResult = await this.sendCreatedOrUpdatedPatientsToServer();
       console.log("Patients mis à jour synchronisés in local db:", sendCreatedOrUpdatedPatientsResult.success);
+      Logger.info("Patients mis à jour synchronisés in local db:", { success: sendCreatedOrUpdatedPatientsResult.success });  
       if (!sendCreatedOrUpdatedPatientsResult.success) {
+        Logger.error("Erreur lors de la synchronisation des patients mis à jour");
         console.error("Erreur lors de la synchronisation des patients mis à jour");
-        Logger.log("error", "Erreur lors de la synchronisation des patients mis à jour");
         if (sendCreatedOrUpdatedPatientsResult.errors) {
           errors.push(...sendCreatedOrUpdatedPatientsResult.errors);
         }
@@ -292,9 +334,10 @@ export default class PatientService extends Service {
       // Envoyer les consultations créées au serveur
       const sendCreatedConsultationsResult = await this.sendCreatedConsultationsToServer();
       console.log("Consultations créées synchronisées in local db:", sendCreatedConsultationsResult.success);
+      Logger.info("Consultations créées synchronisées in local db:", { success: sendCreatedConsultationsResult.success });
       if (!sendCreatedConsultationsResult.success) {
+        Logger.error("Erreur lors de la synchronisation des consultations créées");
         console.error("Erreur lors de la synchronisation des consultations créées");
-        Logger.log("error", "Erreur lors de la synchronisation des consultations créées");
         if (sendCreatedConsultationsResult.errors) {
           errors.push(...sendCreatedConsultationsResult.errors);
         }
@@ -303,9 +346,10 @@ export default class PatientService extends Service {
       // Récupérer tous les patients du serveur
       const getAllPatientResult = await this.getAllPatientOnServer();
       console.log("Patients synchronisés get Medical Data:", getAllPatientResult.success);
+      Logger.info("Patients synchronisés get Medical Data:", { success: getAllPatientResult.success });
       if (!getAllPatientResult.success) {
+        Logger.error("Erreur lors de la synchronisation des patients");
         console.error("Erreur lors de la synchronisation des patients");
-        Logger.log("error", "Erreur lors de la synchronisation des patients");
         if (getAllPatientResult.errors) {
           errors.push(...getAllPatientResult.errors);
         }
@@ -314,9 +358,10 @@ export default class PatientService extends Service {
       // Récupérer tous les patients supprimés du serveur
       const getAllDeletedPatientResult = await this.getAllDeletedPatientOnServer();
       console.log("Patients supprimés synchronisés on the server:", getAllDeletedPatientResult.success);
+      Logger.info("Patients supprimés synchronisés on the server:", { success: getAllDeletedPatientResult.success });
       if (!getAllDeletedPatientResult.success) {
+        Logger.error("Erreur lors de la synchronisation des patients supprimés");
         console.error("Erreur lors de la synchronisation des patients supprimés");
-        Logger.log("error", "Erreur lors de la synchronisation des patients supprimés");
         if (getAllDeletedPatientResult.errors) {
           errors.push(...getAllDeletedPatientResult.errors);
         }
@@ -332,20 +377,21 @@ export default class PatientService extends Service {
       if (config.isPictureSyncEnabled) {
         /* syncPicturesResult = await this.syncPictures(); */
         console.log("Images synchronisées on the server:", syncPicturesResult.success);
+        Logger.info("Images synchronisées on the server:", { success: syncPicturesResult.success });
         if (!syncPicturesResult.success) {
+          Logger.error("Erreur lors de la synchronisation des images");
           console.error("Erreur lors de la synchronisation des images");
-          Logger.log("error", "Erreur lors de la synchronisation des images");
           if (syncPicturesResult.errors) {
             errors.push(...syncPicturesResult.errors);
           }
         }
       }
 
-      if(errors.length === 0){
+      if (errors.length === 0) {
         await setLastSyncDate(new Date().toISOString());
       }
 
-      Logger.log("info", "Patients synchronisés");
+      Logger.info("Patients synchronisés");
       console.log("Patients synchronisés");
 
       // Créer l'objet de retour avec toutes les statistiques
@@ -366,7 +412,7 @@ export default class PatientService extends Service {
       return result;
     } catch (error) {
       console.error("Erreur lors de la synchronisation des patients :", error);
-      Logger.log("error", "Erreur lors de la synchronisation des patients", { error });
+      Logger.error("Erreur lors de la synchronisation des patients", { error });
 
       return {
         success: false,
@@ -403,9 +449,10 @@ export default class PatientService extends Service {
           }
           console.log("Sync deleted patients : ", url);
           const response = await axios.post(url);
-          if (response.status !== 200 && response.status !== 201) {
+          if (response.status !== 200 && response.status !== 201 && response.status !== 401) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
+          
           this.patientRepository.forceDelete(patient.id);
           Logger.info(`${SYNCHRO_DELETE_LOCAL_PATIENTS} ${patient.id_patient}: ${response.data}`);
           deletedPatientsSynced++;
@@ -793,9 +840,9 @@ export default class PatientService extends Service {
       const totalPatients = patients.length;
 
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS);
-      
+
       // Lancer la création des fichiers JSON en tâche de fond
-      this.saveAllPatientsAndConsultationsAsJson(patients); 
+      this.saveAllPatientsAndConsultationsAsJson(patients);
 
       return {
         success: true,
@@ -822,7 +869,7 @@ export default class PatientService extends Service {
       };
     }
   }
-  
+
   /**
    * Sauvegarde tous les patients et leurs consultations en fichiers JSON en tâche de fond
    * @param patients Liste des patients à sauvegarder
@@ -830,13 +877,13 @@ export default class PatientService extends Service {
   private async saveAllPatientsAndConsultationsAsJson(patients: PatientSyncDataResponseOfGetAllMedicalDataServer[]): Promise<void> {
     try {
       console.log(`🔄 Début de la sauvegarde de ${patients.length} patients et leurs consultations en JSON...`);
-      
+
       // Traiter en arrière-plan
       setTimeout(async () => {
         try {
           const consultationRepository = new ConsultationRepository();
           const typeDiabete = await getDiabetesType();
-          
+
           for (const patientData of patients) {
             // Récupérer le patient depuis la base de données
             const patientId = patientData.identifier;
@@ -845,7 +892,7 @@ export default class PatientService extends Service {
               if (patient) {
                 // Sauvegarder le patient en JSON
                 await this.savePatientAsJson(patient);
-                
+
                 // Récupérer et sauvegarder les consultations du patient
                 const consultations = await consultationRepository.getAllConsultationByPatientIdOnLocalDB(patient.id_patient);
                 for (const consultation of consultations) {
@@ -860,7 +907,7 @@ export default class PatientService extends Service {
           Logger.log('error', 'Error saving patients and consultations as json in background', { error });
         }
       }, 100); // Délai minimal pour démarrer en arrière-plan
-      
+
     } catch (error) {
       console.error("❌ Erreur lors de l'initialisation de la sauvegarde en tâche de fond :", error);
       Logger.log('error', 'Error initializing background save of patients and consultations', { error });
@@ -874,10 +921,10 @@ export default class PatientService extends Service {
     try {
       const jsonContent = JSON.stringify(consultation.parseDataToJson());
       const isFicheAdmin = await consultation.isFicheAdministrative();
-      
+
       let fileName;
       let folderPath;
-      
+
       if (isFicheAdmin) {
         // Si c'est une fiche administrative, utiliser un nom spécifique
         fileName = generateFicheAdministrativeNameForJsonSave(new Date(), consultation.ficheName || '');
@@ -888,18 +935,18 @@ export default class PatientService extends Service {
         fileName = generateConsultationName(new Date());
         folderPath = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(), consultation.id_patient)}`;
       }
-      
+
       const fileUri = `${folderPath}/${fileName}`;
-      
+
       const dirInfo = await FileSystem.getInfoAsync(folderPath);
       if (!dirInfo.exists) {
         await FileSystem.makeDirectoryAsync(folderPath, { intermediates: true });
       }
-      
+
       await FileSystem.writeAsStringAsync(fileUri, jsonContent, {
         encoding: FileSystem.EncodingType.UTF8,
       });
-      
+
       console.log(`✅ Consultation ${consultation.id} sauvegardée en JSON: ${fileUri}`);
     } catch (error) {
       console.error(`❌ Erreur d'enregistrement de la consultation en JSON en arrière-plan :`, error);

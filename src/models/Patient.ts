@@ -114,7 +114,7 @@ export default class Patient extends BaseModel {
         const consultation = new Consultation();
         consultation.id = this.id;
         consultation.id_patient = this.id_patient;
-        consultation.ficheName = await getFicheAdministrativeName();
+        consultation.ficheName = await getFicheAdministrativeName() || "";
         consultation.type_diabete = this.type_diabete;
         consultation.createdBy = this.createdBy;
         consultation.createdAt = this.createdAt;

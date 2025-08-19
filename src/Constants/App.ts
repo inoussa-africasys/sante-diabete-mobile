@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
 
-export const APP_NAME = process.env.APP_NAME
+export const APP_NAME = Constants.expoConfig?.name
 
 export const VERSION_NAME = Constants.expoConfig?.version
 export const APP_VERSION = Constants.expoConfig?.version
@@ -26,5 +26,5 @@ export const NAME_OF_TRAFIC_ZIP_FILE = `trafic_archive.zip`;
 export const LAST_SYNC_DATE_KEY = 'last_sync_date';
 
 
-export const DAY_OF_SYNC_ALERT_TO_DECLANCHE = 0.000; 
+export const DAY_OF_SYNC_ALERT_TO_DECLANCHE = 10; 
 

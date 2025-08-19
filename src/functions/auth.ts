@@ -1,7 +1,7 @@
 import { getItemAsync } from "expo-secure-store";
-import { ACTIVE_DIABETE_TYPE_KEY, AUTH_BASE_URL_KEY } from "../Constants/App";
+import { ACTIVE_DIABETE_TYPE_KEY } from "../Constants/App";
 import { DiabeteType } from "../types/enums";
-import { getAuthTokenKey, getUserNameKey } from "./qrcodeFunctions";
+import { getAuthBaseUrlKey, getAuthTokenKey, getUserNameKey } from "./qrcodeFunctions";
 
 export const getToken = async (): Promise<string> => {
     const token = await getItemAsync(getAuthTokenKey(await getDiabetesType()));
@@ -13,7 +13,7 @@ export const getToken = async (): Promise<string> => {
 
 
 export const getBaseUrl = async (): Promise<string> => {
-    const baseUrl = await getItemAsync(AUTH_BASE_URL_KEY);
+    const baseUrl = await getItemAsync(getAuthBaseUrlKey(await getDiabetesType()));
     if (!baseUrl) {
         throw new Error('No baseUrl found');
     }

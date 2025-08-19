@@ -1,4 +1,5 @@
 import { DiabeteType } from '@/src/types';
+import { useIsFocused } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -10,13 +11,15 @@ function DT1Page() {
 
   const { setActiveDiabetesType,loading } = useDiabetes();
   const { refreshDiabetesType } = useAuth();
+  const isFocused = useIsFocused();
 
   useEffect(() => {
+    if (isFocused) {
      setActiveDiabetesType(DiabeteType.DT1).then(() => {
-      console.log('Diabetes type set to DT1');
       refreshDiabetesType();
     });
-  }, []);
+    }
+  }, [isFocused]);
 
   const handleBackPress = () => {
     router.back();

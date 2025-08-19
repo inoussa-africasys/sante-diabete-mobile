@@ -1,3 +1,4 @@
+import DiabetesTypeBadge from "@/src/Components/DiabetesTypeBadge";
 import FicheDoesntExist from "@/src/Components/FicheDoesntExist";
 import { AlertModal, ConfirmModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
@@ -29,7 +30,7 @@ export default function ShowConsultationScreen() {
 
   const { getConsultationById,deleteConsultationOnTheLocalDb } = useConsultation();
   const { getPatientByIdOnTheLocalDb } = usePatient();
-  const { getFicheById ,getFicheByName} = useFiche();
+  const { getFicheByName } = useFiche();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -145,6 +146,8 @@ export default function ShowConsultationScreen() {
             </TouchableOpacity>
           </View>
       </View>
+
+      <DiabetesTypeBadge />
 
       <SurveyScreenDom
         surveyJson={fiche?.data}
