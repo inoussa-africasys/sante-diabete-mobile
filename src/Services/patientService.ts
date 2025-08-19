@@ -449,9 +449,10 @@ export default class PatientService extends Service {
           }
           console.log("Sync deleted patients : ", url);
           const response = await axios.post(url);
-          if (response.status !== 200 && response.status !== 201) {
+          if (response.status !== 200 && response.status !== 201 && response.status !== 401) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
+          
           this.patientRepository.forceDelete(patient.id);
           Logger.info(`${SYNCHRO_DELETE_LOCAL_PATIENTS} ${patient.id_patient}: ${response.data}`);
           deletedPatientsSynced++;
