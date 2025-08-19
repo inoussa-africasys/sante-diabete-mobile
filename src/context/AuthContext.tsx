@@ -1,8 +1,8 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { ACTIVE_DIABETE_TYPE_KEY, AUTH_BASE_URL_KEY, LAST_SYNC_DATE_KEY, USER_PREFERENCES_KEY, VERSION_NAME } from '../Constants/App';
-import { getAuthTokenKey } from '../functions';
+import { ACTIVE_DIABETE_TYPE_KEY, LAST_SYNC_DATE_KEY, USER_PREFERENCES_KEY, VERSION_NAME } from '../Constants/App';
+import { getAuthBaseUrlKey, getAuthTokenKey } from '../functions';
 import { getUserNameKey } from '../functions/qrcodeFunctions';
 import { DiabeteType } from '../types/enums';
 import Logger from '../utils/Logger';
@@ -18,7 +18,6 @@ async function validateTokenOnLine(baseUrl: string, token: string): Promise<bool
         const url = `${baseUrl}/api/json/mobile/authenticate?app_version=${VERSION_NAME}&token=${token}`;
         const response = await axios.post(url, undefined, { headers: { 'Content-Type': 'application/json' } });
         Logger.info('↔️ Token validated on line', { status: response.status, statusText: response.statusText, data: response.data });
-        console.log('↔️ Token validated on line', { status: response.status, statusText: response.statusText, data: response.data });
         return response.status === 200;
 
     } catch (e) {
@@ -33,7 +32,7 @@ async function validateTokenOffline(activeDiabetesType: DiabeteType): Promise<bo
 
     const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
     const userName = await SecureStore.getItemAsync(USER_NAME_KEY);
-    const baseUrl = await SecureStore.getItemAsync(AUTH_BASE_URL_KEY);
+    const baseUrl = await SecureStore.getItemAsync(getAuthBaseUrlKey(activeDiabetesType as DiabeteType));
 
     // Only return true if both token, username and baseUrl exist
     if (token && userName && baseUrl) {
@@ -96,7 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const isValid = await validateTokenOnLine(baseUrl, token);
         if (isValid) {
             await SecureStore.setItemAsync(getAuthTokenKey(diabetesType), token);
-            await SecureStore.setItemAsync(AUTH_BASE_URL_KEY, baseUrl);
+            await SecureStore.setItemAsync(getAuthBaseUrlKey(diabetesType), baseUrl);
             await SecureStore.setItemAsync(getUserNameKey(diabetesType), userName);
             setIsAuthenticated(true);
             setIsAuthenticatedState(true);
@@ -108,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Déconnexion
     const logout = async ({ diabetesType }: LogoutParams): Promise<boolean> => {
         await SecureStore.deleteItemAsync(getAuthTokenKey(diabetesType));
-        await SecureStore.deleteItemAsync(AUTH_BASE_URL_KEY);
+        await SecureStore.deleteItemAsync(getAuthBaseUrlKey(diabetesType));
         await SecureStore.deleteItemAsync(getUserNameKey(diabetesType));
         await SecureStore.deleteItemAsync(ACTIVE_DIABETE_TYPE_KEY);
         await SecureStore.deleteItemAsync(LAST_SYNC_DATE_KEY);
@@ -155,9 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 try {
                     const storedUserName = await SecureStore.getItemAsync(getUserNameKey(diabetesType as DiabeteType));
                     setCurrentUserName(storedUserName);
-                    console.log('Username updated:', storedUserName);
                 } catch (error) {
-                    console.error('Error fetching username:', error);
                     Logger.error('Error fetching username', { error });
                 }
             } else {
@@ -213,7 +210,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             return false;
         }
 
-        const baseUrl = await SecureStore.getItemAsync(AUTH_BASE_URL_KEY);
+        const baseUrl = diabetesType ? await SecureStore.getItemAsync(getAuthBaseUrlKey(diabetesType as DiabeteType)) : null;
         const token = await SecureStore.getItemAsync(getAuthTokenKey(diabetesType as DiabeteType));
 
         if (!baseUrl || !token) {
@@ -235,13 +232,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
             const oppositeType = diabetesType === DiabeteType.DT1 ? DiabeteType.DT2 : DiabeteType.DT1;
             const oppositeToken = await SecureStore.getItemAsync(getAuthTokenKey(oppositeType));
-            const oppositeUsername = await SecureStore.getItemAsync(getUserNameKey(oppositeType));
-            const oppositeBaseUrl = await SecureStore.getItemAsync(AUTH_BASE_URL_KEY);
-            if (!oppositeToken || !oppositeBaseUrl || !oppositeUsername) {
+            const oppositeBaseUrl = await SecureStore.getItemAsync(getAuthBaseUrlKey(oppositeType));
+            if (!oppositeToken || !oppositeBaseUrl) {
                 return true;
             }
-            const username = await userName();
-            if (oppositeToken === token && oppositeUsername === username && oppositeBaseUrl === baseUrl) {
+            if (oppositeToken === token && oppositeBaseUrl === baseUrl) {
                 return false;
             }
             return true;

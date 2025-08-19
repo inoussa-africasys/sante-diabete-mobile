@@ -1,6 +1,7 @@
 import * as Crypto from 'expo-crypto';
-import { QRCodeRepository } from '../Repositories/QRCodeRepository';
+import * as SecureStore from 'expo-secure-store';
 import { DiabeteType } from '../types/enums';
+import Logger from '../utils/Logger';
 
 export function decoderQRCodeInformation(qrCode: string): {url: string, code: string, username: string} {
     const [url, code, username] = qrCode.split('|');
@@ -28,12 +29,17 @@ export function getUserNameKey(DiabeteType: DiabeteType): string {
   return `user_name_${DiabeteType.toLowerCase()}`;
 }
 
+export function getAuthBaseUrlKey(DiabeteType: DiabeteType): string {
+  return `auth_base_url_${DiabeteType.toLowerCase()}`;
+}
+
 export async function getBaseUrl(DiabeteType: DiabeteType): Promise<string | null> {
-    const repo = new QRCodeRepository();
+    /* const repo = new QRCodeRepository();
     const qrCode = await repo.findAll();
     console.log('QR Code:', qrCode);
     const baseUrl = qrCode.findLast((qrCode) => qrCode.type === DiabeteType)?.url || null;
-    console.log('Base URL:', baseUrl);
+    console.log('Base URL:', baseUrl); */
+    const baseUrl = await SecureStore.getItemAsync(getAuthBaseUrlKey(DiabeteType));
     return baseUrl;
 }
 
@@ -54,7 +60,8 @@ export function isValidURL(url: string): boolean {
 
     // Si tout passe, c'est une URL valide
     return true;
-  } catch (err) {
+  } catch (error) {
+    Logger.error('Error checking URL:', { error });
     return false;
   }
 }

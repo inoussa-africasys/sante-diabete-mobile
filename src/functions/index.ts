@@ -1,5 +1,5 @@
 export * from './auth';
-export { decoderQRCodeInformation, getAuthTokenKey, hashTo512, isValidURL } from './qrcodeFunctions';
+export { decoderQRCodeInformation, getAuthTokenKey, getAuthBaseUrlKey, hashTo512, isValidURL } from './qrcodeFunctions';
 export { getLastSyncDate, saveLastSyncDate } from './syncHelpers';
 
             
