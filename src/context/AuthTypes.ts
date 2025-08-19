@@ -35,6 +35,7 @@ export interface AuthContextType {
     refreshDiabetesType: () => void;
     isAuthenticatedState: boolean;
     splashScreenCheckOnlineAuth: () => Promise<boolean>;
+    canLogin: (baseUrl: string, token: string) => Promise<boolean | null>;
 }
 
 export interface AuthProviderProps {

@@ -17,8 +17,8 @@ async function validateTokenOnLine(baseUrl: string, token: string): Promise<bool
     try {
         const url = `${baseUrl}/api/json/mobile/authenticate?app_version=${VERSION_NAME}&token=${token}`;
         const response = await axios.post(url, undefined, { headers: { 'Content-Type': 'application/json' } });
-        Logger.info('↔️ Token validated on line', {status: response.status, statusText: response.statusText,data: response.data});
-        console.log('↔️ Token validated on line', {status: response.status, statusText: response.statusText,data: response.data});
+        Logger.info('↔️ Token validated on line', { status: response.status, statusText: response.statusText, data: response.data });
+        console.log('↔️ Token validated on line', { status: response.status, statusText: response.statusText, data: response.data });
         return response.status === 200;
 
     } catch (e) {
@@ -27,24 +27,24 @@ async function validateTokenOnLine(baseUrl: string, token: string): Promise<bool
     }
 }
 
-async function validateTokenOffline(activeDiabetesType :DiabeteType ): Promise<boolean> {    
+async function validateTokenOffline(activeDiabetesType: DiabeteType): Promise<boolean> {
     const AUTH_TOKEN_KEY = getAuthTokenKey(activeDiabetesType as DiabeteType);
     const USER_NAME_KEY = getUserNameKey(activeDiabetesType as DiabeteType);
-    
+
     const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
     const userName = await SecureStore.getItemAsync(USER_NAME_KEY);
     const baseUrl = await SecureStore.getItemAsync(AUTH_BASE_URL_KEY);
-    
+
     // Only return true if both token, username and baseUrl exist
     if (token && userName && baseUrl) {
         return true;
     }
-    
-    Logger.error('Authentication validation failed', { 
-        hasToken: !!token, 
-        hasUserName: !!userName, 
+
+    Logger.error('Authentication validation failed', {
+        hasToken: !!token,
+        hasUserName: !!userName,
         hasBaseUrl: !!baseUrl,
-        diabetesType: activeDiabetesType 
+        diabetesType: activeDiabetesType
     });
     return false;
 }
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { diabetesType } = useDiabetes();
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [isAuthenticatedState, setIsAuthenticatedState] = useState(false);
-    
+
     // Plus de lecture directe du type depuis SecureStore ici: on s'aligne sur DiabetesContext
 
     // Vérifie l'état d'authentification (offline)
@@ -123,7 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const getToken = async (): Promise<string | null> => {
         try {
             // Use diabetesType from context
-            const activeType = diabetesType;            
+            const activeType = diabetesType;
             if (!activeType) {
                 console.error('No active diabetes type found');
                 Logger.error('No active diabetes type found');
@@ -133,14 +133,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const token = await SecureStore.getItemAsync(getAuthTokenKey(activeType as DiabeteType));
             if (!token) {
                 console.error('No token found for diabetes type:', activeType);
-                Logger.error('No token found for diabetes type:', {activeDiabetesType: activeType});
+                Logger.error('No token found for diabetes type:', { activeDiabetesType: activeType });
                 return null;
             }
 
             return token;
         } catch (error) {
             console.error('Erreur lors de la récupération du token:', error);
-            Logger.error('Erreur lors de la récupération du token:', {error});
+            Logger.error('Erreur lors de la récupération du token:', { error });
             return null;
         }
     };
@@ -164,7 +164,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setCurrentUserName(null);
             }
         };
-        
+
         fetchUserName();
         // Vérifier auth à chaque changement de type
         checkAuth();
@@ -176,11 +176,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await checkAuth();
         })();
     }, [checkAuth]);
-    
+
     // Function to get username that matches the interface requirement
     const userName = async (): Promise<string | null> => {
         if (currentUserName) return currentUserName;
-        
+
         try {
             const activeType = diabetesType;
             if (!activeType) {
@@ -192,14 +192,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const storedUserName = await SecureStore.getItemAsync(getUserNameKey(activeType as DiabeteType));
             if (!storedUserName) {
                 console.error('No userName found for diabetes type:', activeType);
-                Logger.error('No userName found for diabetes type:', {activeDiabetesType: activeType});
+                Logger.error('No userName found for diabetes type:', { activeDiabetesType: activeType });
                 return null;
             }
 
             return storedUserName;
         } catch (error) {
             console.error('Erreur lors de la récupération du userName:', error);
-            Logger.error('Erreur lors de la récupération du userName:', {error});
+            Logger.error('Erreur lors de la récupération du userName:', { error });
             return null;
         }
     };
@@ -227,10 +227,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return ok;
     }, [diabetesType]);
 
-    
+
+    const canLogin = useCallback(async (baseUrl: string, token: string): Promise<boolean | null> => {
+        try {
+            if (!diabetesType) {
+                return null;
+            }
+            const oppositeType = diabetesType === DiabeteType.DT1 ? DiabeteType.DT2 : DiabeteType.DT1;
+            const oppositeToken = await SecureStore.getItemAsync(getAuthTokenKey(oppositeType));
+            const oppositeUsername = await SecureStore.getItemAsync(getUserNameKey(oppositeType));
+            const oppositeBaseUrl = await SecureStore.getItemAsync(AUTH_BASE_URL_KEY);
+            if (!oppositeToken || !oppositeBaseUrl || !oppositeUsername) {
+                return true;
+            }
+            const username = await userName();
+            if (oppositeToken === token && oppositeUsername === username && oppositeBaseUrl === baseUrl) {
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('Error checking login:', error);
+            Logger.error('Error checking login:', { error });
+            return false;
+        }
+    }, [diabetesType]);
 
 
-    const value : AuthContextType = {
+
+
+    const value: AuthContextType = {
         isAuthenticated,
         checkAuthOffline,
         getIsAuthenticated,
@@ -241,6 +266,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         refreshDiabetesType,
         isAuthenticatedState,
         splashScreenCheckOnlineAuth,
+        canLogin
     };
 
     return (
