@@ -32,7 +32,7 @@ export const SyncStatsModal: React.FC<SyncStatsModalProps> = ({ visible, stats, 
 
                             {stats?.statistics?.syncDeletedPatients && (
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statLabel}>Patients supprimés:</Text>
+                                    <Text style={styles.statLabel}>Patients supprimés</Text>
                                     <Text style={styles.statValue}>
                                         {stats.statistics.syncDeletedPatients.success}/{stats.statistics.syncDeletedPatients.total}
                                     </Text>
@@ -41,7 +41,7 @@ export const SyncStatsModal: React.FC<SyncStatsModalProps> = ({ visible, stats, 
 
                             {stats?.statistics?.sendCreatedOrUpdatedPatientsToServer && (
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statLabel}>Patients créés/mis à jour:</Text>
+                                    <Text style={styles.statLabel}>Patients créés/mis à jour</Text>
                                     <Text style={styles.statValue}>
                                         {stats.statistics.sendCreatedOrUpdatedPatientsToServer.success}/{stats.statistics.sendCreatedOrUpdatedPatientsToServer.total}
                                     </Text>
@@ -50,7 +50,7 @@ export const SyncStatsModal: React.FC<SyncStatsModalProps> = ({ visible, stats, 
 
                             {stats?.statistics?.sendCreatedConsultationsToServer && (
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statLabel}>Consultations synchronisées:</Text>
+                                    <Text style={styles.statLabel}>Consultations synchronisées</Text>
                                     <Text style={styles.statValue}>
                                         {stats.statistics.sendCreatedConsultationsToServer.success}/{stats.statistics.sendCreatedConsultationsToServer.total}
                                     </Text>
@@ -59,7 +59,7 @@ export const SyncStatsModal: React.FC<SyncStatsModalProps> = ({ visible, stats, 
 
                             {stats?.statistics?.getAllPatientOnServer && (
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statLabel}>Patients récupérés du serveur:</Text>
+                                    <Text style={styles.statLabel}>Patients récupérés du serveur</Text>
                                     <Text style={styles.statValue}>
                                         {stats.statistics.getAllPatientOnServer.success}/{stats.statistics.getAllPatientOnServer.total}
                                     </Text>
@@ -68,7 +68,7 @@ export const SyncStatsModal: React.FC<SyncStatsModalProps> = ({ visible, stats, 
 
                             {stats?.statistics?.getAllDeletedPatientOnServer && (
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statLabel}>Patients supprimés récupérés:</Text>
+                                    <Text style={styles.statLabel}>Patients supprimés récupérés</Text>
                                     <Text style={styles.statValue}>
                                         {stats.statistics.getAllDeletedPatientOnServer.success}/{stats.statistics.getAllDeletedPatientOnServer.total}
                                     </Text>
@@ -77,7 +77,7 @@ export const SyncStatsModal: React.FC<SyncStatsModalProps> = ({ visible, stats, 
 
                             {stats?.statistics?.syncPictures && (
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statLabel}>Images synchronisées:</Text>
+                                    <Text style={styles.statLabel}>Images synchronisées</Text>
                                     <Text style={styles.statValue}>
                                         {stats.statistics.syncPictures.success}/{stats.statistics.syncPictures.total}
                                     </Text>
