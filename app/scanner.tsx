@@ -100,7 +100,7 @@ const ScannerScreen = () => {
         type="warning"
         isVisible={showCanLoginErrorModal}
         title="Connexion Impossible"
-        message={`Ce code QR est déjà connecté à ${diabetesType === DiabeteType.DT1 ? 'DT2' : 'DT1'} sur ce téléphone. \nVeuillez scanner un autre code QR.`}
+        message={`Ce même QR code est déjà connecté à ${diabetesType === DiabeteType.DT1 ? 'DT2' : 'DT1'} sur ce même appareil. \nVous devez scanner un autre QR Code pour le profil ${diabetesType === DiabeteType.DT1 ? 'DT2' : 'DT1'}`}
         primaryText="OK"
         secondaryText={`Ouvrir ${diabetesType === DiabeteType.DT1 ? 'DT2' : 'DT1'}`}
         onPrimary={() => {
