@@ -3,7 +3,7 @@
     "name": "Santé Diabète Mobile",
     "slug": "sante-diabet-mobile",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/sd_logo.png",
     "scheme": "santediabetmobile",
     "userInterfaceStyle": "automatic",

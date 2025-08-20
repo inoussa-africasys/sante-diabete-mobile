@@ -8,8 +8,8 @@ import { DpiResponse } from '@/src/types/dpi';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+ 
 
 const Dpi = () => {
     const { ficheId, patientId } = useLocalSearchParams();
@@ -19,6 +19,9 @@ const Dpi = () => {
     const { isLoading: isLoadingPatient, error: errorPatient } = usePatient();
     const { isLoading: isLoadingDpi, error: errorDpi, getAllDpis } = useDPI();
     const [dpisResponse, setDpisResponse] = useState<DpiResponse>([]);
+    const { width, height } = useWindowDimensions();
+    const isLandscape = width > height;
+ 
 
     const parseContent = (content?: string): Record<string, unknown> => {
         if (!content) return {};
@@ -31,29 +34,47 @@ const Dpi = () => {
 
     useEffect(() => {
         const loadData = async () => {
+            if (!ficheId) return;
             const fiche = await getFicheById(ficheId as string);
             setFiche(fiche);
         }
         loadData();
-    }, [patientId, ficheId])
+    }, [ficheId])
 
     useEffect(() => {
         const loadData = async () => {
             if (!patientId || !fiche?.name) {
                 return;
             }
-            const getAllDpisResponse = await getAllDpis(patientId as string, fiche?.name as string);
+            // reset pour éviter des données périmées lors d’un changement de fiche
+            setDpisResponse([]);
+            const getAllDpisResponse = await getAllDpis(patientId as string, fiche.name as string);
             setDpisResponse(getAllDpisResponse);
+            console.log("getAllDpisResponse", getAllDpisResponse);
         }
         loadData();
-    }, [patientId, ficheId])
+    }, [patientId, fiche?.name, getAllDpis])
+
+ 
+    const header = (
+        <View style={styles.header}>
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.back()}
+            >
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{title}</Text>
+        </View>
+    )
 
 
     if (isLoadingFiche || isLoadingPatient || isLoadingDpi) {
         return (
             <View style={styles.container}>
+                {header}
                 <ActivityIndicator size="large" color="red" />
-                <Text style={styles.headerTitle}>Chargement des données...</Text>
+                <Text style={styles.loadingText}>Chargement des données...</Text>
             </View>
         )
     }
@@ -61,60 +82,76 @@ const Dpi = () => {
     if (errorFiche || errorPatient || errorDpi) {
         return (
             <View style={styles.container}>
-                <Text style={styles.headerTitle}>Une erreur est survenue</Text>
+                {header}
+                <Text style={styles.errorText}>Une erreur est survenue</Text>
             </View>
         )
     }
 
 
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => router.back()}
-                >
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{title}</Text>
-            </View>
-            <DiabetesTypeBadge />
-            <View style={styles.imageContainer}>
-                <Image source={Images.rotate} style={styles.image} />
-                <View style={styles.imageTextContainer}>
-                    <Text style={styles.imageText}>{"Tourner l'écran en paysage"} </Text>
-                </View>
-            </View>
-            <Text style={styles.sectionTitle}>Dossier: {patientId}</Text>
-            <Text style={styles.sectionTitle}>Fiche: {fiche?.name}</Text>
 
-            {dpisResponse.map((dpi, index) => {
-                const data = parseContent(dpi.content);
-                const entries = Object.entries(data);
-                return (
-                    <View key={dpi.uuid || index} style={styles.section}>
-                        <Text style={styles.sectionSubtitle}>Consultation du {new Date(dpi.date_consultation).toLocaleString()}</Text>
-                        <View style={styles.tableContainer}>
-                            {entries.length === 0 ? (
-                                <Text style={styles.emptyText}>Aucune donnée</Text>
-                            ) : (
-                                entries.map(([key, value]) => (
-                                    <View style={styles.tableRow} key={key}>
-                                        <View style={styles.tableCellKey}>
-                                            <Text style={styles.keyText}>{key}</Text>
-                                        </View>
-                                        <View style={styles.tableCellValue}>
-                                            <Text style={styles.valueText}>{String(value ?? '')}</Text>
-                                        </View>
-                                    </View>
-                                ))
-                            )}
-                        </View>
+
+    return (
+        <View style={styles.container}>
+            {header}
+            <DiabetesTypeBadge />
+            {!isLandscape && (
+                <View style={styles.imageContainer}>
+                    <Image source={Images.rotate} style={styles.image} />
+                    <View style={styles.imageTextContainer}>
+                        <Text style={styles.imageText}>{"Tourner l'écran en paysage"} </Text>
                     </View>
+                </View>
+            )}
+ 
+
+            {(() => {
+                if (!dpisResponse || dpisResponse.length === 0) {
+                    return <Text style={styles.emptyText}>Aucune donnée</Text>;
+                }
+                // Union des clés sur l'ensemble des items pour éviter de perdre des colonnes
+                const keySet = new Set<string>();
+                dpisResponse.forEach((dpi) => {
+                    const obj = parseContent(dpi.content);
+                    Object.keys(obj).forEach((k) => keySet.add(k));
+                });
+                const headers = Array.from(keySet);
+                return (
+                    <ScrollView horizontal style={styles.hScroll} contentContainerStyle={styles.hScrollContent}>
+                        <View>
+                            {/* Header */}
+                            <View style={[styles.row, styles.headerRow]}>
+                                <View style={[styles.cell, styles.headerCell, styles.cellDate]}>
+                                    <Text style={styles.headerCellText}>Date Consultation</Text>
+                                </View>
+                                {headers.map((key) => (
+                                    <View key={key} style={[styles.cell, styles.headerCell]}>
+                                        <Text style={styles.headerCellText}>{key}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                            {/* Body */}
+                            {dpisResponse.map((dpi, index) => {
+                                const data = parseContent(dpi.content);
+                                return (
+                                    <View key={dpi.uuid || index} style={styles.row}>
+                                        <View style={[styles.cell, styles.cellDate]}>
+                                            <Text style={styles.bodyCellText}>{new Date(dpi.date_consultation).toLocaleString()}</Text>
+                                        </View>
+                                        {headers.map((key) => (
+                                            <View key={key} style={styles.cell}>
+                                                <Text style={styles.bodyCellText}>{String((data as any)[key] ?? '')}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    </ScrollView>
                 );
-            })}
-        </SafeAreaView>
+            })()}
+        </View>
     )
 }
 
@@ -135,7 +172,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 16,
         paddingBottom: 10,
-        justifyContent: 'space-between',
+        
         backgroundColor: 'red',
     },
     backButton: {
@@ -160,6 +197,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 18,
         fontStyle: 'italic',
     },
+ 
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
@@ -212,9 +250,73 @@ const styles = StyleSheet.create({
         color: '#111827',
         fontSize: 14,
     },
+    hScroll: {
+        marginTop: 12,
+    },
+    hScrollContent: {
+        paddingHorizontal: 16,
+    },
+    row: {
+        flexDirection: 'row',
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        borderTopWidth: 0,
+    },
+    headerRow: {
+        backgroundColor: '#000',
+    },
+    cell: {
+        minWidth: 160,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRightWidth: 1,
+        borderRightColor: '#e5e7eb',
+        backgroundColor: '#fff',
+    },
+    cellDate: {
+        minWidth: 220,
+    },
+    headerCell: {
+        backgroundColor: '#000',
+    },
+    headerCellText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 16,
+        textAlign: 'center',
+    },
+    bodyCellText: {
+        color: '#111827',
+        fontSize: 14,
+        textAlign: 'center',
+    },
+    tableHeaderRow: {
+        backgroundColor: '#000',
+    },
+    tableHeaderCell: {
+        backgroundColor: '#000',
+    },
+    tableHeaderText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 16,
+        textAlign: 'center',
+    },
     emptyText: {
         padding: 12,
         color: '#6b7280',
         fontStyle: 'italic',
+    },
+    loadingText: {
+        padding: 12,
+        color: '#6b7280',
+        fontStyle: 'italic',
+        textAlign: 'center',
+    },
+    errorText: {
+        padding: 12,
+        color: '#6b7280',
+        fontStyle: 'italic',
+        textAlign: 'center',
     }
 })

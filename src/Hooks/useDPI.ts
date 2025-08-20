@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import DpiService from '../Services/dpiService';
 import { DpiResponse } from '../types/dpi';
 
@@ -11,11 +11,11 @@ export const useDPI = (): UseDpiType => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
-    const getAllDpis = async (patientId: string, ficheName: string): Promise<DpiResponse> => {
+    const getAllDpis = useCallback(async (patientId: string, ficheName: string): Promise<DpiResponse> => {
         setIsLoading(true);
         try {
             const dpiService = await DpiService.create();
-            const dpisArrayString = await dpiService.fetchAllDpisOnServer({ patientId, ficheName })
+            const dpisArrayString = await dpiService.fetchAllDpisOnServer({ patientId, ficheName });
             return dpisArrayString;
         } catch (error) {
             console.error('Erreur réseau :', error);
@@ -24,7 +24,7 @@ export const useDPI = (): UseDpiType => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
 
 
