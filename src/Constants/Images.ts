@@ -12,5 +12,7 @@ export const Images = {
     VenusSanteDiabeteLogo : require('@/assets/images/logo-venus-sante-diabete.png'),
     SDPlannerLogo : require('@/assets/images/sd-planner-logo.png'),
     CentreDeRessourcesLogo : require('@/assets/images/lien-utile-default-logo.png'),
+    dpiLogo : require('@/assets/images/paysage-orientation.jpg'),
+    rotate : require('@/assets/images/rotate.png'),
     
 }

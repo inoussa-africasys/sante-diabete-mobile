@@ -1,3 +1,4 @@
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { useAuth } from '@/src/context/AuthContext';
 import Fiche from '@/src/models/Fiche';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -6,7 +7,6 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '../../src/Components/Toast';
-import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { useFiche } from '../../src/Hooks/useFiche';
 
 
@@ -16,7 +16,8 @@ enum Action {
   Fill = 'fill',
   Empty = 'empty',
   EditFormFill = 'editFormFill',
-  Consultation = 'consultation'
+  Consultation = 'consultation',
+  DPI = 'dpi'
 }
 
 export default function ListeFichesScreen() {
@@ -27,35 +28,35 @@ export default function ListeFichesScreen() {
   const [fiches, setFiches] = React.useState<Fiche[]>([]);
   const { isAuthenticated } = useAuth();
 
-  const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge', 'editFormFill','consultation'].includes(params.mode)) ? params.mode : 'remplir';
+  const mode = (typeof params.mode === 'string' && ['editer', 'remplir', 'vierge', 'editFormFill', 'consultation', 'dpi'].includes(params.mode)) ? params.mode : 'remplir';
   const patientId = params.patientId as string;
 
- useEffect(() => {
-  getAllFicheDownloaded().then((fiches) => {
-    setFiches(fiches);
-  });
- }, []);
+  useEffect(() => {
+    getAllFicheDownloaded().then((fiches) => {
+      setFiches(fiches);
+    });
+  }, []);
 
- useEffect(() => {
-  if (error) {
-    showToast('Erreur lors de la récupération des fiches', 'error', 3000);
-  }
- }, [error, showToast]);
+  useEffect(() => {
+    if (error) {
+      showToast('Erreur lors de la récupération des fiches', 'error', 3000);
+    }
+  }, [error, showToast]);
 
- // Vérification d'authentification déplacée dans un useEffect
- useEffect(() => {
-  if (!isAuthenticated) {
-    router.replace('/errors/unauthenticated');
-  }
- }, [isAuthenticated, router]);
+  // Vérification d'authentification déplacée dans un useEffect
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/errors/unauthenticated');
+    }
+  }, [isAuthenticated, router]);
 
 
   const getHeaderTitle = () => {
     switch (mode) {
       case 'editer':
         return `Éditer une fiche `;
-      case 'remplir':{
-        if(patientId){
+      case 'remplir': {
+        if (patientId) {
           return `Nouveau suivi ${patientId}`;
         }
         return `Remplir une fiche `;
@@ -66,6 +67,8 @@ export default function ListeFichesScreen() {
         return `Éditer une fiche `;
       case 'consultation':
         return `Consultation ${patientId}`;
+      case 'dpi':
+        return `DPI ${patientId}`;
       default:
         return `Liste des fiches `;
     }
@@ -90,11 +93,14 @@ export default function ListeFichesScreen() {
       case Action.Consultation:
         router.push(`/patient/${patientId}/consultations/create?mode=consultation&ficheId=${fiche.id}`);
         break;
+      case Action.DPI:
+        router.push(`/patient/${patientId}/dpi?ficheId=${fiche.id}`);
+        break;
     }
   };
 
   const renderItemFiche = ({ item }: { item: Fiche }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.item}
       onPress={() => {
         let action: Action = Action.None;
@@ -113,6 +119,9 @@ export default function ListeFichesScreen() {
             break;
           case 'consultation':
             action = Action.Consultation;
+            break;
+          case 'dpi':
+            action = Action.DPI;
             break;
         }
         handleMakeAction(action, item);
@@ -134,7 +143,7 @@ export default function ListeFichesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
           >
@@ -154,7 +163,7 @@ export default function ListeFichesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
           >
@@ -174,7 +183,7 @@ export default function ListeFichesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
@@ -197,7 +206,7 @@ export default function ListeFichesScreen() {
 const EmptyList = () => {
   return (
     <View style={styles.emptyList}>
-    <MaterialIcons name="edit-document" size={124} color="#666" />
+      <MaterialIcons name="edit-document" size={124} color="#666" />
       <Text style={styles.errorText}>Aucune fiche disponible</Text>
     </View>
   );
@@ -215,7 +224,7 @@ const styles = StyleSheet.create({
   emptyList: {
     flex: 1,
     textAlign: 'center',
-    
+
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 16,

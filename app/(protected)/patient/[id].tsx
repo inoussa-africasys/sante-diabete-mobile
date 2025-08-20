@@ -103,8 +103,8 @@ export default function PatientDetailScreen() {
     setShowOptions(false);
   };
 
-  const handleNewRecord = () => {
-    /* router.push(`/nouveau-dossier?patientId=${patientId}`); */
+  const handleDPI = () => {
+    router.push(`/liste-fiches?patientId=${patientId}&mode=dpi`);
     setShowOptions(false);
   };
 
@@ -250,7 +250,7 @@ export default function PatientDetailScreen() {
                   </View>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.optionButton} onPress={handleNewRecord}>
+              <TouchableOpacity style={styles.optionButton} onPress={handleDPI}>
                 <View style={styles.optionContent}>
                   <View style={styles.optionTextContainer}>
                     <Text style={styles.optionText}>Dossier</Text>
