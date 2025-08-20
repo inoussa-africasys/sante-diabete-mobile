@@ -13,7 +13,8 @@ export default class DpiService extends Service {
         try {
             const baseUrl = this.getBaseUrl();
             const token = this.getToken();
-            const url = `${baseUrl}/api/json/mobile/patients/medicaldata/dpiview?patientID=${patientId}&formName=${ficheName}&token=${token}`;
+            //const url = `${baseUrl}/api/json/mobile/patients/medicaldata/dpiview?patientID=${patientId}&formName=${ficheName}&token=${token}`;
+            const url = `http://192.168.11.101:3000/dpi`;
             const response = await axios.get<DpiResponse>(url);
             return response.data;
         } catch (error) {

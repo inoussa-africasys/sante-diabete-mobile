@@ -9,19 +9,36 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
- 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+
+const Header = ({ title }: { title: string }) => {
+
+    const insets = useSafeAreaInsets();
+    return (
+        <View style={[styles.header, { paddingTop: insets.top }]}>
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.back()}
+            >
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
+        </View>
+    )
+}
 
 const Dpi = () => {
     const { ficheId, patientId } = useLocalSearchParams();
     const [fiche, setFiche] = useState<Fiche | null>(null);
-    const title = "Dossier: " + (patientId || "") + "\n" + (fiche?.name || "");
+    const title = "Dossier: " + (patientId || "") + " - " + (fiche?.name || "");
     const { isLoading: isLoadingFiche, error: errorFiche, getFicheById } = useFiche();
     const { isLoading: isLoadingPatient, error: errorPatient } = usePatient();
     const { isLoading: isLoadingDpi, error: errorDpi, getAllDpis } = useDPI();
     const [dpisResponse, setDpisResponse] = useState<DpiResponse>([]);
     const { width, height } = useWindowDimensions();
     const isLandscape = width > height;
- 
+
 
     const parseContent = (content?: string): Record<string, unknown> => {
         if (!content) return {};
@@ -55,24 +72,14 @@ const Dpi = () => {
         loadData();
     }, [patientId, fiche?.name, getAllDpis])
 
- 
-    const header = (
-        <View style={styles.header}>
-            <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => router.back()}
-            >
-                <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{title}</Text>
-        </View>
-    )
+
+
 
 
     if (isLoadingFiche || isLoadingPatient || isLoadingDpi) {
         return (
             <View style={styles.container}>
-                {header}
+                <Header title={title} />
                 <ActivityIndicator size="large" color="red" />
                 <Text style={styles.loadingText}>Chargement des données...</Text>
             </View>
@@ -82,7 +89,7 @@ const Dpi = () => {
     if (errorFiche || errorPatient || errorDpi) {
         return (
             <View style={styles.container}>
-                {header}
+                <Header title={title} />
                 <Text style={styles.errorText}>Une erreur est survenue</Text>
             </View>
         )
@@ -93,8 +100,8 @@ const Dpi = () => {
 
 
     return (
-        <View style={styles.container}>
-            {header}
+        <View style={[styles.container]}>
+            <Header title={title} />
             <DiabetesTypeBadge />
             {!isLandscape && (
                 <View style={styles.imageContainer}>
@@ -104,7 +111,7 @@ const Dpi = () => {
                     </View>
                 </View>
             )}
- 
+
 
             {(() => {
                 if (!dpisResponse || dpisResponse.length === 0) {
@@ -119,35 +126,37 @@ const Dpi = () => {
                 const headers = Array.from(keySet);
                 return (
                     <ScrollView horizontal style={styles.hScroll} contentContainerStyle={styles.hScrollContent}>
-                        <View>
-                            {/* Header */}
-                            <View style={[styles.row, styles.headerRow]}>
-                                <View style={[styles.cell, styles.headerCell, styles.cellDate]}>
-                                    <Text style={styles.headerCellText}>Date Consultation</Text>
-                                </View>
-                                {headers.map((key) => (
-                                    <View key={key} style={[styles.cell, styles.headerCell]}>
-                                        <Text style={styles.headerCellText}>{key}</Text>
+                        <ScrollView nestedScrollEnabled>
+                            <View>
+                                {/* Header */}
+                                <View style={[styles.row, styles.headerRow]}>
+                                    <View style={[styles.cell, styles.headerCell, styles.cellDate]}>
+                                        <Text style={styles.headerCellText}>Date Consultation</Text>
                                     </View>
-                                ))}
-                            </View>
-                            {/* Body */}
-                            {dpisResponse.map((dpi, index) => {
-                                const data = parseContent(dpi.content);
-                                return (
-                                    <View key={dpi.uuid || index} style={styles.row}>
-                                        <View style={[styles.cell, styles.cellDate]}>
-                                            <Text style={styles.bodyCellText}>{new Date(dpi.date_consultation).toLocaleString()}</Text>
+                                    {headers.map((key) => (
+                                        <View key={key} style={[styles.cell, styles.headerCell]}>
+                                            <Text style={styles.headerCellText}>{key}</Text>
                                         </View>
-                                        {headers.map((key) => (
-                                            <View key={key} style={styles.cell}>
-                                                <Text style={styles.bodyCellText}>{String((data as any)[key] ?? '')}</Text>
+                                    ))}
+                                </View>
+                                {/* Body */}
+                                {dpisResponse.map((dpi, index) => {
+                                    const data = parseContent(dpi.content);
+                                    return (
+                                        <View key={`${dpi.uuid}-${index}`} style={styles.row}>
+                                            <View style={[styles.cell, styles.cellDate]}>
+                                                <Text style={styles.bodyCellText}>{new Date(dpi.date_consultation).toLocaleString()}</Text>
                                             </View>
-                                        ))}
-                                    </View>
-                                );
-                            })}
-                        </View>
+                                            {headers.map((key) => (
+                                                <View key={`${key}-${index}`} style={styles.cell}>
+                                                    <Text style={styles.bodyCellText}>{String((data as any)[key] ?? '')}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </ScrollView>
                     </ScrollView>
                 );
             })()}
@@ -166,13 +175,15 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: '#fff',
+        flex: 1,
+        flexShrink: 1,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
         paddingBottom: 10,
-        
+
         backgroundColor: 'red',
     },
     backButton: {
@@ -197,7 +208,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 18,
         fontStyle: 'italic',
     },
- 
+
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
