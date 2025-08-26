@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import useConfigStore from '../../core/zustand/configStore';
 import { APP_GREEN } from '@/src/Constants/Colors';
+import { getHasPin, setPin, verifyPin } from '@/src/core/security/pinStore';
 
 // Composant pour l'en-tête de section
 const SectionHeader = ({ title }: { title: string }) => (
@@ -28,7 +29,12 @@ const MenuItem = ({
   isActive?: boolean,
   rightText?: string
 }) => (
-  <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+  <TouchableOpacity
+    style={styles.menuItem}
+    onPress={onPress}
+    accessible={true}
+    accessibilityLabel={title}
+  >
     <View style={styles.menuItemContent}>
       <View style={styles.menuItemIcon}>
         {icon}
@@ -47,6 +53,7 @@ const MenuItem = ({
           ios_backgroundColor="#3e3e3e"
           onValueChange={onPress}
           value={isActive}
+          accessibilityLabel={`${title} - interrupteur`}
         />
       ) : (
         <Ionicons name="chevron-forward" size={24} color="#888" />
@@ -63,15 +70,33 @@ const AdministrationPage = () => {
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmNewPin, setConfirmNewPin] = useState('');
+  const [pinError, setPinError] = useState<string>('');
+  const [hasExistingPin, setHasExistingPin] = useState<boolean>(false);
+
+  // Modals pour période et timers
+  const [showSyncPeriodModal, setShowSyncPeriodModal] = useState(false);
+  const [localSyncPeriod, setLocalSyncPeriod] = useState<string>('');
+  const [syncPeriodError, setSyncPeriodError] = useState<string>('');
+
+  // Ancien modal groupé supprimé; on gère désormais chaque timer individuellement
+  // Edition individuelle des timers
+  const [showSingleTimerModal, setShowSingleTimerModal] = useState(false);
+  const [currentTimerKey, setCurrentTimerKey] = useState<'timer1' | 'timer2' | 'timer3' | null>(null);
+  const [localSingleTimer, setLocalSingleTimer] = useState<string>('');
+  const [timerError, setTimerError] = useState<string>('');
 
 
   const configStore = useConfigStore();
 
   // Fonction pour naviguer vers la page de modification du code PIN
-  const handleModifyPin = () => {
-    console.log('Modifier le code PIN');
+  const handleModifyPin = async () => {
+    const exists = await getHasPin();
+    setHasExistingPin(exists);
+    setPinError('');
+    setCurrentPin('');
+    setNewPin('');
+    setConfirmNewPin('');
     setShowCodePinModal(true);
-    // router.push('/pin-modification');
   };
 
   // Fonction pour retourner au menu principal
@@ -79,45 +104,84 @@ const AdministrationPage = () => {
     router.back();
   };
 
-  // Fonction pour ouvrir la page ONG/Associations
-  const handleOngAssociations = () => {
-    router.push('/ong-associations');
-  };
-
-  // Fonction pour gérer les autres options de menu
-  const handleMenuOption = (option: string) => {
-    switch (option) {
-      case 'timer1':
-        console.log('Timer synchro step 1 (en seconde)');
-        break;
-      case 'timer2':
-        console.log('Timer synchro step 2 (en seconde)');
-        break;
-      case 'timer3':
-        console.log('Timer synchro step 3 (en seconde)');
-        break;
-      case 'shortcuts':
-        console.log('Gestion des raccourcis');
-        break;
-      default:
-        console.log(`Option sélectionnée: ${option}`);
-    }
-    // Implémentation à venir
-  };
-
   // Fonction pour ouvrir le sélecteur de période de synchronisation
   const handleSyncPeriod = () => {
-    console.log('Ouvrir sélecteur de période');
-    // Implémentation du modal à venir
+    // Init valeur locale depuis le store
+    setLocalSyncPeriod(String(configStore.getValue('syncPeriodDays') ?? 30));
+    setSyncPeriodError('');
+    setShowSyncPeriodModal(true);
   };
 
-  function handleValidateModifyPin(): void {
-    if (currentPin === '1234' && newPin === confirmNewPin) {
-      setShowCodePinModalChangeSuccess(true);
-      setShowCodePinModal(false);
+  async function handleValidateModifyPin(): Promise<void> {
+    setPinError('');
+    // validations basiques
+    const pinRegex = /^\d{4}$/;
+    if (!pinRegex.test(newPin)) {
+      setPinError('Le nouveau code PIN doit contenir exactement 4 chiffres.');
+      return;
+    }
+    if (newPin !== confirmNewPin) {
+      setPinError('Les deux nouveaux codes PIN ne correspondent pas.');
+      return;
     }
 
+    try {
+      if (hasExistingPin) {
+        const ok = await verifyPin(currentPin);
+        if (!ok) {
+          setPinError('Le code PIN actuel est incorrect.');
+          return;
+        }
+      }
+      await setPin(newPin);
+      setShowCodePinModal(false);
+      setShowCodePinModalChangeSuccess(true);
+    } catch {
+      setPinError("Une erreur est survenue lors de l'enregistrement du PIN.");
+    }
   }
+
+  // handlers pour timers
+  // Ouverture du modal pour un timer individuel
+  const openSingleTimerModal = (key: 'timer1' | 'timer2' | 'timer3') => {
+    setCurrentTimerKey(key);
+    setTimerError('');
+    setLocalSingleTimer(String(configStore.getValue(key)));
+    setShowSingleTimerModal(true);
+  };
+
+  const saveSyncPeriod = () => {
+    const n = Number(localSyncPeriod);
+    if (Number.isNaN(n) || !Number.isInteger(n)) {
+      setSyncPeriodError('Veuillez saisir un nombre entier.');
+      return;
+    }
+    const minDays = 1, maxDays = 365;
+    if (n < minDays || n > maxDays) {
+      setSyncPeriodError(`Veuillez saisir une valeur entre ${minDays} et ${maxDays} jours.`);
+      return;
+    }
+    setSyncPeriodError('');
+    configStore.setValue('syncPeriodDays', Math.floor(n));
+    setShowSyncPeriodModal(false);
+  };
+
+  // Sauvegarde d'un timer individuel
+  const saveSingleTimer = () => {
+    if (!currentTimerKey) return;
+    const n = Number(localSingleTimer);
+    if (Number.isNaN(n) || !Number.isInteger(n)) {
+      setTimerError('Veuillez saisir un nombre entier.');
+      return;
+    }
+    const minS = 5, maxS = 3600;
+    if (n < minS || n > maxS) {
+      setTimerError(`Veuillez saisir une valeur entre ${minS} et ${maxS} secondes.`);
+      return;
+    }
+    configStore.setValue(currentTimerKey, Math.floor(n));
+    setShowSingleTimerModal(false);
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -131,11 +195,11 @@ const AdministrationPage = () => {
         </View>
 
         {/* Boutons d'action */}
-        <TouchableOpacity style={styles.pinButton} onPress={handleModifyPin}>
+        <TouchableOpacity style={styles.pinButton} onPress={handleModifyPin} accessibilityLabel="Modifier le code PIN">
           <Text style={styles.pinButtonText}>MODIFIER LE CODE PIN</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.mainMenuButton} onPress={handleMainMenu}>
+        <TouchableOpacity style={styles.mainMenuButton} onPress={handleMainMenu} accessibilityLabel="Menu principal">
           <Text style={styles.mainMenuButtonText}>MENU PRINCIPAL</Text>
         </TouchableOpacity>
       </View>
@@ -255,35 +319,26 @@ const AdministrationPage = () => {
 
           <MenuItem
             icon={<MaterialIcons name="event" size={24} color="#9C27B0" />}
-            title={`Période de Synchronisation: \nles NON SYNCHRONISÉ`}
+            title={`Période de Synchronisation: \nles NON SYNCHRONISÉ (${configStore.getValue('syncPeriodDays')} j)`}
             onPress={handleSyncPeriod}
           />
 
           <MenuItem
             icon={<MaterialIcons name="timer" size={24} color={APP_GREEN} />}
-            title="Timer synchro step 1 (en seconde)"
-            onPress={() => handleMenuOption('timer1')}
-            rightText="30"
+            title={`Timer synchro étape 1 (sec): ${configStore.getValue('timer1')}`}
+            onPress={() => openSingleTimerModal('timer1')}
           />
 
           <MenuItem
             icon={<MaterialIcons name="timer" size={24} color={APP_GREEN} />}
-            title="Timer synchro step 2 (en seconde)"
-            onPress={() => handleMenuOption('timer2')}
-            rightText="60"
+            title={`Timer synchro étape 2 (sec): ${configStore.getValue('timer2')}`}
+            onPress={() => openSingleTimerModal('timer2')}
           />
 
           <MenuItem
             icon={<MaterialIcons name="timer" size={24} color={APP_GREEN} />}
-            title="Timer synchro step 3 (en seconde)"
-            onPress={() => handleMenuOption('timer3')}
-            rightText="90"
-          />
-
-          <MenuItem
-            icon={<MaterialIcons name="link" size={24} color="#2196F3" />}
-            title="Gestion des raccourcis"
-            onPress={() => handleMenuOption('shortcuts')}
+            title={`Timer synchro étape 3 (sec): ${configStore.getValue('timer3')}`}
+            onPress={() => openSingleTimerModal('timer3')}
           />
 
           <MenuItem
@@ -310,19 +365,29 @@ const AdministrationPage = () => {
             <View style={styles.modalIconContainer}>
               <Ionicons name="lock-closed" size={100} color="black" />
             </View>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Code PIN actuel"
-              value={currentPin}
-              onChangeText={setCurrentPin}
-              secureTextEntry
-            />
+            {hasExistingPin ? (
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Code PIN actuel"
+                value={currentPin}
+                onChangeText={setCurrentPin}
+                secureTextEntry
+                keyboardType="number-pad"
+                maxLength={4}
+                autoFocus={hasExistingPin}
+                accessibilityLabel="Saisir le code PIN actuel"
+              />
+            ) : null}
             <TextInput
               style={styles.modalInput}
               placeholder="Nouveau code PIN"
               value={newPin}
               onChangeText={setNewPin}
               secureTextEntry
+              keyboardType="number-pad"
+              maxLength={4}
+              autoFocus={!hasExistingPin}
+              accessibilityLabel="Saisir le nouveau code PIN"
             />
             <TextInput
               style={styles.modalInput}
@@ -330,8 +395,12 @@ const AdministrationPage = () => {
               value={confirmNewPin}
               onChangeText={setConfirmNewPin}
               secureTextEntry
+              keyboardType="number-pad"
+              maxLength={4}
+              accessibilityLabel="Confirmer le nouveau code PIN"
             />
-            <TouchableOpacity style={styles.modalButton} onPress={handleValidateModifyPin}>
+            {!!pinError && <Text style={{ color: 'red', marginBottom: 10 }}>{pinError}</Text>}
+            <TouchableOpacity style={styles.modalButton} onPress={handleValidateModifyPin} accessibilityLabel="Valider la modification du code PIN">
               <Text style={styles.modalButtonText}>Valider</Text>
             </TouchableOpacity>
           </View>
@@ -349,6 +418,64 @@ const AdministrationPage = () => {
             <Text style={styles.modalTitle}>Code PIN modifié avec succès</Text>
             <TouchableOpacity style={styles.modalButton} onPress={() => setShowCodePinModalChangeSuccess(false)}>
               <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal période de synchronisation */}
+      <Modal
+        visible={showSyncPeriodModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSyncPeriodModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Période de synchronisation (jours)</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Ex: 30"
+              keyboardType="number-pad"
+              value={localSyncPeriod}
+              onChangeText={setLocalSyncPeriod}
+              autoFocus
+              accessibilityLabel="Saisir la période de synchronisation en jours"
+            />
+            {!!syncPeriodError && <Text style={{ color: 'red', marginBottom: 10 }}>{syncPeriodError}</Text>}
+            <TouchableOpacity style={styles.modalButton} onPress={saveSyncPeriod} accessibilityLabel="Enregistrer la période de synchronisation">
+              <Text style={styles.modalButtonText}>Enregistrer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal timer individuel */}
+      <Modal
+        visible={showSingleTimerModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSingleTimerModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {currentTimerKey === 'timer1' && 'Définir le timer étape 1 (secondes)'}
+              {currentTimerKey === 'timer2' && 'Définir le timer étape 2 (secondes)'}
+              {currentTimerKey === 'timer3' && 'Définir le timer étape 3 (secondes)'}
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Ex: 60 (entre 5 et 3600)"
+              keyboardType="number-pad"
+              value={localSingleTimer}
+              onChangeText={setLocalSingleTimer}
+              autoFocus
+              accessibilityLabel="Saisir la valeur du timer en secondes"
+            />
+            {!!timerError && <Text style={{ color: 'red', marginBottom: 10 }}>{timerError}</Text>}
+            <TouchableOpacity style={styles.modalButton} onPress={saveSingleTimer} accessibilityLabel="Enregistrer la valeur du timer">
+              <Text style={styles.modalButtonText}>Enregistrer</Text>
             </TouchableOpacity>
           </View>
         </View>

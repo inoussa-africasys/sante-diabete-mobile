@@ -1,6 +1,7 @@
 import { useDiabetes } from '@/src/context/DiabetesContext';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { APP_GREEN } from '../Constants/Colors';
 
 const DiabetesTypeBadge: React.FC = () => {
   const { diabetesType } = useDiabetes();
@@ -17,11 +18,11 @@ const DiabetesTypeBadge: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: APP_GREEN,
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#4CAF50',
+    borderBottomColor: APP_GREEN,
     flexDirection: 'row',
     
   },
