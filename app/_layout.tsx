@@ -145,7 +145,7 @@ export default function RootLayout() {
 
   return (
     <View style={{ flex: 1 }}>
-      <StatusBar style="light" />
+      <StatusBar style="light" backgroundColor="#FF0000" />
       {showSplash && <FullScreenSplash onAnimationComplete={handleSplashComplete} />}
       {isAppReady &&
         <QueryClientProvider client={queryClient}>

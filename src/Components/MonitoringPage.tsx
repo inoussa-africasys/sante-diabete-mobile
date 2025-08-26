@@ -13,7 +13,7 @@ interface MonitoringPageProps {
 const MonitoringPage: React.FC<MonitoringPageProps> = ({ onStartPress, onBackPress }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="light" backgroundColor="#FF0000" />
       
       {/* Header */}
       <View style={styles.header}>

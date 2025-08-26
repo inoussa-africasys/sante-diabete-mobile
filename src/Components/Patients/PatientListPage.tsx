@@ -143,7 +143,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#f00" barStyle="light-content" />
+      <StatusBar backgroundColor="#FF0000" barStyle="light-content" />
 
       <>
         {showPatientScanner ? <PatientScanner onScan={handleScan} /> : null}

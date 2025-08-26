@@ -13,7 +13,7 @@ interface HomePageProps {
 const HomePage: React.FC<HomePageProps> = ({ onOptionPress }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="light" backgroundColor="#FF0000" />
       
       {/* Header */}
       <View style={styles.header}>

@@ -11,7 +11,7 @@ interface ConsultationsPageProps {
 const ConsultationsPage: React.FC<ConsultationsPageProps> = ({ onOptionPress, onBackPress }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#f00" barStyle="light-content" />
+      <StatusBar backgroundColor="#FF0000" barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>

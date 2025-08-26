@@ -14,7 +14,7 @@ interface CommunityPageProps {
 const CommunityPage: React.FC<CommunityPageProps> = ({ onOpenPress, onBackPress }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#f00" barStyle="light-content" />
+      <StatusBar backgroundColor="#FF0000" barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>

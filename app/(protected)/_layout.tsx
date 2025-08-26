@@ -35,7 +35,8 @@ export default function ProtectedLayout() {
   return(
     <Stack screenOptions={{ 
       headerShown: false,
-      statusBarStyle: 'dark',
+      statusBarStyle: 'light',
+      statusBarBackgroundColor: '#FF0000',
     }} />
     
   );
