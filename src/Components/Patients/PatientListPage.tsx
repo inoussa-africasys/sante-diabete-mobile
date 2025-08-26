@@ -1,20 +1,18 @@
 import PatientScanner from '@/app/(protected)/patient/scanner';
+import { APP_GREEN } from '@/src/Constants/Colors';
 import { useSyncPatientsUI } from '@/src/Hooks/useSyncPatientsUI';
 import { formatPatientDate } from '@/src/functions/helpers';
 import Patient from '@/src/models/Patient';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePatient } from '../../Hooks/usePatient';
 import DiabetesTypeBadge from '../DiabetesTypeBadge';
 import Empty from '../Empty';
 import SyncLoader from '../SyncLoader';
 import SyncStatsModal from '../SyncStatsModal';
-import { APP_GREEN } from '@/src/Constants/Colors';
-
 
 interface PatientListPageProps {
   onPatientPress: (patientId: string) => void;
@@ -145,7 +143,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" hidden={false} backgroundColor="red" />
+      <StatusBar backgroundColor="#f00" barStyle="light-content" />
 
       <>
         {showPatientScanner ? <PatientScanner onScan={handleScan} /> : null}

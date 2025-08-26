@@ -2,7 +2,7 @@ import { DiabeteType } from '@/src/types';
 import { useIsFocused } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, StatusBar, View } from 'react-native';
 import AccueilPage from '../src/Components/AccueilPage';
 import { useAuth } from '../src/context/AuthContext';
 import { useDiabetes } from '../src/context/DiabetesContext';
@@ -32,6 +32,7 @@ function DT2Page() {
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );

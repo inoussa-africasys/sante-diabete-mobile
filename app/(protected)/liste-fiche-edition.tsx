@@ -1,12 +1,11 @@
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { formatDate } from '@/src/functions/helpers';
 import { useFormFill } from '@/src/Hooks/useFormFill';
 import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 
 const ListeFicheEdition = () => {
     const router = useRouter();
@@ -26,6 +25,7 @@ const { isLoading, error, formFills ,loadFormFills} = useFormFill();
    
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>

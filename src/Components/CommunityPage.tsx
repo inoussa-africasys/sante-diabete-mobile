@@ -1,8 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Dimensions, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Images } from '../Constants';
 
 const { width } = Dimensions.get('window');
@@ -15,7 +14,7 @@ interface CommunityPageProps {
 const CommunityPage: React.FC<CommunityPageProps> = ({ onOpenPress, onBackPress }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar backgroundColor="#f00" barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>

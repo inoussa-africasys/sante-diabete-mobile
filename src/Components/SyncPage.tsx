@@ -1,8 +1,8 @@
-import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
+import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSyncData } from '../Hooks/useSyncData';
 // Utilisation de l'interface SyncFolderData du hook useSyncData
@@ -61,6 +61,7 @@ const SyncPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#f00" barStyle="light-content" />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>

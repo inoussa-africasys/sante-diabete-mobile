@@ -1,3 +1,4 @@
+import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import FicheDoesntExist from '@/src/Components/FicheDoesntExist';
 import { AlertModal, ConfirmDualModal, LoadingModal } from '@/src/Components/Modal';
 import SurveyScreenDom from '@/src/Components/Survey/SurveyScreenDom';
@@ -8,11 +9,10 @@ import { PatientMapper } from '@/src/mappers/patientMapper';
 import { ConsultationFormData, FicheAdministrativeFormData, PatientFormData } from '@/src/types/patient';
 import Logger from '@/src/utils/Logger';
 import { Ionicons } from '@expo/vector-icons';
-import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
@@ -43,6 +43,8 @@ export default function NouveauPatientScreen() {
   const [showConfirmCreateDoublonModal, setShowConfirmCreateDoublonModal] = useState(false);
   const [doublonIdsResponse, setDoublonIdsResponse] = useState<string[]>([]);
   const [createPatientFicheAdminData, setCreatePatientFicheAdminData] = useState<FicheAdministrativeFormData>();
+  const [gpsErrorMsg, setGpsErrorMsg] = useState<string | null>(null);
+  const [showGpsErrorModal, setShowGpsErrorModal] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
@@ -86,14 +88,22 @@ export default function NouveauPatientScreen() {
 
 
 
-  async function getCurrentLocation(): Promise<Location.LocationObject> {
-
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      return {} as Location.LocationObject;
+  async function getCurrentLocation(): Promise<Location.LocationObject | null> {
+    const servicesEnabled = await Location.hasServicesEnabledAsync();
+    if (!servicesEnabled) {
+      setGpsErrorMsg('GPS désactivé. Activez la localisation pour créer un patient.');
+      setShowGpsErrorModal(true);
+      return null;
     }
 
-    let location = await Location.getCurrentPositionAsync({});
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      setGpsErrorMsg('Permission de localisation refusée. Accordez-la pour créer un patient.');
+      setShowGpsErrorModal(true);
+      return null;
+    }
+
+    const location = await Location.getCurrentPositionAsync({});
     return location;
   }
 
@@ -190,6 +200,9 @@ export default function NouveauPatientScreen() {
       id_fiche: ficheAdministrative?.id?.toString() || ''
     }
     const coordinates = await getCurrentLocation();
+    if (!coordinates) {
+      throw new Error('Localisation indisponible. GPS requis.');
+    }
     const consultation = await createConsultationOnLocalDB(consultationFormData, patientCreated.id_patient, coordinates.coords);
     if (consultation) {
       const result = await associateFicheAdministrativeToPatient(patientCreated.id_patient, consultation);
@@ -254,6 +267,7 @@ export default function NouveauPatientScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#f00" barStyle="light-content" />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -304,6 +318,14 @@ export default function NouveauPatientScreen() {
           isVisible={isOpenSuccessModal}
         />
       )}
+      <AlertModal
+        title="GPS requis"
+        type="warning"
+        message={gpsErrorMsg || 'Activez la localisation pour continuer.'}
+        customIcon={<Ionicons name="alert-circle-outline" size={76} color="#FFC107" />}
+        onClose={() => setShowGpsErrorModal(false)}
+        isVisible={showGpsErrorModal}
+      />
       {isCreatingPatient && (
         <LoadingModal
           message="Patient en cours d'enregistrement..."

@@ -1,8 +1,9 @@
 import { Entypo, Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect } from 'react';
-import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Linking, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DAY_OF_SYNC_ALERT_TO_DECLANCHE } from '../Constants/App';
 import { useAuth } from '../context/AuthContext';
@@ -34,6 +35,8 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   const [logoutModalVisible, setLogoutModalVisible] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const { showToast, showConfirm } = useToast();
+  const [gpsModalVisible, setGpsModalVisible] = React.useState(false);
+  const [gpsMessage, setGpsMessage] = React.useState<string>('');
   const { userName } = useAuth();
   const [userNameValue, setUserNameValue] = React.useState<string | null>(null);
 
@@ -70,6 +73,29 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
     const qrCode = repo.findAll();
     console.log('QR Code:', qrCode);
     userName().then((name) => setUserNameValue(name));
+  }, []);
+
+  // Demande d'activation/permission GPS au démarrage
+  useEffect(() => {
+    (async () => {
+      try {
+        const servicesEnabled = await Location.hasServicesEnabledAsync();
+        if (!servicesEnabled) {
+          setGpsMessage('GPS désactivé. Activez la localisation pour utiliser l’application (création patient/consultation).');
+          setGpsModalVisible(true);
+          return;
+        }
+
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setGpsMessage('Permission de localisation refusée. Accordez-la pour utiliser l’application (création patient/consultation).');
+          setGpsModalVisible(true);
+          return;
+        }
+      } catch (e) {
+        console.warn('Erreur vérification GPS:', e);
+      }
+    })();
   }, []);
 
 
@@ -163,7 +189,7 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
   return (
     <>
 
-      <StatusBar backgroundColor="red" barStyle="default" />
+      <StatusBar backgroundColor="red" barStyle="light-content" />
       <SafeAreaView style={styles.container} >
 
         {/* Slide-out Menu */}
@@ -414,6 +440,21 @@ const AccueilPage: React.FC<AccueilPageProps> = ({ onBackPress }) => {
         customIcon={<MaterialIcons name="logout" size={76} color="#D32F2F" />}
         message="Voulez-vous vous vraiment vous deconnecter ?"
         confirmText="Oui"
+      />
+
+      {/* Modal GPS requis */}
+      <ConfirmModal
+        type="warning"
+        onConfirm={() => {
+          setGpsModalVisible(false);
+          Linking.openSettings();
+        }}
+        isVisible={gpsModalVisible}
+        onClose={() => setGpsModalVisible(false)}
+        title="GPS requis"
+        customIcon={<Ionicons name="alert-circle-outline" size={76} color="#FFC107" />}
+        message={gpsMessage || 'Activez la localisation pour continuer.'}
+        confirmText="Paramètres"
       />
 
 

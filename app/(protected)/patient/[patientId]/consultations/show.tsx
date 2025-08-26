@@ -94,6 +94,7 @@ export default function ShowConsultationScreen() {
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <ActivityIndicator size="large" color="#FF0000" />
         <Text>Chargement...</Text>
       </View>
@@ -104,7 +105,7 @@ export default function ShowConsultationScreen() {
   if (!consultation) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <FontAwesome6 name="user-doctor" size={150} color="gray" />
         <Text style={styles.errorText}>{`La consultation ${consultationId} n'a pas été trouvée`}</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.btnBack}>
@@ -117,7 +118,7 @@ export default function ShowConsultationScreen() {
   if (!patient) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <FontAwesome name="user-times" size={150} color="gray" />
         <Text style={styles.errorText}>{`Le patient ${patientId} n'a pas été trouvé`}</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.btnBack}>
@@ -136,6 +137,7 @@ export default function ShowConsultationScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#f00" barStyle="light-content" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />

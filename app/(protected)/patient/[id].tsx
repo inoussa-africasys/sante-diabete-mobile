@@ -9,7 +9,7 @@ import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-ico
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PatientDetailScreen() {
@@ -158,6 +158,7 @@ export default function PatientDetailScreen() {
   return (
     <>
       <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}

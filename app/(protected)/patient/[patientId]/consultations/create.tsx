@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
@@ -27,6 +27,7 @@ export default function CreateConsultationScreen() {
   
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showGpsErrorModal, setShowGpsErrorModal] = useState<boolean>(false);
 
   const { getFicheById, error: getFicheError } = useFiche();
   const { getPatientOnTheLocalDb, error: getPatientError } = usePatient();
@@ -58,15 +59,22 @@ export default function CreateConsultationScreen() {
     };
 
     async function getCurrentLocation() {
-      
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
+      if (!servicesEnabled) {
+        setErrorMsg('GPS désactivé. Activez la localisation pour créer une consultation.');
+        setShowGpsErrorModal(true);
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permission de localisation refusée. Accordez-la pour créer une consultation.');
+        setShowGpsErrorModal(true);
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({});
+      setLocation(loc);
     }
 
     getCurrentLocation();
@@ -77,6 +85,8 @@ export default function CreateConsultationScreen() {
 
   const handleCompletSurveyForm = async (data: any) => {
     if (!location) {
+      setErrorMsg('Localisation indisponible. Veuillez activer le GPS et réessayer.');
+      setShowGpsErrorModal(true);
       return;
     }
     const endDate = new Date();
@@ -97,6 +107,7 @@ export default function CreateConsultationScreen() {
   if (!patientId) {
     return (
       <View style={styles.container}>
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -112,6 +123,7 @@ export default function CreateConsultationScreen() {
   if (getFicheError || getPatientError) {
     return (
       <View style={styles.container}>
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -128,6 +140,7 @@ export default function CreateConsultationScreen() {
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent,{justifyContent: 'center', alignItems: 'center',marginTop: 100}]}>
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -144,6 +157,7 @@ export default function CreateConsultationScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#f00" barStyle="light-content" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -166,6 +180,14 @@ export default function CreateConsultationScreen() {
           setShowSuccessModal(false);
           router.back();
         }}
+      />
+      <AlertModal
+        isVisible={showGpsErrorModal}
+        type="warning"
+        customIcon={<Ionicons name="alert-circle-outline" size={76} color="#FFC107" />}
+        title="GPS requis"
+        message={errorMsg || 'Activez la localisation pour continuer.'}
+        onClose={() => setShowGpsErrorModal(false)}
       />
     </SafeAreaView>
   );

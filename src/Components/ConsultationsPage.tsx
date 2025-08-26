@@ -1,7 +1,6 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Images } from '../Constants/Images';
 
 interface ConsultationsPageProps {
@@ -12,7 +11,7 @@ interface ConsultationsPageProps {
 const ConsultationsPage: React.FC<ConsultationsPageProps> = ({ onOptionPress, onBackPress }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar backgroundColor="#f00" barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>

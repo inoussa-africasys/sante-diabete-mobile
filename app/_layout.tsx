@@ -17,12 +17,12 @@ import { PreferencesProvider } from '../src/context/PreferencesContext';
 
 // Neutraliser les logs en production
 if (!__DEV__) {
-  const noop = () => {};
-  // eslint-disable-next-line no-console
+  const noop = () => { };
+   
   console.log = noop;
-  // eslint-disable-next-line no-console
+   
   console.debug = noop;
-  // eslint-disable-next-line no-console
+   
   console.info = noop;
 }
 
@@ -52,7 +52,7 @@ export default function RootLayout() {
         // Initialiser la configuration
         await initConfig();
         console.log('Configuration initialisée avec succès');
-        
+
         await initDB();
 
         setAppReady(true);
@@ -95,7 +95,7 @@ export default function RootLayout() {
         } else {
           setError('Échec ou annulation de l’authentification.');
         }
-      } catch (err ) {
+      } catch (err) {
         setError('Erreur lors de l’authentification.');
       }
 
@@ -109,17 +109,17 @@ export default function RootLayout() {
   if (loading) {
     return (
       <SplashScreen />
-     /*  <View style={styles.content}>
-        <Image
-          source={require('../assets/images/splash-icon-v2.png')}
-          style={styles.image}
-          contentFit="contain"
-        />
-        <View style={styles.versionContainer}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.versionText}>Version : {version}</Text>
-        </View>
-      </View> */
+      /*  <View style={styles.content}>
+         <Image
+           source={require('../assets/images/splash-icon-v2.png')}
+           style={styles.image}
+           contentFit="contain"
+         />
+         <View style={styles.versionContainer}>
+           <ActivityIndicator size="large" color="#fff" />
+           <Text style={styles.versionText}>Version : {version}</Text>
+         </View>
+       </View> */
     );
   }
 
@@ -154,7 +154,7 @@ export default function RootLayout() {
               <AuthProvider>
                 <ToastProvider>
                   <Stack screenOptions={{
-                    headerShown: false
+                    headerShown: false,
                   }} />
                 </ToastProvider>
               </AuthProvider>
