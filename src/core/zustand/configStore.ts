@@ -25,6 +25,9 @@ interface ConfigState {
     timer2: number;
     timer3: number;
 
+    // Période de synchronisation (en jours)
+    syncPeriodDays: number;
+
     // Fonctions
     toggle: (key: ToggleKeys) => void;
     setValue: <K extends ConfigKeys>(key: K, value: ConfigState[K]) => void;
@@ -78,6 +81,9 @@ const useConfigStore = create<ConfigState>()(
             timer1: 30,
             timer2: 60,
             timer3: 90,
+
+            // Par défaut: 30 jours
+            syncPeriodDays: 30,
 
             toggle: (key) => set((state) => ({ [key]: !state[key] })),
             setValue: (key, value) => set(() => ({ [key]: value })),

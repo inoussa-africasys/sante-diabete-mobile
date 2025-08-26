@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNetworkState } from 'expo-network';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '../../src/Components/Toast';
 import { useFiche } from '../../src/Hooks/useFiche';
@@ -94,6 +94,7 @@ export default function DownloadFicheScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}

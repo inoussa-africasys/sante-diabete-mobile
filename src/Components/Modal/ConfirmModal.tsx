@@ -33,7 +33,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     color: '#F44336',
                     icon: <MaterialIcons name="warning" size={100} color="#333" />,
                     background: '#F44336',
-                    button: '#D32F2F',
+                    button: '#F44336',
                 };
             case 'warning':
                 return {

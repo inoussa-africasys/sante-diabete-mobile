@@ -1,19 +1,18 @@
 import PatientScanner from '@/app/(protected)/patient/scanner';
+import { APP_GREEN } from '@/src/Constants/Colors';
 import { useSyncPatientsUI } from '@/src/Hooks/useSyncPatientsUI';
 import { formatPatientDate } from '@/src/functions/helpers';
 import Patient from '@/src/models/Patient';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePatient } from '../../Hooks/usePatient';
 import DiabetesTypeBadge from '../DiabetesTypeBadge';
 import Empty from '../Empty';
 import SyncLoader from '../SyncLoader';
 import SyncStatsModal from '../SyncStatsModal';
-
 
 interface PatientListPageProps {
   onPatientPress: (patientId: string) => void;
@@ -144,7 +143,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" hidden={false} backgroundColor="red" />
+      <StatusBar backgroundColor="#FF0000" barStyle="light-content" />
 
       <>
         {showPatientScanner ? <PatientScanner onScan={handleScan} /> : null}
@@ -209,11 +208,11 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
         {/* Actions Bar */}
         <View style={styles.actionsBar}>
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/download-fiche`)}>
-            <FontAwesome5 name="download" size={20} color="#4CAF50" />
+            <FontAwesome5 name="download" size={20} color={APP_GREEN} />
           </TouchableOpacity>
           <View style={styles.actionDivider} />
           <TouchableOpacity style={styles.actionButton} onPress={handleSync}>
-            <FontAwesome5 name="sync-alt" size={20} color="#4CAF50" />
+            <FontAwesome5 name="sync-alt" size={20} color={APP_GREEN} />
           </TouchableOpacity>
           <View style={styles.actionDivider} />
           <TouchableOpacity style={styles.actionButton}>
@@ -390,7 +389,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: APP_GREEN,
     marginBottom: 10,
     textAlign: 'center',
   },
@@ -429,7 +428,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: APP_GREEN,
   },
   errorsSection: {
     marginTop: 10,
@@ -449,7 +448,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   closeButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: APP_GREEN,
     padding: 12,
     borderRadius: 5,
     alignItems: 'center',
@@ -490,16 +489,16 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   diabetesTypeContainer: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: APP_GREEN,
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#C8E6C9',
+    borderBottomColor: APP_GREEN,
   },
   diabetesTypeText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: APP_GREEN,
   },
   actionsBar: {
     flexDirection: 'row',
@@ -573,7 +572,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   idContainer: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: APP_GREEN,
     borderRadius: 15,
     paddingVertical: 4,
     paddingHorizontal: 10,

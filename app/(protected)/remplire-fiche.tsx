@@ -1,5 +1,5 @@
-import { AlertModal } from "@/src/Components/Modal";
 import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
+import { AlertModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
 import { useFiche } from "@/src/Hooks/useFiche";
 import { useFormFill } from "@/src/Hooks/useFormFill";
@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
@@ -80,6 +80,7 @@ export default function RemplireFiche() {
   if (errorMsg) {
     return (
       <View>
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <Text>Erreur : {errorMsg}</Text>
       </View>
     );
@@ -88,6 +89,7 @@ export default function RemplireFiche() {
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent, { justifyContent: 'center', alignItems: 'center', marginTop: 100 }]}>
+        <StatusBar backgroundColor="#f00" barStyle="light-content" />
         <ActivityIndicator size="large" color="#000" />
         <Text>Chargement en cours...</Text>
       </View>
@@ -97,6 +99,7 @@ export default function RemplireFiche() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#f00" barStyle="light-content" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />

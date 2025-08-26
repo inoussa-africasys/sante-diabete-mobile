@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SyncPatientReturnType } from '../types/patient';
+import { APP_GREEN } from '@/src/Constants/Colors';
 
 export interface SyncStatsModalProps {
     visible: boolean;
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
     modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#4CAF50',
+        color: APP_GREEN,
         marginBottom: 10,
         textAlign: 'center',
     },
@@ -179,7 +180,7 @@ const styles = StyleSheet.create({
     statValue: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#4CAF50',
+        color: APP_GREEN,
     },
     errorsSection: {
         marginTop: 10,
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     closeButton: {
-        backgroundColor: '#4CAF50',
+        backgroundColor: APP_GREEN,
         padding: 12,
         borderRadius: 5,
         alignItems: 'center',
@@ -215,7 +216,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F5F5F5',
     },
     successTitle: {
-        color: '#4CAF50',
+        color: APP_GREEN,
     },
     errorTitle: {
         color: '#D32F2F',

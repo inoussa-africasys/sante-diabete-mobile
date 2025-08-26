@@ -1,2 +1,7 @@
+⦁	uniformiser les couleurs (verte)
+⦁	rendre les variable requit dans les fiche admin 
+⦁	aider de metter en place un telephone temporaire pour remplacer
 
- - je remaque que quand on supprime une consulation depuis trafic, le serveur ne le prend pas en compte. car seule la suppression de patient est traitée
+
+⦁	il faut gerer les version des telephone  
+⦁	il faut ajouter les  booster les mail de test

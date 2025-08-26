@@ -41,6 +41,18 @@ export default class ConsultationService extends Service {
       consultationToCreate.createdAt = new Date().toISOString();
       consultationToCreate.updatedAt = new Date().toISOString();
       consultationToCreate.date = new Date().toISOString();
+
+      // Garde-fou: empêcher plusieurs fiches administratives pour un même patient
+      if (await consultationToCreate.isFicheAdministrative()) {
+        const existingConsultations = await this.getConsultationsByPatientId(patientId);
+        for (const c of existingConsultations) {
+          const isAdmin = await c.isFicheAdministrative();
+          if (isAdmin && !c.deletedAt) {
+            throw new Error(`Une fiche administrative existe déjà pour ce patient (consultation ID: ${c.id}).`);
+          }
+        }
+      }
+
       const consultationCreated = this.consultationRepository.insertAndReturn(consultationToCreate);
       if (!consultationCreated) {
         throw new Error('La consultation locale n\'a pas pu etre creer');
@@ -313,6 +325,20 @@ export default class ConsultationService extends Service {
       consultationToCreate.createdBy = this.getConnectedUsername();
       consultationToCreate.createdAt = new Date().toISOString();
       consultationToCreate.updatedAt = new Date().toISOString();
+
+      // Si c'est une fiche administrative ET qu'un patient est spécifié, empêcher les doublons
+      if (await consultationToCreate.isFicheAdministrative()) {
+        const pid = consultationToCreate.id_patient;
+        if (pid && pid.trim() !== '') {
+          const existingConsultations = await this.getConsultationsByPatientId(pid);
+          for (const c of existingConsultations) {
+            const isAdmin = await c.isFicheAdministrative();
+            if (isAdmin && !c.deletedAt) {
+              throw new Error(`Une fiche administrative existe déjà pour ce patient (consultation ID: ${c.id}).`);
+            }
+          }
+        }
+      }
       const consultationCreated = this.consultationRepository.insertAndReturn(consultationToCreate);
       if (!consultationCreated) {
         throw new Error('La consultation locale n\'a pas pu etre creer');

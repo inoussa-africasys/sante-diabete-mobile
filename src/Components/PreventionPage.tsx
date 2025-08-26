@@ -13,7 +13,7 @@ interface PreventionPageProps {
 const PreventionPage: React.FC<PreventionPageProps> = ({ onStartPress, onBackPress }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="light" backgroundColor="#FF0000" />
       
       {/* Header */}
       <View style={styles.header}>

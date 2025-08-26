@@ -1,7 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StatusBar, StyleSheet, View } from 'react-native';
 
 import SurveyScreenDom from '@/src/Components/Survey/SurveyScreenDom';
 
@@ -39,11 +38,11 @@ export default function QuestionnaireScreen() {
       <Stack.Screen 
         options={{
           title: `Questionnaire ${questionnaireType === 'initial' ? 'Initial' : 
-                 questionnaireType === 'suivi' ? 'de Suivi' : 'de Prévention'}`,
-          headerBackTitle: "Retour"
-        }} 
+            questionnaireType === 'suivi' ? 'de Suivi' : 'de Prévention'}`,
+            headerBackTitle: "Retour"
+          }} 
       />
-      <StatusBar style="auto" />
+      <StatusBar backgroundColor="#f00" barStyle="light-content" />
       
       {/* Composant SurveyScreen qui affiche le questionnaire */}
       <SurveyScreenDom surveyJson={surveyJson} handleSurveyComplete={(data) => {

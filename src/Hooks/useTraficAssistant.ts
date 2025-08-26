@@ -15,19 +15,17 @@ export default function useTraficAssistant(): UseTraficAssistantType {
         osVersion,
       } = useDeviceInfo();
 
-    const handleSendData = () => {
+    const handleSendData = async () => {
         setIsLoading(true);
-        TraficAssistantService.zipPatientDirectory().then((zipUri) => {
-            setIsLoading(false);
-            TraficAssistantService.sendZipFileToTheBackend({
-                brand : brand ?? "",
-                modelName : modelName ?? "",
-                osVersion : osVersion ?? "",
-                zipUri: zipUri ?? ""
-            });
-
-            console.log("✅ Fichiers patients zippés :", zipUri);
+        const zipUri = await TraficAssistantService.zipPatientDirectory();
+        await TraficAssistantService.sendZipFileToTheBackend({
+            brand : brand ?? "",
+            modelName : modelName ?? "",
+            osVersion : osVersion ?? "",
+            zipUri: zipUri ?? ""
         });
+        setIsLoading(false);
+        console.log("✅ Fichiers patients zippés :", zipUri);
     }
 
     return {
