@@ -45,6 +45,10 @@ export default function ShowConsultationScreen() {
 
         if (consultationFetched?.ficheName) {
           const ficheFetched = await getFicheByName(consultationFetched.ficheName);
+          if(!ficheFetched?.is_downloaded){
+            setFiche(null);
+            return;
+          }
           setFiche(ficheFetched);
         }
 
@@ -102,7 +106,7 @@ export default function ShowConsultationScreen() {
       <View style={[styles.container, styles.centerContent]}>
         <StatusBar barStyle="light-content" />
         <FontAwesome6 name="user-doctor" size={150} color="gray" />
-        <Text style={styles.errorText}>La consultation n'a pas été trouvée</Text>
+        <Text style={styles.errorText}>{`La consultation ${consultationId} n'a pas été trouvée`}</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.btnBack}>
           <Text style={styles.btnBackText}>Retour</Text>
         </TouchableOpacity>
@@ -115,7 +119,7 @@ export default function ShowConsultationScreen() {
       <View style={[styles.container, styles.centerContent]}>
         <StatusBar barStyle="light-content" />
         <FontAwesome name="user-times" size={150} color="gray" />
-        <Text style={styles.errorText}>Le patient {patientId} n'a pas été trouvé</Text>
+        <Text style={styles.errorText}>{`Le patient ${patientId} n'a pas été trouvé`}</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.btnBack}>
           <Text style={styles.btnBackText}>Retour</Text>
         </TouchableOpacity>
@@ -163,7 +167,14 @@ export default function ShowConsultationScreen() {
       }
       {
         showDeleteModal && (
-          <ConfirmModal type="danger" message="Voulez-vous vraiment supprimer cette consultation ?" isVisible={true} onClose={() => setShowDeleteModal(false)} title="Supprimer la consultation" onConfirm={() => handleDeleteConsultation(consultationId)}/>
+          <ConfirmModal 
+            type="danger" 
+            message="Voulez-vous vraiment supprimer cette consultation ?" 
+            isVisible={true} 
+            onClose={() => setShowDeleteModal(false)} 
+            title="Supprimer la consultation" 
+            customIcon={<FontAwesome name="trash" size={100} color="red" />}
+            onConfirm={() => handleDeleteConsultation(consultationId)}/>
         )
       }
       {
