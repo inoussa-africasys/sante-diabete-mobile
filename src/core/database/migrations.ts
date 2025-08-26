@@ -16,12 +16,54 @@ export class Migration {
       this.createQRCodeTable(db);
       this.createPatientTable(db);
       this.createFicheTable(db);
+      // Nettoyage des doublons avant de créer l'index UNIQUE
+      this.runPreIndexCleanupForAdminFiche(db);
+      this.createUniqueAdministrativeFicheIndex(db);
 
       db.execSync('COMMIT');
     } catch (error) {
       console.error("Erreur lors de la migration : ", error);
       db.execSync('ROLLBACK');
     }
+  }
+
+  private static runPreIndexCleanupForAdminFiche(db: any): void {
+    // Marquer comme supprimées toutes les fiches administratives en doublon par patient,
+    // en conservant la plus récente (basée sur createdAt). Cela permet à l'index UNIQUE de se créer.
+    db.execSync(`
+      UPDATE consultations
+      SET deletedAt = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE id IN (
+        SELECT c.id FROM consultations c
+        JOIN (
+          SELECT id_patient, MAX(createdAt) AS maxCreatedAt
+          FROM consultations
+          WHERE deletedAt IS NULL AND ficheName LIKE '%administrative%'
+          GROUP BY id_patient
+        ) keep ON keep.id_patient = c.id_patient
+        WHERE c.deletedAt IS NULL
+          AND c.ficheName LIKE '%administrative%'
+          AND c.createdAt < keep.maxCreatedAt
+      )
+    `);
+
+    // Si égalité stricte sur createdAt, garder l'id le plus grand et supprimer les autres
+    db.execSync(`
+      UPDATE consultations
+      SET deletedAt = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE id IN (
+        SELECT c.id FROM consultations c
+        JOIN (
+          SELECT id_patient, createdAt, MAX(id) AS keepId
+          FROM consultations
+          WHERE deletedAt IS NULL AND ficheName LIKE '%administrative%'
+          GROUP BY id_patient, createdAt
+        ) k ON k.id_patient = c.id_patient AND k.createdAt = c.createdAt
+        WHERE c.deletedAt IS NULL
+          AND c.ficheName LIKE '%administrative%'
+          AND c.id <> k.keepId
+      )
+    `);
   }
 
 
@@ -32,6 +74,17 @@ export class Migration {
         name TEXT NOT NULL,
         value TEXT NOT NULL
       )
+    `);
+  }
+
+
+  private static createUniqueAdministrativeFicheIndex(db: any): void {
+    // Empêche plus d'une fiche administrative ACTIVE (non supprimée) par patient
+    // Basé sur la détection actuelle: ficheName contient "administrative"
+    db.execSync(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_admin_fiche_per_patient
+      ON consultations(id_patient)
+      WHERE deletedAt IS NULL AND ficheName LIKE '%administrative%'
     `);
   }
 
@@ -150,9 +203,10 @@ export class Migration {
       WHERE type='table' AND name NOT LIKE 'sqlite_%'
     `);
 
-    for (const table of tables) {
-      db.runSync(`DROP TABLE IF EXISTS ${table.name}`);
-      console.log(`Table ${table.name} supprimée.`);
+    for (const table of tables as any[]) {
+      const name = (table as any).name;
+      db.runSync(`DROP TABLE IF EXISTS ${name}`);
+      console.log(`Table ${name} supprimée.`);
     }
 
     setLastSyncDate("");
