@@ -158,7 +158,7 @@ export default function PatientDetailScreen() {
   return (
     <>
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor="#f00" barStyle="light-content" />
+        <StatusBar backgroundColor="#FF0000" barStyle="light-content" />
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -280,7 +280,7 @@ export default function PatientDetailScreen() {
       <ConfirmModal
         isVisible={showConfirmModal}
         title="Confirmation"
-        message="Êtes-vous sûr de vouloir supprimer ce patient ? Cette action est irréversible."
+        message="Êtes-vous sûr de vouloir supprimer ce patient et sa fiche administrative ? Cette action est irréversible."
         customIcon={<Ionicons name="trash" size={76} color="#FF0000" />}
         onConfirm={confirmDeletePatient}
         onClose={() => setShowConfirmModal(false)}
@@ -326,9 +326,9 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 15,
     paddingHorizontal: 15,
-    backgroundColor: 'red',
+    backgroundColor: '#FF0000',
     borderBottomWidth: 1,
-    borderBottomColor: 'red',
+    borderBottomColor: '#FF0000',
   },
   backButton: {
     padding: 5,
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     minWidth: 200,
   },
   optionIconContainer: {
-    backgroundColor: 'red',
+    backgroundColor: '#FF0000',
     borderRadius: 8,
     padding: 10,
     alignItems: 'center',
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'red',
+    backgroundColor: '#FF0000',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
@@ -457,6 +457,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   addButtonActive: {
-    backgroundColor: 'red',
+    backgroundColor: '#FF0000',
   },
 });

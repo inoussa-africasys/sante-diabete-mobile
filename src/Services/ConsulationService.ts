@@ -161,6 +161,12 @@ export default class ConsultationService extends Service {
         throw new Error('La consultation locale n\'a pas pu être récupérée');
       }
 
+      // Règle métier: empêcher la suppression de la fiche administrative seule
+      const isAdminFiche = await consultationToDelete.isFicheAdministrative();
+      if (isAdminFiche) {
+        throw new Error("La fiche administrative ne peut pas être supprimée seule. Supprimez le patient pour supprimer aussi la fiche administrative.");
+      }
+
       const patientId = consultationToDelete.id_patient;
       await this.consultationRepository.delete(consultationId);
 
