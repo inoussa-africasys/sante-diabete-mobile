@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Images } from '../Constants/Images';
+import { APP_GREEN } from '@/src/Constants/Colors';
 
 interface HomePageProps {
   onOptionPress: (option: string) => void;
@@ -33,7 +34,7 @@ const HomePage: React.FC<HomePageProps> = ({ onOptionPress }) => {
           activeOpacity={0.7}
         >
           <View style={styles.iconContainer}>
-            <Ionicons name="document-text-outline" size={24} color="#4CAF50" />
+            <Ionicons name="document-text-outline" size={24} color={APP_GREEN} />
           </View>
           <View style={styles.cardTextContainer}>
             <Text style={styles.cardTitle}>Prévention</Text>
@@ -48,7 +49,7 @@ const HomePage: React.FC<HomePageProps> = ({ onOptionPress }) => {
           activeOpacity={0.7}
         >
           <View style={styles.iconContainer}>
-            <MaterialCommunityIcons name="chart-line" size={24} color="#4CAF50" />
+            <MaterialCommunityIcons name="chart-line" size={24} color={APP_GREEN} />
           </View>
           <View style={styles.cardTextContainer}>
             <Text style={styles.cardTitle}>Monitoring</Text>
@@ -63,7 +64,7 @@ const HomePage: React.FC<HomePageProps> = ({ onOptionPress }) => {
           activeOpacity={0.7}
         >
           <View style={styles.iconContainer}>
-            <FontAwesome5 name="stethoscope" size={24} color="#4CAF50" />
+            <FontAwesome5 name="stethoscope" size={24} color={APP_GREEN} />
           </View>
           <View style={styles.cardTextContainer}>
             <Text style={styles.cardTitle}>Consultations</Text>
@@ -78,7 +79,7 @@ const HomePage: React.FC<HomePageProps> = ({ onOptionPress }) => {
           activeOpacity={0.7}
         >
           <View style={styles.iconContainer}>
-            <MaterialIcons name="chat-bubble-outline" size={24} color="#4CAF50" />
+            <MaterialIcons name="chat-bubble-outline" size={24} color={APP_GREEN} />
           </View>
           <View style={styles.cardTextContainer}>
             <Text style={styles.cardTitle}>Communauté de pratiques</Text>
@@ -93,7 +94,7 @@ const HomePage: React.FC<HomePageProps> = ({ onOptionPress }) => {
           activeOpacity={0.7}
         >
           <View style={styles.iconContainer}>
-            <MaterialIcons name="link" size={24} color="#4CAF50" />
+            <MaterialIcons name="link" size={24} color={APP_GREEN} />
           </View>
           <View style={styles.cardTextContainer}>
             <Text style={styles.cardTitle}>Liens utiles</Text>

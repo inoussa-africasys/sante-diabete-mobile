@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import useConfigStore from '../../core/zustand/configStore';
+import { APP_GREEN } from '@/src/Constants/Colors';
 
 // Composant pour l'en-tête de section
 const SectionHeader = ({ title }: { title: string }) => (
@@ -208,7 +209,7 @@ const AdministrationPage = () => {
 
         <View style={styles.menuSection}>
           <MenuItem
-            icon={<MaterialIcons name="sync" size={24} color="#4CAF50" />}
+            icon={<MaterialIcons name="sync" size={24} color={APP_GREEN} />}
             title="Auto Synchronisation"
             onPress={() => configStore.toggle('autoSync')}
             hasToggle={true}
@@ -244,7 +245,7 @@ const AdministrationPage = () => {
           />
 
           <MenuItem
-            icon={<MaterialIcons name="screen-lock-portrait" size={24} color="#4CAF50" />}
+            icon={<MaterialIcons name="screen-lock-portrait" size={24} color={APP_GREEN} />}
             title={`Demander code PIN à \nl'ouverture de l'application`}
             onPress={() => configStore.toggle('pinAtStartup')}
             hasToggle={true}
@@ -259,21 +260,21 @@ const AdministrationPage = () => {
           />
 
           <MenuItem
-            icon={<MaterialIcons name="timer" size={24} color="#4CAF50" />}
+            icon={<MaterialIcons name="timer" size={24} color={APP_GREEN} />}
             title="Timer synchro step 1 (en seconde)"
             onPress={() => handleMenuOption('timer1')}
             rightText="30"
           />
 
           <MenuItem
-            icon={<MaterialIcons name="timer" size={24} color="#4CAF50" />}
+            icon={<MaterialIcons name="timer" size={24} color={APP_GREEN} />}
             title="Timer synchro step 2 (en seconde)"
             onPress={() => handleMenuOption('timer2')}
             rightText="60"
           />
 
           <MenuItem
-            icon={<MaterialIcons name="timer" size={24} color="#4CAF50" />}
+            icon={<MaterialIcons name="timer" size={24} color={APP_GREEN} />}
             title="Timer synchro step 3 (en seconde)"
             onPress={() => handleMenuOption('timer3')}
             rightText="90"
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   pinButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: APP_GREEN,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 25,
@@ -530,7 +531,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   modalButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: APP_GREEN,
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
