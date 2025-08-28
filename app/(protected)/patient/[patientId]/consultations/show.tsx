@@ -27,6 +27,7 @@ export default function ShowConsultationScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteSuccessModal, setShowDeleteSuccessModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAdminDeleteBlockedModal, setShowAdminDeleteBlockedModal] = useState(false);
 
   const { getConsultationById,deleteConsultationOnTheLocalDb } = useConsultation();
   const { getPatientByIdOnTheLocalDb } = usePatient();
@@ -80,7 +81,18 @@ export default function ShowConsultationScreen() {
     
   };
 
-  const handleDeleteModalOpen = () => {
+  const handleDeleteModalOpen = async () => {
+    // Si la consultation est une fiche administrative, on bloque la suppression côté UI
+    try {
+      if (consultation && (await consultation.isFicheAdministrative())) {
+        setShowAdminDeleteBlockedModal(true);
+        return;
+      }
+    } catch (e) {
+      // En cas d'erreur d'évaluation, on sécurise en bloquant également
+      setShowAdminDeleteBlockedModal(true);
+      return;
+    }
     setShowDeleteModal(true);
   };
 
@@ -94,7 +106,7 @@ export default function ShowConsultationScreen() {
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <StatusBar backgroundColor="#f00" barStyle="light-content" />
+        <StatusBar backgroundColor="#FF0000" barStyle="light-content" />
         <ActivityIndicator size="large" color="#FF0000" />
         <Text>Chargement...</Text>
       </View>
@@ -137,7 +149,7 @@ export default function ShowConsultationScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#f00" barStyle="light-content" />
+      <StatusBar backgroundColor="#FF0000" barStyle="light-content" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -180,8 +192,27 @@ export default function ShowConsultationScreen() {
         )
       }
       {
+        showAdminDeleteBlockedModal && (
+          <AlertModal
+            type="warning"
+            isVisible={true}
+            customIcon={<FontAwesome name="user-times" size={100} color="#FF9800" />}
+            title="Action non autorisée"
+            message="Impossible de supprimer la fiche administrative d'un patient. Pour la supprimer, il faut supprimer le patient."
+            onClose={() => setShowAdminDeleteBlockedModal(false)}
+          />
+        )
+      }
+      {
         showDeleteSuccessModal && (
-          <AlertModal type="success" message="Consultation supprimée avec succès" isVisible={true} onClose={handleSuccessModalClose} title="Suppression reussie"/>
+          <AlertModal 
+            type="success" 
+            message="Consultation supprimée avec succès" 
+            isVisible={true} 
+            onClose={handleSuccessModalClose} 
+            title="Suppression reussie"
+            customIcon={<Ionicons name="checkmark-circle-outline" size={76} color="#4CAF50" />}
+          />
         )
       }
     </SafeAreaView>
@@ -208,7 +239,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
-        backgroundColor: 'red',
+        backgroundColor: '#FF0000',
         paddingBottom: 10
     },
     backButton: {
@@ -272,7 +303,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         marginRight: 8,
         paddingHorizontal: 20,
-        backgroundColor: 'red',
+        backgroundColor: '#FF0000',
         borderRadius: 12,
         elevation: 2,
         fontSize: 16,

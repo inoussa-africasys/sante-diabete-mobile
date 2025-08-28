@@ -3,7 +3,8 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AlertModal } from '@/src/Components/Modal';
 
 interface QRCodeScannerViewProps {
   type: 'patient' | 'user';
@@ -15,6 +16,7 @@ const QRCodeScannerView: React.FC<QRCodeScannerViewProps> = ({ type, onScan, onC
   const [scanned, setScanned] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [analyzing, setAnalyzing] = useState(false);
+  const [simpleAlert, setSimpleAlert] = useState<{ visible: boolean; title: string; message: string; type: 'error' | 'warning' | 'success'; }>({ visible: false, title: '', message: '', type: 'error' });
   
   // Fonction pour choisir une image depuis la galerie
   const pickImage = async () => {
@@ -23,10 +25,7 @@ const QRCodeScannerView: React.FC<QRCodeScannerViewProps> = ({ type, onScan, onC
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert(
-          "Permission requise", 
-          "Nous avons besoin de votre permission pour accéder à la galerie"
-        );
+        setSimpleAlert({ visible: true, title: 'Permission requise', message: 'Nous avons besoin de votre permission pour accéder à la galerie', type: 'warning' });
         return;
       }
       
@@ -84,33 +83,24 @@ const QRCodeScannerView: React.FC<QRCodeScannerViewProps> = ({ type, onScan, onC
             console.log('Données du QR code:', qrData);
             
             if (qrData === 'error decoding QR Code') {
-              Alert.alert(
-                "Erreur de décodage", 
-                "Impossible de décoder le QR code dans cette image. Veuillez essayer avec une autre image."
-              );
+              setSimpleAlert({ visible: true, title: 'Erreur de décodage', message: 'Impossible de décoder le QR code dans cette image. Veuillez essayer avec une autre image.', type: 'error' });
             } else {
               onScan(qrData);
             }
           } else {
             // Aucun QR code détecté
-            Alert.alert(
-              "Aucun QR code détecté", 
-              "Aucun QR code n'a été détecté dans cette image. Veuillez essayer avec une autre image."
-            );
+            setSimpleAlert({ visible: true, title: 'Aucun QR code détecté', message: "Aucun QR code n\'a été détecté dans cette image. Veuillez essayer avec une autre image.", type: 'warning' });
           }
         } catch (error) {
           console.error('Erreur lors de l\'analyse de l\'image:', error);
           setAnalyzing(false);
-          
-          Alert.alert(
-            "Erreur d'analyse", 
-            "Une erreur est survenue lors de l'analyse de l'image. Veuillez vérifier votre connexion internet et réessayer."
-          );
+
+          setSimpleAlert({ visible: true, title: "Erreur d\'analyse", message: "Une erreur est survenue lors de l\'analyse de l\'image. Veuillez vérifier votre connexion internet et réessayer.", type: 'error' });
         }
       }
     } catch (error) {
       console.error('Erreur lors de la sélection d\'image:', error);
-      Alert.alert("Erreur", "Une erreur est survenue lors de la sélection de l'image.");
+      setSimpleAlert({ visible: true, title: 'Erreur', message: "Une erreur est survenue lors de la sélection de l\'image.", type: 'error' });
     }
   };
 
@@ -211,6 +201,15 @@ const QRCodeScannerView: React.FC<QRCodeScannerViewProps> = ({ type, onScan, onC
           )}
         </View>
       </CameraView>
+      {simpleAlert.visible && (
+        <AlertModal
+          title={simpleAlert.title}
+          type={simpleAlert.type}
+          message={simpleAlert.message}
+          onClose={() => setSimpleAlert({ ...simpleAlert, visible: false })}
+          isVisible={simpleAlert.visible}
+        />
+      )}
     </View>
   );
 };

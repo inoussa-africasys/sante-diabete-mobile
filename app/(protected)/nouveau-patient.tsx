@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
@@ -45,6 +45,8 @@ export default function NouveauPatientScreen() {
   const [createPatientFicheAdminData, setCreatePatientFicheAdminData] = useState<FicheAdministrativeFormData>();
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string | null>(null);
   const [showGpsErrorModal, setShowGpsErrorModal] = useState<boolean>(false);
+  const [simpleAlert, setSimpleAlert] = useState<{ visible: boolean; title: string; message: string; type: 'error' | 'warning' | 'success'; onClose: (() => void) | null }>({ visible: false, title: '', message: '', type: 'error', onClose: null });
+  const [simpleAlertOnClose, setSimpleAlertOnClose] = useState<(() => void) | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -71,12 +73,11 @@ export default function NouveauPatientScreen() {
             console.log("consultation : ", consultation);
             setFormData(consultation.parseDataToJson());
           } else {
-            Alert.alert('Erreur', `Patient avec l'ID ${patientId} non trouvé`);
-            router.back();
+            setSimpleAlert({ visible: true, title: 'Erreur', message: `Patient avec l'ID ${patientId} non trouvé`, type: 'error', onClose: () => router.back() });
           }
         } catch (error) {
           console.error('Erreur lors du chargement du patient:', error);
-          Alert.alert('Erreur', 'Impossible de charger les données du patient');
+          setSimpleAlert({ visible: true, title: 'Erreur', message: 'Impossible de charger les données du patient', type: 'error', onClose: () => router.back() });
         } finally {
           setIsLoading(false);
         }
@@ -154,7 +155,7 @@ export default function NouveauPatientScreen() {
         setIsCreatingPatient(false);
       } catch (error) {
         console.error('Erreur lors de l\'enregistrement du patient:', error);
-        Alert.alert('Erreur', 'Impossible d\'enregistrer le patient');
+        setSimpleAlert({ visible: true, title: 'Erreur', message: 'Impossible d\'enregistrer le patient', type: 'error', onClose: null });
         Logger.log('error', 'Error inserting patient on the local db', { error });
       } finally {
         setIsCreatingPatient(false);
@@ -163,6 +164,12 @@ export default function NouveauPatientScreen() {
       try {
         setIsCreatingPatient(true);
         const patientFormData = PatientMapper.ficheAdminToFormPatient(data, ficheAdministrative?.name || '');
+        // Validation UI: interdire la création si nom/prénom vides
+        if (!patientFormData.nom?.trim() || !patientFormData.prenom?.trim()) {
+          setSimpleAlert({ visible: true, title: 'Champs requis', message: 'Nom et prénom sont obligatoires', type: 'warning', onClose: null });
+          setIsCreatingPatient(false);
+          return;
+        }
         const doublonIdsResult = await doublonIds(patientFormData);
         if (doublonIdsResult.length > 0) {
           setDoublonIdsResponse(doublonIdsResult);
@@ -174,7 +181,7 @@ export default function NouveauPatientScreen() {
 
       } catch (error) {
         console.error('Erreur lors de l\'enregistrement du patient:', error);
-        Alert.alert('Erreur', 'Impossible d\'enregistrer le patient');
+        setSimpleAlert({ visible: true, title: 'Erreur', message: 'Impossible d\'enregistrer le patient', type: 'error', onClose: null });
         Logger.log('error', 'Error inserting patient on the local db', { error });
       } finally {
         setIsCreatingPatient(false);
@@ -225,12 +232,18 @@ export default function NouveauPatientScreen() {
         throw new Error('Impossible de créer le patient car les données de la fiche administrative sont introuvables');
       }
       const patientFormData = PatientMapper.ficheAdminToFormPatient(createPatientFicheAdminData, ficheAdministrative?.name || '');
+      // Validation UI: interdire la création si nom/prénom vides (cas doublon confirmé)
+      if (!patientFormData.nom?.trim() || !patientFormData.prenom?.trim()) {
+        setSimpleAlert({ visible: true, title: 'Champs requis', message: 'Nom et prénom sont obligatoires', type: 'warning', onClose: null });
+        setIsCreatingPatient(false);
+        return;
+      }
       await createNewPatientWithFicheAdministrative(createPatientFicheAdminData, patientFormData, startDate ?? new Date());
 
       setIsOpenSuccessModal(true);
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement du patient doublon :', error);
-      Alert.alert('Erreur', 'Impossible d\'enregistrer le patient doublon');
+      setSimpleAlert({ visible: true, title: 'Erreur', message: 'Impossible d\'enregistrer le patient doublon', type: 'error', onClose: null });
       Logger.log('error', 'Error inserting patient doublon on the local db', { error });
     } finally {
       setIsCreatingPatient(false);
@@ -316,6 +329,19 @@ export default function NouveauPatientScreen() {
             router.replace('/liste-patient');
           }}
           isVisible={isOpenSuccessModal}
+        />
+      )}
+      {simpleAlert.visible && (
+        <AlertModal
+          title={simpleAlert.title}
+          type={simpleAlert.type}
+          message={simpleAlert.message}
+          onClose={() => {
+            setSimpleAlert({ ...simpleAlert, visible: false });
+            if (simpleAlertOnClose) { simpleAlertOnClose(); setSimpleAlertOnClose(null); }
+            if (simpleAlert.onClose) { simpleAlert.onClose(); }
+          }}
+          isVisible={simpleAlert.visible}
         />
       )}
       <AlertModal
