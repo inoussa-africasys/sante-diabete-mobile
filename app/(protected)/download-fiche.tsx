@@ -1,6 +1,6 @@
 import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { AlertModal, LoadingModal } from '@/src/Components/Modal';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNetworkState } from 'expo-network';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -156,8 +156,8 @@ export default function DownloadFicheScreen() {
 
       </SafeAreaView>
       {showLoadingModal && <LoadingModal isVisible={showLoadingModal} message={"En cours de téléchargement " + ficheDownloadingName} />}
-      {showErrorModal && <AlertModal isVisible={showErrorModal} message="Une erreur est survenue lors du téléchargement de la fiche" onClose={() => setShowErrorModal(false)} title="Erreur" />}
-      {showSuccessModal && <AlertModal isVisible={showSuccessModal} message="Fiche téléchargée avec succès" onClose={() => setShowSuccessModal(false)} title="Succès" />}
+      {showErrorModal && <AlertModal isVisible={showErrorModal} message="Une erreur est survenue lors du téléchargement de la fiche" type="error" onClose={() => setShowErrorModal(false)} title="Erreur" />}
+      {showSuccessModal && <AlertModal isVisible={showSuccessModal} message="Fiche téléchargée avec succès" type="success" onClose={() => setShowSuccessModal(false)} title="Téléchargement terminé" customIcon={<FontAwesome6 name="circle-check"  size={76} color="#4CAF50"  />}/>}
     </>
   );
 }

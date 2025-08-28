@@ -56,6 +56,12 @@ export default class PatientService extends Service {
   async insertOnTheLocalDb(patientFormData: PatientFormData): Promise<Patient> {
     try {
       const patientClass = PatientMapper.toPatient(patientFormData);
+      // Validation: interdire la création si nom/prénom vides
+      const firstName = (patientClass.first_name || '').trim();
+      const lastName = (patientClass.last_name || '').trim();
+      if (!firstName || !lastName) {
+        throw new Error('Nom et prénom sont obligatoires');
+      }
       patientClass.id_patient = this.generatePatientId();
       patientClass.synced = false;
       patientClass.createdAt = new Date().toISOString();
@@ -134,7 +140,31 @@ export default class PatientService extends Service {
         throw new Error(` Patient avec l'ID ${patientId} non trouvé`);
       }
 
-      const patientToUpdate = PatientMapper.toPatient(patientFormData);
+      // Mapper les nouvelles valeurs depuis le formulaire
+      const mapped = PatientMapper.toPatient(patientFormData);
+
+      // Fusionner avec l'ancien patient en évitant d'écraser par des champs vides
+      const patientToUpdate: Patient = { ...oldPatient } as Patient;
+      patientToUpdate.first_name = (mapped.first_name ?? '').trim() || oldPatient.first_name;
+      patientToUpdate.last_name = (mapped.last_name ?? '').trim() || oldPatient.last_name;
+      patientToUpdate.date_of_birth = mapped.date_of_birth || oldPatient.date_of_birth;
+      patientToUpdate.genre = (mapped.genre ?? '').trim() || oldPatient.genre;
+      patientToUpdate.profession = (mapped.profession ?? '').trim() || oldPatient.profession;
+      patientToUpdate.phone = (mapped.phone ?? '').trim() || oldPatient.phone;
+      patientToUpdate.email = (mapped.email ?? '').trim() || oldPatient.email;
+      patientToUpdate.comment = (mapped.comment ?? '').trim() || oldPatient.comment;
+      patientToUpdate.photo = mapped.photo ?? oldPatient.photo;
+      // Garder la fiche admin si non fournie dans les champs
+      patientToUpdate.fiche_administrative_name = patientFormData.fiche_administrative_name ?? oldPatient.fiche_administrative_name;
+
+      // Validation forte: nom/prénom ne doivent pas être vides après fusion
+      const firstName = (patientToUpdate.first_name || '').trim();
+      const lastName = (patientToUpdate.last_name || '').trim();
+      if (!firstName || !lastName) {
+        throw new Error('Nom et prénom sont obligatoires');
+      }
+
+      // Métadonnées et champs techniques
       patientToUpdate.id = id;
       patientToUpdate.updatedAt = new Date().toISOString();
       patientToUpdate.synced = false;
@@ -144,8 +174,9 @@ export default class PatientService extends Service {
       patientToUpdate.type_diabete = this.getTypeDiabete();
       patientToUpdate.createdAt = oldPatient.createdAt;
       patientToUpdate.isModified = true;
-      this.patientRepository.updatev2(id, patientToUpdate);
-      this.updatePatientJson(patientId, patientToUpdate);
+
+      await this.patientRepository.updatev2(id, patientToUpdate);
+      await this.updatePatientJson(patientId, patientToUpdate);
       console.log(`Patient mis à jour : ${patientId}`);
     } catch (error) {
       console.error("Erreur de mise à jour du patient :", error);

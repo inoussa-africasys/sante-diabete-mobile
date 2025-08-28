@@ -209,13 +209,20 @@ export default class ConsultationService extends Service {
 
       // Ensuite mettre à jour le fichier JSON
       try {
-        // Vérifier que le fileName n'est pas l'ID du patient
-        if (consultationToCreate.fileName === consultationToCreate.id_patient) {
-          throw new Error(`Le nom du fichier ne peut pas être l'ID du patient: ${consultationToCreate.fileName}`);
+        // Si aucun nom de fichier, en générer un (cas anciens enregistrements)
+        let fileNameToUse = consultationToCreate.fileName?.trim() || '';
+        if (!fileNameToUse || fileNameToUse === consultationToCreate.id_patient) {
+          if (await consultationToCreate.isFicheAdministrative()) {
+            fileNameToUse = `${generateFicheAdministrativeNameForJsonSave(new Date(), consultationToCreate.ficheName)}`;
+          } else {
+            fileNameToUse = `${generateConsultationName(new Date())}`;
+          }
+          consultationToCreate.fileName = fileNameToUse;
+          await this.consultationRepository.update(consultationId, consultationToCreate);
         }
 
-        console.log(`Mise à jour du fichier: ${consultationToCreate.fileName}`);
-        await this.updateConsultationFile(consultationToCreate.fileName, consultationToCreate.data);
+        console.log(`Mise à jour du fichier: ${fileNameToUse}`);
+        await this.updateConsultationFile(fileNameToUse, consultationToCreate.data, consultationToCreate.id_patient);
       } catch (fileError: any) {
         console.error('Erreur lors de la mise à jour du fichier de consultation:', fileError);
         Logger.log('error', 'Error updating consultation file', { error: fileError });
@@ -232,11 +239,8 @@ export default class ConsultationService extends Service {
 
 
 
-  async updateConsultationFile(fileName: string, updatedData: any) {
+  async updateConsultationFile(fileName: string, updatedData: any, patientId: string) {
     try {
-      // Récupérer la consultation depuis updatedData pour obtenir l'ID du patient
-      const consultationData = updatedData;
-      const patientId = consultationData.id_patient;
       const typeDiabete = this.getTypeDiabete();
 
       // Vérifier que fileName n'est pas vide et n'est pas l'ID du patient
@@ -268,15 +272,12 @@ export default class ConsultationService extends Service {
         const newFileUri = `${fileUri}/${uniqueFileName}`;
         console.log(`Le chemin est un répertoire, utilisation du nouveau chemin: ${newFileUri}`);
 
-        await FileSystem.writeAsStringAsync(newFileUri, JSON.stringify(updatedData, null, 2));
+        const contentStr = typeof updatedData === 'string' ? updatedData : JSON.stringify(updatedData, null, 2);
+        await FileSystem.writeAsStringAsync(newFileUri, contentStr);
         console.log("✅ Fichier consultation mis à jour avec un nouveau nom :", newFileUri);
 
         // Mettre à jour le fileName dans la consultation
-        if (consultationData.id) {
-          const updatedConsultation = { ...consultationData, fileName: uniqueFileName };
-          await this.consultationRepository.update(consultationData.id, updatedConsultation);
-          console.log(`✅ Nom du fichier mis à jour dans la base de données: ${uniqueFileName}`);
-        }
+        // On ne connaît pas l'ID ici via updatedData; la mise à jour du fileName a déjà été faite en amont si nécessaire.
 
         return;
       }
@@ -288,7 +289,8 @@ export default class ConsultationService extends Service {
       }
 
       // Écrire le fichier
-      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(updatedData, null, 2));
+      const contentStr = typeof updatedData === 'string' ? updatedData : JSON.stringify(updatedData, null, 2);
+      await FileSystem.writeAsStringAsync(fileUri, contentStr);
       console.log("✅ Fichier consultation mis à jour :", fileUri);
     } catch (err) {
       console.error("❌ Erreur mise à jour consultation file :", err);

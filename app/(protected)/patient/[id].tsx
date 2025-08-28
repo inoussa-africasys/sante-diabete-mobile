@@ -296,14 +296,17 @@ export default function PatientDetailScreen() {
 
       <AlertModal
         isVisible={showSuccessModal}
-        title="Succès"
+        type='success'
+        title="Patient supprimé"
         message="Le patient a été supprimé avec succès"
+        customIcon={<Ionicons name="checkmark-circle-outline" size={76} color="#4CAF50" />}
         onClose={handleSuccessModalClose}
       />
 
       <AlertModal
         isVisible={showErrorModal}
-        title="Erreur"
+        type='error'
+        title="Erreur de suppression"
         message={errorMessage}
         onClose={() => setShowErrorModal(false)}
       />

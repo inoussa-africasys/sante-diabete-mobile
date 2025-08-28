@@ -205,7 +205,14 @@ export default function ShowConsultationScreen() {
       }
       {
         showDeleteSuccessModal && (
-          <AlertModal type="success" message="Consultation supprimée avec succès" isVisible={true} onClose={handleSuccessModalClose} title="Suppression reussie"/>
+          <AlertModal 
+            type="success" 
+            message="Consultation supprimée avec succès" 
+            isVisible={true} 
+            onClose={handleSuccessModalClose} 
+            title="Suppression reussie"
+            customIcon={<Ionicons name="checkmark-circle-outline" size={76} color="#4CAF50" />}
+          />
         )
       }
     </SafeAreaView>
