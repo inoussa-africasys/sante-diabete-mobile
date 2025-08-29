@@ -9,6 +9,7 @@ import { Consultation } from "@/src/models/Consultation";
 import Fiche from "@/src/models/Fiche";
 import Patient from "@/src/models/Patient";
 import { ConsultationFormData } from "@/src/types";
+import Logger from '@/src/utils/Logger';
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -47,12 +48,14 @@ export default function EditConsultationScreen() {
 
         if (consultationFetched?.ficheName) {
           console.log("consultation : ", consultationFetched);
+          Logger.info("consultation to edit : ", consultationFetched);
           const ficheFetched = await getFicheByName(consultationFetched.ficheName);
           setFiche(ficheFetched);
         }
 
       } catch (e) {
         console.error("Erreur lors du chargement des données :", e);
+        Logger.error("Erreur lors du chargement des données :", e as Error);
       } finally {
         setLoading(false);
       }
@@ -75,7 +78,6 @@ export default function EditConsultationScreen() {
     data.end = endDate;
     const consultationFormData: ConsultationFormData = { data: data, id_fiche: consultation.id_fiche };
     const result = await updateConsultationByIdOnLocalDB(consultationId, consultationFormData);
-    console.log("result : ", result);
     if (result) {
       setLoading(false);
       setShowSuccessModal(true);

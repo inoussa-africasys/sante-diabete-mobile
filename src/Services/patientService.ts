@@ -552,7 +552,10 @@ export default class PatientService extends Service {
           if (!patient.identifier) {
             throw new Error(` Patient avec l'ID ${patient.identifier} non trouvé`);
           }
-          const response = await axios.post(url, patient);
+          console.log("patient : ", JSON.stringify(patient));
+          console.log("url : ", url);
+          const response = await axios.post(url, JSON.stringify(patient));
+          console.log("response : ", response);
           if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }

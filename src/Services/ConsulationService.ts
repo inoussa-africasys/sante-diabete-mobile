@@ -195,6 +195,7 @@ export default class ConsultationService extends Service {
       consultationToCreate.data = consultation.data;
       consultationToCreate.updatedAt = new Date().toISOString();
       consultationToCreate.synced = false;
+      
       await this.consultationRepository.update(consultationId, consultationToCreate);
 
       if (await consultationToCreate.isFicheAdministrative()) {
