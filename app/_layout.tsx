@@ -15,17 +15,6 @@ import { initConfig } from '../src/Config';
 import { DiabetesProvider } from '../src/context/DiabetesContext';
 import { PreferencesProvider } from '../src/context/PreferencesContext';
 
-// Neutraliser les logs en production
-if (!__DEV__) {
-  const noop = () => { };
-   
-  console.log = noop;
-   
-  console.debug = noop;
-   
-  console.info = noop;
-}
-
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
