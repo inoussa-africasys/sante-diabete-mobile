@@ -1,10 +1,10 @@
+import { APP_GREEN } from '@/src/Constants/Colors';
+import { getHasPin, setPin, verifyPin } from '@/src/core/security/pinStore';
 import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import useConfigStore from '../../core/zustand/configStore';
-import { APP_GREEN } from '@/src/Constants/Colors';
-import { getHasPin, setPin, verifyPin } from '@/src/core/security/pinStore';
 
 // Composant pour l'en-tête de section
 const SectionHeader = ({ title }: { title: string }) => (
@@ -511,7 +511,7 @@ const MenuOngAssociationsItem = ({
         onValueChange={onPress}
         value={isActive}
       />
-      <Text style={styles.switchLabel}>{isActive ? "Afficher" : "Cacher"}</Text>
+      <Text style={styles.switchLabel}>{isActive ? "Affiché" : "Caché"}</Text>
     </View>
   </TouchableOpacity>
 );

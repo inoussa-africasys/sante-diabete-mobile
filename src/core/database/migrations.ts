@@ -17,8 +17,8 @@ export class Migration {
       this.createPatientTable(db);
       this.createFicheTable(db);
       // Nettoyage des doublons avant de créer l'index UNIQUE
-      this.runPreIndexCleanupForAdminFiche(db);
-      this.createUniqueAdministrativeFicheIndex(db);
+      //this.runPreIndexCleanupForAdminFiche(db);
+      //this.createUniqueAdministrativeFicheIndex(db);
 
       db.execSync('COMMIT');
     } catch (error) {
@@ -27,7 +27,7 @@ export class Migration {
     }
   }
 
-  private static runPreIndexCleanupForAdminFiche(db: any): void {
+ /* private static runPreIndexCleanupForAdminFiche(db: any): void {
     // Marquer comme supprimées toutes les fiches administratives en doublon par patient,
     // en conservant la plus récente (basée sur createdAt). Cela permet à l'index UNIQUE de se créer.
     db.execSync(`
@@ -65,7 +65,7 @@ export class Migration {
       )
     `);
   }
-
+*/
 
   private static createConfigTable(db: any): void {
     db.execSync(`
@@ -78,7 +78,7 @@ export class Migration {
   }
 
 
-  private static createUniqueAdministrativeFicheIndex(db: any): void {
+  /* private static createUniqueAdministrativeFicheIndex(db: any): void {
     // Empêche plus d'une fiche administrative ACTIVE (non supprimée) par patient
     // Basé sur la détection actuelle: ficheName contient "administrative"
     db.execSync(`
@@ -86,7 +86,7 @@ export class Migration {
       ON consultations(id_patient)
       WHERE deletedAt IS NULL AND ficheName LIKE '%administrative%'
     `);
-  }
+  } */
 
   private static createQRCodeTable(db: any): void {
     db.execSync(`

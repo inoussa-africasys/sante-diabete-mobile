@@ -216,19 +216,29 @@ export class GenericRepository<T extends BaseModel> {
       );
 
       if (existing) {
+        // DEBUG LOGS: update path
+        console.log('[createOrUpdate][UPDATE] table:', this.tableName, 'uniqueKey:', String(uniqueKey), 'keyValue:', keyValue);
+        Logger.log('debug', '[createOrUpdate][UPDATE] entering update path', { table: this.tableName, uniqueKey: String(uniqueKey), keyValue });
+
         const fields = Object.keys(item).filter(k => k !== 'id');
         const setters = fields.map(k => `${k} = ?`).join(', ');
         const values = fields.map(k => item[k as keyof T] as SQLiteBindValue);
         values.push(keyValue);
 
         const sql = `UPDATE ${this.tableName} SET ${setters} WHERE ${String(uniqueKey)} = ?`;
+        Logger.debug('[createOrUpdate][UPDATE] SQL:', {sql});
+        Logger.debug('[createOrUpdate][UPDATE] values:', values);
+        Logger.debug('[createOrUpdate][UPDATE] about to run', { sql, values, table: this.tableName });
         await this.db.runAsync(sql, values);
       } else {
+        // DEBUG LOGS: insert path
+        console.log('[createOrUpdate][INSERT] table:', this.tableName, 'uniqueKey:', String(uniqueKey), 'keyValue:', keyValue);
+        Logger.log('debug', '[createOrUpdate][INSERT] entering insert path', { table: this.tableName, uniqueKey: String(uniqueKey), keyValue, itemKeys: Object.keys(item) });
         await this.insert(item);
       }
     } catch (error) {
-      console.error('Error creating or updating item:', error);
-      Logger.log('error', 'Error creating or updating item', { error });
+      console.error('[createOrUpdate][ERROR] table:', this.tableName, 'uniqueKey:', String(uniqueKey), 'error:', error);
+      Logger.log('error', '[createOrUpdate][ERROR] Error creating or updating item', { table: this.tableName, uniqueKey: String(uniqueKey), error });
     }
   }
 
@@ -243,24 +253,35 @@ export class GenericRepository<T extends BaseModel> {
       );
   
       if (existing) {
+        // DEBUG LOGS: update path
+        console.log('[createOrUpdateAndReturnId][UPDATE] table:', this.tableName, 'uniqueKey:', String(uniqueKey), 'keyValue:', keyValue);
+        Logger.log('debug', '[createOrUpdateAndReturnId][UPDATE] entering update path', { table: this.tableName, uniqueKey: String(uniqueKey), keyValue });
         const fields = Object.keys(item).filter(k => k !== 'id');
         const setters = fields.map(k => `${k} = ?`).join(', ');
         const values = fields.map(k => item[k as keyof T] as SQLiteBindValue);
         values.push(keyValue);
   
         const sql = `UPDATE ${this.tableName} SET ${setters} WHERE ${String(uniqueKey)} = ?`;
+        console.log('[createOrUpdateAndReturnId][UPDATE] SQL:', sql);
+        console.log('[createOrUpdateAndReturnId][UPDATE] values:', values);
+        Logger.log('debug', '[createOrUpdateAndReturnId][UPDATE] about to run', { sql, values, table: this.tableName });
         await this.db.runAsync(sql, values);
   
         // Retourne l'id existant
         return existing.id;
       } else {
         // Insertion
-        const insertedId = await this.insert(item);
-        return insertedId; // `insert` doit retourner l'ID inséré
+        console.log('[createOrUpdateAndReturnId][INSERT] table:', this.tableName, 'uniqueKey:', String(uniqueKey), 'keyValue:', keyValue);
+        Logger.log('debug', '[createOrUpdateAndReturnId][INSERT] entering insert path', { table: this.tableName, uniqueKey: String(uniqueKey), keyValue, itemKeys: Object.keys(item) });
+        const inserted = this.insertAndReturn(item);
+        const insertedId = inserted?.id;
+        console.log('[createOrUpdateAndReturnId][INSERT] insertedId:', insertedId);
+        Logger.log('debug', '[createOrUpdateAndReturnId][INSERT] inserted result', { insertedId, table: this.tableName });
+        return insertedId; // renvoie l'id inséré si disponible
       }
     } catch (error) {
-      console.error('Error creating or updating item:', error);
-      Logger.log('error', 'Error creating or updating item', { error });
+      console.error('[createOrUpdateAndReturnId][ERROR] table:', this.tableName, 'uniqueKey:', String(uniqueKey), 'error:', error);
+      Logger.log('error', '[createOrUpdateAndReturnId][ERROR] Error creating or updating item', { table: this.tableName, uniqueKey: String(uniqueKey), error });
       return undefined;
     }
   }
