@@ -1,7 +1,7 @@
+import { APP_GREEN } from '@/src/Constants/Colors';
 import React from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SyncPatientReturnType } from '../types/patient';
-import { APP_GREEN } from '@/src/Constants/Colors';
 
 export interface SyncStatsModalProps {
     visible: boolean;
@@ -60,9 +60,18 @@ export const SyncStatsModal: React.FC<SyncStatsModalProps> = ({ visible, stats, 
 
                             {stats?.statistics?.getAllPatientOnServer && (
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statLabel}>Patients récupérés du serveur</Text>
+                                    <Text style={styles.statLabel}>Patients récupérés</Text>
                                     <Text style={styles.statValue}>
                                         {stats.statistics.getAllPatientOnServer.success}/{stats.statistics.getAllPatientOnServer.total}
+                                    </Text>
+                                </View>
+                            )}
+
+                            {stats?.statistics?.getAllConsultationsOnServer && (
+                                <View style={styles.statItem}>
+                                    <Text style={styles.statLabel}>Consultations récupérées</Text>
+                                    <Text style={styles.statValue}>
+                                        {stats.statistics.getAllConsultationsOnServer.success}/{stats.statistics.getAllConsultationsOnServer.total}
                                     </Text>
                                 </View>
                             )}

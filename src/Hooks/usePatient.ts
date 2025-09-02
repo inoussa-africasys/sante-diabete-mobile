@@ -191,6 +191,7 @@ export const usePatient = () : usePatientReturnType => {
                     sendCreatedConsultationsToServer: { total: 0, success: 0, failed: 0 },
                     getAllPatientOnServer: { total: 0, success: 0, failed: 0 },
                     getAllDeletedPatientOnServer: { total: 0, success: 0, failed: 0 },
+                    getAllConsultationsOnServer: { total: 0, success: 0, failed: 0 },
                     syncPictures: { total: 0, success: 0, failed: 0 }
                 }
             };
