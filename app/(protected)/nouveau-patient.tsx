@@ -47,6 +47,7 @@ export default function NouveauPatientScreen() {
   const [showGpsErrorModal, setShowGpsErrorModal] = useState<boolean>(false);
   const [simpleAlert, setSimpleAlert] = useState<{ visible: boolean; title: string; message: string; type: 'error' | 'warning' | 'success'; onClose: (() => void) | null }>({ visible: false, title: '', message: '', type: 'error', onClose: null });
   const [simpleAlertOnClose, setSimpleAlertOnClose] = useState<(() => void) | null>(null);
+  const [showNoAdminFicheModal, setShowNoAdminFicheModal] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
@@ -68,7 +69,9 @@ export default function NouveauPatientScreen() {
             }
             const consultation = await patient.donneesAdministratives();
             if (!consultation) {
-              throw new Error('Les données de la fiche administrative du patient avec l\'ID ' + patientId + ' sont introuvables');
+              setShowNoAdminFicheModal(true);
+              setIsLoading(false);
+              return;
             }
             console.log("donne a admin : ", consultation);
             setFormData(consultation.parseDataToJson());
@@ -359,6 +362,33 @@ export default function NouveauPatientScreen() {
           isVisible={isCreatingPatient}
         />
       )}
+
+      <ConfirmDualModal
+        isVisible={showNoAdminFicheModal}
+        type="warning"
+        title="Fiche administrative manquante"
+        message={
+          `Ce patient n'a pas de fiche administrative.
+Voulez-vous créer la fiche administrative maintenant ?`
+        }
+        customIcon={<Ionicons name="alert-circle-outline" size={76} color="#FFC107" />}
+        onClose={() => setShowNoAdminFicheModal(false)}
+        onPrimary={() => {
+          setShowNoAdminFicheModal(false);
+          if (patientId && ficheAdministrative?.id) {
+            router.replace(`/patient/${patientId}/consultations/create?ficheId=${ficheAdministrative.id.toString()}`);
+          } else {
+            router.back();
+          }
+        }}
+        onSecondary={() => {
+          setShowNoAdminFicheModal(false);
+          router.back();
+        }}
+        primaryText="Créer"
+        secondaryText="Retour"
+        showCancel={false}
+      />
 
       {showConfirmCreateDoublonModal && (
 
