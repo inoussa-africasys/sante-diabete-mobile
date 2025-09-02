@@ -169,6 +169,9 @@ export class PatientRepository extends GenericRepository<Patient> {
     let countPatientsSyncedSuccess = 0;
     let countConsultationsSyncedSuccess = 0;
     let totalConsultations = 0;
+    // Transaction globale pour accélérer toutes les écritures
+    const db = this.db;
+    db.execSync('BEGIN TRANSACTION');
     try {
       for (const item of items) {
         const patient = PatientMapper.syncResponseToPatient(item);
@@ -191,21 +194,24 @@ export class PatientRepository extends GenericRepository<Patient> {
         await this.createOrUpdate(patient, 'id_patient');
 
         const consultationRepository = new ConsultationRepository();
-        consultationRepository.createOrUpdateAll(
-          item.dataConsultations.map(
-            (consultation) => {
-              countConsultationsSyncedSuccess++;
-              return ConsultationMapper.DataConsultationOfGetWithPatientGetAllMedicalDataToConsultation(consultation, patient.id_patient, patient.type_diabete)
-            }
+        const consultations = item.dataConsultations.map((consultation) =>
+          ConsultationMapper.DataConsultationOfGetWithPatientGetAllMedicalDataToConsultation(
+            consultation,
+            patient.id_patient,
+            patient.type_diabete
           )
         );
+        await consultationRepository.createOrUpdateAll(consultations, false);
 
-        totalConsultations += item.dataConsultations.length;
+        countConsultationsSyncedSuccess += consultations.length;
+        totalConsultations += consultations.length;
         countPatientsSyncedSuccess++;
       }
+      db.execSync('COMMIT');
     } catch (error) {
       console.error('Error creating or updating patients:', error);
       Logger.log('error', 'Error creating or updating patients', { error });
+      db.execSync('ROLLBACK');
     }
     console.log(`Patients created or updated: ${countPatientsSyncedSuccess}/${totalPatients}`);
     console.log(`Consultations created or updated: ${countConsultationsSyncedSuccess}/${totalConsultations}`);

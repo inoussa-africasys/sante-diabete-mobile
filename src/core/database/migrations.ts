@@ -7,6 +7,16 @@ export class Migration {
     const db = DatabaseConnection.getInstance();
     console.log('db', db);
 
+    // PRAGMAs de performance (hors transaction)
+    try {
+      db.execSync(`PRAGMA journal_mode = WAL`);
+      db.execSync(`PRAGMA synchronous = NORMAL`);
+      db.execSync(`PRAGMA temp_store = MEMORY`);
+      db.execSync(`PRAGMA cache_size = -8000`); // ~8MB de cache
+      db.execSync(`PRAGMA foreign_keys = ON`);
+    } catch (e) {
+      console.warn('PRAGMA setup error:', e);
+    }
 
     db.execSync('BEGIN TRANSACTION');
 
@@ -20,11 +30,19 @@ export class Migration {
       //this.runPreIndexCleanupForAdminFiche(db);
       //this.createUniqueAdministrativeFicheIndex(db);
 
+      // Index après création des tables
+      this.createIndexes(db);
+
       db.execSync('COMMIT');
     } catch (error) {
       console.error("Erreur lors de la migration : ", error);
       db.execSync('ROLLBACK');
     }
+
+    // Amélioration du planificateur
+    try {
+      db.execSync(`PRAGMA optimize`);
+    } catch {}
   }
 
  /* private static runPreIndexCleanupForAdminFiche(db: any): void {
@@ -192,6 +210,18 @@ export class Migration {
     `);
   }
 
+
+  private static createIndexes(db: any): void {
+    // Patients: index pour filtres/fréquences d'accès
+    db.execSync(`CREATE INDEX IF NOT EXISTS idx_patients_type_deleted_created ON patients(type_diabete, deletedAt, createdAt)`);
+    db.execSync(`CREATE INDEX IF NOT EXISTS idx_patients_updated_type_deleted_created ON patients(updatedAt, type_diabete, deletedAt, createdAt)`);
+    db.execSync(`CREATE INDEX IF NOT EXISTS idx_patients_id_patient ON patients(id_patient)`);
+
+    // Consultations: unicité et accès par patient
+    db.execSync(`CREATE UNIQUE INDEX IF NOT EXISTS idx_consultations_uuid ON consultations(uuid)`);
+    db.execSync(`CREATE INDEX IF NOT EXISTS idx_consultations_id_patient ON consultations(id_patient)`);
+    db.execSync(`CREATE INDEX IF NOT EXISTS idx_consultations_patient_type_deleted_created ON consultations(id_patient, type_diabete, deletedAt, createdAt)`);
+  }
 
 
   static resetDatabase() {

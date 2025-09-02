@@ -1092,9 +1092,9 @@ export default class PatientService extends Service {
 
   public async doublonIds(patient: Patient): Promise<string[]> {
     try {
-      console.log('Checking if patient is a doublon', { patient });
+      console.log('👓👓 Checking if patient is a doublon', { patient });
       const doublon = await this.patientRepository.getDoublon(patient, this.getTypeDiabete());
-      console.log('Doublon : ', doublon);
+      console.log('👓👓 Doublon : ', doublon);
       if (!doublon) {
         return [];
       }

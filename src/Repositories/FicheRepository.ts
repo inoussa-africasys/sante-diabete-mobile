@@ -51,6 +51,10 @@ export class FicheRepository extends GenericRepository<Fiche> {
     return result.map((item : any) => item.name as string);
   }
 
+  public findAllNamesWhereFicheAdministrativeAttributeIsTrue(type_diabete: string): string[] {
+    const result = this.db.getAllSync(`SELECT name FROM ${this.tableName} WHERE type_diabete = ? AND is_administrative = true`, [type_diabete]);
+    return result.map((item : any) => item.name as string);
+  }
 
   
 

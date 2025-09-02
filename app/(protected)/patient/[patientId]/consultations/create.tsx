@@ -62,7 +62,8 @@ export default function CreateConsultationScreen() {
           || (ficheFetched?.name || '').toLowerCase().includes('administrative');
         if (isAdministrative && patientFetched) {
           try {
-            const adminConsultation = await patientFetched.ficheAdministrative?.();
+            const adminConsultation = await patientFetched.donneesAdministratives();
+            console.log(' 📝 adminConsultation : ', adminConsultation);
             if (adminConsultation && !adminConsultation.deletedAt) {
               setAdminFicheExists(true);
               setExistingAdminConsultationId(adminConsultation.id?.toString() || null);

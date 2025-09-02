@@ -118,14 +118,33 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
   }
 
 
-  public createOrUpdateAll(items: Consultation[]): void {
+  public async createOrUpdateAll(items: Consultation[], useTransaction: boolean = true): Promise<void> {
+    if (!items || items.length === 0) return;
+    const db = this.db;
+    if (useTransaction) db.execSync('BEGIN TRANSACTION');
     try {
       for (const item of items) {
-        this.createOrUpdate(item, 'uuid');
+        // Champs à insérer/mettre à jour (ignorer 'id')
+        const fields = Object.keys(item).filter(
+          (k) => k !== 'id' && (item as any)[k] !== undefined
+        );
+        const placeholders = fields.map(() => '?').join(',');
+        const values = fields.map((k) => (item as any)[k]);
+
+        // Construire la partie UPDATE à partir des mêmes champs, sauf 'uuid' (clé de conflit)
+        const updateFields = fields.filter((k) => k !== 'uuid');
+        const updateSet = updateFields.map((k) => `${k} = excluded.${k}`).join(', ');
+
+        const sql = `INSERT INTO ${this.tableName} (${fields.join(',')}) VALUES (${placeholders})
+          ON CONFLICT(uuid) DO UPDATE SET ${updateSet}`;
+
+        db.runSync(sql, values);
       }
+      if (useTransaction) db.execSync('COMMIT');
     } catch (error) {
       console.error('Error creating or updating consultations:', error);
       Logger.log('error', 'Error creating or updating consultations', { error });
+      if (useTransaction) db.execSync('ROLLBACK');
     }
   }
 
