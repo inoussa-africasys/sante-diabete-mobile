@@ -169,6 +169,9 @@ export class PatientRepository extends GenericRepository<Patient> {
     let countPatientsSyncedSuccess = 0;
     let countConsultationsSyncedSuccess = 0;
     let totalConsultations = 0;
+    // Transaction globale pour accélérer toutes les écritures
+    const db = this.db;
+    db.execSync('BEGIN TRANSACTION');
     try {
       for (const item of items) {
         const patient = PatientMapper.syncResponseToPatient(item);
@@ -198,15 +201,17 @@ export class PatientRepository extends GenericRepository<Patient> {
             patient.type_diabete
           )
         );
-        await consultationRepository.createOrUpdateAll(consultations);
+        await consultationRepository.createOrUpdateAll(consultations, false);
 
         countConsultationsSyncedSuccess += consultations.length;
         totalConsultations += consultations.length;
         countPatientsSyncedSuccess++;
       }
+      db.execSync('COMMIT');
     } catch (error) {
       console.error('Error creating or updating patients:', error);
       Logger.log('error', 'Error creating or updating patients', { error });
+      db.execSync('ROLLBACK');
     }
     console.log(`Patients created or updated: ${countPatientsSyncedSuccess}/${totalPatients}`);
     console.log(`Consultations created or updated: ${countConsultationsSyncedSuccess}/${totalConsultations}`);

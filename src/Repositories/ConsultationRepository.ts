@@ -118,42 +118,33 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
   }
 
 
-  public async createOrUpdateAll(items: Consultation[]): Promise<void> {
+  public async createOrUpdateAll(items: Consultation[], useTransaction: boolean = true): Promise<void> {
     if (!items || items.length === 0) return;
     const db = this.db;
-    db.execSync('BEGIN TRANSACTION');
+    if (useTransaction) db.execSync('BEGIN TRANSACTION');
     try {
       for (const item of items) {
-        // Upsert basé sur la clé unique 'uuid'
-        const existing = db.getFirstSync(
-          `SELECT id FROM ${this.tableName} WHERE uuid = ?`,
-          [item.uuid]
+        // Champs à insérer/mettre à jour (ignorer 'id')
+        const fields = Object.keys(item).filter(
+          (k) => k !== 'id' && (item as any)[k] !== undefined
         );
+        const placeholders = fields.map(() => '?').join(',');
+        const values = fields.map((k) => (item as any)[k]);
 
-        if (existing) {
-          // Construire dynamiquement l'UPDATE (sans le champ 'id')
-          const fields = Object.keys(item).filter((k) => k !== 'id');
-          const setters = fields.map((k) => `${k} = ?`).join(', ');
-          const values = fields.map((k) => (item as any)[k]);
-          values.push(item.uuid);
-          const sql = `UPDATE ${this.tableName} SET ${setters} WHERE uuid = ?`;
-          db.runSync(sql, values);
-        } else {
-          // INSERT dynamique en ignorant 'id' et les undefined
-          const fields = Object.keys(item).filter(
-            (k) => k !== 'id' && (item as any)[k] !== undefined
-          );
-          const placeholders = fields.map(() => '?').join(',');
-          const values = fields.map((k) => (item as any)[k]);
-          const insertQuery = `INSERT INTO ${this.tableName} (${fields.join(',')}) VALUES (${placeholders})`;
-          db.runSync(insertQuery, values);
-        }
+        // Construire la partie UPDATE à partir des mêmes champs, sauf 'uuid' (clé de conflit)
+        const updateFields = fields.filter((k) => k !== 'uuid');
+        const updateSet = updateFields.map((k) => `${k} = excluded.${k}`).join(', ');
+
+        const sql = `INSERT INTO ${this.tableName} (${fields.join(',')}) VALUES (${placeholders})
+          ON CONFLICT(uuid) DO UPDATE SET ${updateSet}`;
+
+        db.runSync(sql, values);
       }
-      db.execSync('COMMIT');
+      if (useTransaction) db.execSync('COMMIT');
     } catch (error) {
       console.error('Error creating or updating consultations:', error);
       Logger.log('error', 'Error creating or updating consultations', { error });
-      db.execSync('ROLLBACK');
+      if (useTransaction) db.execSync('ROLLBACK');
     }
   }
 
