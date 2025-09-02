@@ -98,6 +98,8 @@ export interface SyncPatientReturnType {
     sendCreatedConsultationsToServer: SyncStatistics;
     getAllPatientOnServer: SyncStatistics;
     getAllDeletedPatientOnServer: SyncStatistics;
+    // Nouveau: nombre de consultations récupérées depuis le serveur
+    getAllConsultationsOnServer: SyncStatistics;
     syncPictures: SyncStatistics;
   };
 }
@@ -107,6 +109,12 @@ export interface SyncOnlyOnTraitementReturnType {
   message: string;
   errors?: string[];
   statistics: SyncStatistics;
+}
+
+// Spécifique à la récupération des patients du serveur:
+// inclut aussi des statistiques sur les consultations récupérées
+export interface SyncPatientsAndConsultationsReturnType extends SyncOnlyOnTraitementReturnType {
+  consultationsStatistics: SyncStatistics;
 }
 
 export interface SyncStatistics {

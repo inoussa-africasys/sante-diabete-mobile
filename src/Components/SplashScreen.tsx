@@ -7,28 +7,32 @@ import CardWithBubbles from "./SplashBloodDrop";
 
 
 const { width, height } = Dimensions.get("window");
+const shortest = Math.min(width, height);
+const isTablet = shortest >= 600; // seuil simple pour tabletter
+const logoSize = isTablet ? shortest * 0.35 : shortest * 0.55; // logo plus petit sur tablette
 
 export default function SplashScreen() {
- 
+
   const version = Constants.expoConfig?.version;
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
-        <Image
-          source={Images.splashIconDecouper}
-          style={styles.image}
-          contentFit="contain"
-        />
-        <View style={styles.bulleSpace}>
-          {/* 3 bulles animées avec rebond */}
-          <CardWithBubbles height={height * 0.4} width={width} />
-        </View>
-        <View style={[styles.versionContainer,{ bottom: 20 + insets.bottom}]}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.versionText}>Version : {version}</Text>
-        </View>
+      <Image
+        source={Images.splashIconDecouper}
+        style={styles.image}
+        contentFit="contain"
+      />
+      <View style={[styles.versionContainer, { bottom: 20 + insets.bottom }]}>
+        <ActivityIndicator size={isTablet ? "large" : "small"} color="#fff" animating={true} />
+        <Text style={styles.versionText}>Version : {version}</Text>
       </View>
+      <View style={styles.bulleSpace}>
+        {/* 3 bulles animées avec rebond */}
+        <CardWithBubbles height={height * 0.4} width={width} />
+      </View>
+
+    </View>
   );
 }
 
@@ -40,14 +44,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   image: {
-    width: width * 0.8,
-    height: width * 0.8,
+    width: logoSize,
+    height: logoSize,
     marginBottom: 20,
   },
   versionContainer: {
-    position: "absolute",
+    position : "absolute",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 2,
   },
   versionText: {
     color: "#fff",
@@ -55,11 +60,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-  bulleSpace : {
-    width : "100%",
-    height : height * 0.4,
-    backgroundColor : "#f00",
-    zIndex : 1,
+  bulleSpace: {
+    width: "100%",
+    height: height * (isTablet ? 0.35 : 0.4),
+    // backgroundColor: "#f00", // debug
+    zIndex: 1,
     position: "relative",
     justifyContent: "flex-end",
   },

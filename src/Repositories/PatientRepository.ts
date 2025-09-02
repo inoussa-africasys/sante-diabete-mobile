@@ -13,6 +13,17 @@ export class PatientRepository extends GenericRepository<Patient> {
     super('patients', (data) => new Patient(data), false);
   }
 
+  // Normalise une chaîne pour comparaison: trim, espaces réduits, minuscules, accents supprimés,
+  // puis suppression des espaces, des apostrophes et des tirets pour une comparaison tolérante
+  private normalizeString(value: string | undefined | null): string {
+    if (!value) return '';
+    const collapsed = value.replace(/\s+/g, ' ').trim();
+    const deAccented = collapsed.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const lower = deAccented.toLowerCase();
+    // Retirer espaces, apostrophes (droites et typographiques) et tirets (courts/longs)
+    return lower.replace(/[\s'’\-–—]/g, '');
+  }
+
   async findAllByTypeDiabete(type_diabete: string): Promise<Patient[]> {
     try {
       const result = this.db.getAllSync(`SELECT * FROM ${this.tableName} WHERE type_diabete = ? AND deletedAt IS NULL ORDER BY createdAt DESC`, [type_diabete]);
@@ -214,17 +225,26 @@ export class PatientRepository extends GenericRepository<Patient> {
 
   async getDoublon(patient: Patient, typeDiabete: string): Promise<Patient[] | null> {
     try {
-    const result = this.db.getAllSync(
-      `SELECT * FROM ${this.tableName} 
-        WHERE type_diabete = ? 
-        AND first_name = ? 
-        AND last_name = ? 
-        AND date_of_birth = ? 
-        AND genre = ? 
-        AND deletedAt IS NULL`,
-      [typeDiabete, patient.first_name, patient.last_name, patient.date_of_birth, patient.genre]
-    );
-    return result.map((item) => this.modelFactory(item));
+      // Préparer les valeurs normalisées pour une comparaison robuste
+      const normFirst = this.normalizeString(patient.first_name);
+      const normLast = this.normalizeString(patient.last_name);
+
+      // SQL minimal et lisible; filtrage avancé effectué côté TS
+      const rows = this.db.getAllSync(
+        `SELECT * FROM ${this.tableName}
+          WHERE type_diabete = ?
+          AND date_of_birth = ?
+          AND genre = ?
+          AND deletedAt IS NULL`,
+        [typeDiabete, patient.date_of_birth, patient.genre]
+      );
+      const candidates = rows.map((item) => this.modelFactory(item));
+      const doublons = candidates.filter((p) =>
+        this.normalizeString(p.first_name) === normFirst &&
+        this.normalizeString(p.last_name) === normLast &&
+        p.genre === patient.genre
+      );
+      return doublons;
     } catch (error) {
       console.error('Error checking if patient is a doublon:', error);
       Logger.log('error', 'Error checking if patient is a doublon', { error });

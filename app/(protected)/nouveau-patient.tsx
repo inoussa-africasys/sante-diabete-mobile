@@ -70,13 +70,14 @@ export default function NouveauPatientScreen() {
             if (!consultation) {
               throw new Error('Les données de la fiche administrative du patient avec l\'ID ' + patientId + ' sont introuvables');
             }
-            console.log("consultation : ", consultation);
+            console.log("donne a admin : ", consultation);
             setFormData(consultation.parseDataToJson());
           } else {
             setSimpleAlert({ visible: true, title: 'Erreur', message: `Patient avec l'ID ${patientId} non trouvé`, type: 'error', onClose: () => router.back() });
           }
         } catch (error) {
           console.error('Erreur lors du chargement du patient:', error);
+          Logger.error('Erreur lors du chargement du patient:', error as Error);
           setSimpleAlert({ visible: true, title: 'Erreur', message: 'Impossible de charger les données du patient', type: 'error', onClose: () => router.back() });
         } finally {
           setIsLoading(false);

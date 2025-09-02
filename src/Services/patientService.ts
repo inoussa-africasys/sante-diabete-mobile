@@ -11,7 +11,7 @@ import { Consultation } from '../models/Consultation';
 import Patient from '../models/Patient';
 import { ConsultationRepository } from '../Repositories/ConsultationRepository';
 import { PatientRepository } from '../Repositories/PatientRepository';
-import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError, SyncOnlyOnTraitementReturnType, SyncPatientReturnType } from '../types';
+import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError, SyncOnlyOnTraitementReturnType, SyncPatientReturnType, SyncPatientsAndConsultationsReturnType } from '../types';
 import { generateConsultationName, generateFicheAdministrativeNameForJsonSave } from '../utils/consultation';
 import Logger from '../utils/Logger';
 import { sendTraficAuditEvent } from '../utils/traficAudit';
@@ -436,6 +436,7 @@ export default class PatientService extends Service {
           sendCreatedConsultationsToServer: sendCreatedConsultationsResult.statistics,
           getAllPatientOnServer: getAllPatientResult.statistics,
           getAllDeletedPatientOnServer: getAllDeletedPatientResult.statistics,
+          getAllConsultationsOnServer: getAllPatientResult.consultationsStatistics,
           syncPictures: syncPicturesResult.statistics
         }
       };
@@ -455,6 +456,7 @@ export default class PatientService extends Service {
           sendCreatedConsultationsToServer: { total: 0, success: 0, failed: 0 },
           getAllPatientOnServer: { total: 0, success: 0, failed: 0 },
           getAllDeletedPatientOnServer: { total: 0, success: 0, failed: 0 },
+          getAllConsultationsOnServer: { total: 0, success: 0, failed: 0 },
           syncPictures: { total: 0, success: 0, failed: 0 }
         }
       };
@@ -552,7 +554,10 @@ export default class PatientService extends Service {
           if (!patient.identifier) {
             throw new Error(` Patient avec l'ID ${patient.identifier} non trouvé`);
           }
+          console.log("patient : ", JSON.stringify(patient));
+          console.log("url : ", url);
           const response = await axios.post(url, patient);
+          console.log("response : ", response);
           if (response.status !== 201 && response.status !== 200) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
@@ -856,7 +861,7 @@ export default class PatientService extends Service {
   }
 
 
-  private async getAllPatientOnServer(): Promise<SyncOnlyOnTraitementReturnType> {
+  private async getAllPatientOnServer(): Promise<SyncPatientsAndConsultationsReturnType> {
     try {
       const lastSyncDate = await getLastSyncDate();
       const url = `${this.getBaseUrl()}/api/v3/json/mobile/patients/medicaldata/all?token=${this.getToken()}&app_version=${APP_VERSION}&user_last_sync_date=${lastSyncDate}`;
@@ -869,6 +874,7 @@ export default class PatientService extends Service {
       const patients = response.data as PatientSyncDataResponseOfGetAllMedicalDataServer[];
       await this.patientRepository.createOrUpdateAll(patients);
       const totalPatients = patients.length;
+      const totalConsultations = patients.reduce((sum, p) => sum + (p.dataConsultations?.length || 0), 0);
 
       sendTraficAuditEvent(SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS);
 
@@ -882,6 +888,11 @@ export default class PatientService extends Service {
           total: totalPatients,
           success: totalPatients,
           failed: 0
+        },
+        consultationsStatistics: {
+          total: totalConsultations,
+          success: totalConsultations,
+          failed: 0
         }
       };
     } catch (error) {
@@ -893,6 +904,11 @@ export default class PatientService extends Service {
         message: "Erreur lors de la récupération des patients du serveur",
         errors: [error instanceof Error ? error.message : JSON.stringify(error)],
         statistics: {
+          total: 0,
+          success: 0,
+          failed: 0
+        },
+        consultationsStatistics: {
           total: 0,
           success: 0,
           failed: 0

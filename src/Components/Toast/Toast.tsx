@@ -155,7 +155,10 @@ export const Toast: React.FC<ToastProps> = ({
                 <View style={styles.actions}>
                     {onCancel && (
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.cancelBtn]}
+                            style={[
+                                styles.actionBtn,
+                                type === 'warning' ? styles.cancelBtnWarning : styles.cancelBtn,
+                            ]}
                             onPress={() => {
                                 Animated.parallel([
                                     Animated.timing(translateY, {
@@ -181,7 +184,10 @@ export const Toast: React.FC<ToastProps> = ({
                     )}
                     {onConfirm && (
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.confirmBtn]}
+                            style={[
+                                styles.actionBtn,
+                                type === 'warning' ? styles.confirmBtnWarning : styles.confirmBtn,
+                            ]}
                             onPress={() => {
                                 Animated.parallel([
                                     Animated.timing(translateY, {
@@ -214,7 +220,7 @@ export const Toast: React.FC<ToastProps> = ({
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        top: 0,
+        top: 50,
         left: 0,
         right: 0,
         margin: 16,
@@ -228,7 +234,7 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.27,
         shadowRadius: 4.65,
-        zIndex: 1000,
+        zIndex: 100000,
     },
     content: {
         flexDirection: 'row',
@@ -261,6 +267,15 @@ const styles = StyleSheet.create({
     },
     cancelBtn: {
         backgroundColor: 'transparent',
+    },
+    // Styles spécifiques pour le type 'warning'
+    confirmBtnWarning: {
+        backgroundColor: '#4CAF50', // vert
+        borderColor: 'transparent',
+    },
+    cancelBtnWarning: {
+        backgroundColor: '#9E9E9E', // gris
+        borderColor: 'transparent',
     },
     actionText: {
         color: 'white',
