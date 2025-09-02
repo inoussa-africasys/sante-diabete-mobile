@@ -65,7 +65,9 @@ export default function NouveauPatientScreen() {
           const patient = await getPatientByIdOnTheLocalDb(patientId.toString());
           if (patient) {
             if (!patient.fiche_administrative_name) {
-              throw new Error('Patient avec l\'ID ' + patientId + ' n\'a pas de données administratives');
+              setShowNoAdminFicheModal(true);
+              setIsLoading(false);
+              return;
             }
             const consultation = await patient.donneesAdministratives();
             if (!consultation) {

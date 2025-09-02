@@ -64,7 +64,8 @@ export default class FicheService extends Service {
             const response = await fetch(this.getFullUrl(`/api/json/mobile/forms/${ficheName}/content`), {
                 method: 'GET',
                 headers: API_HEADER
-            });
+            })
+            
 
             if (!response.ok) {
                 Logger.log('error', 'Error downloading fiche', { response });
@@ -135,6 +136,10 @@ export default class FicheService extends Service {
 
     getAllFicheNames(): string[] {
         return this.ficheRepository.findAllNames(this.getTypeDiabete()!);
+    }
+
+    getAllFicheNamesWhereFicheAdministrativeAttributeIsTrue(): string[] {
+        return this.ficheRepository.findAllNamesWhereFicheAdministrativeAttributeIsTrue(this.getTypeDiabete()!);
     }
 
 }

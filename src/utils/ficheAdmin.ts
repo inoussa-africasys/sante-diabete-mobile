@@ -4,6 +4,7 @@ import FicheService from "../Services/ficheService";
 
 export const getFicheAdministrativeName = async (): Promise<string | null> => {
     const ficheService = await FicheService.create();
+    //const ficheNames = await ficheService.getAllFicheNamesWhereFicheAdministrativeAttributeIsTrue();
     const ficheNames = await ficheService.getAllFicheNames();
     const latestFicheName = getLatestAdminFicheName(ficheNames);
     return latestFicheName;
@@ -11,7 +12,7 @@ export const getFicheAdministrativeName = async (): Promise<string | null> => {
 
 
 export function getLatestAdminFicheName(ficheNames: string[]): string | null {
-    const regex = /^dt[12]_.*administrative.*_v([0-9]+)$/;
+    const regex = /^dt[12]_donnees_administrative.*_v([0-9]+)$/;
 
     let latestFicheName: string | null = null;
     let maxVersion = -1;
