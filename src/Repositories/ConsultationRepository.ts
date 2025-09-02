@@ -118,14 +118,42 @@ export class ConsultationRepository extends GenericRepository<Consultation> {
   }
 
 
-  public createOrUpdateAll(items: Consultation[]): void {
+  public async createOrUpdateAll(items: Consultation[]): Promise<void> {
+    if (!items || items.length === 0) return;
+    const db = this.db;
+    db.execSync('BEGIN TRANSACTION');
     try {
       for (const item of items) {
-        this.createOrUpdate(item, 'uuid');
+        // Upsert basé sur la clé unique 'uuid'
+        const existing = db.getFirstSync(
+          `SELECT id FROM ${this.tableName} WHERE uuid = ?`,
+          [item.uuid]
+        );
+
+        if (existing) {
+          // Construire dynamiquement l'UPDATE (sans le champ 'id')
+          const fields = Object.keys(item).filter((k) => k !== 'id');
+          const setters = fields.map((k) => `${k} = ?`).join(', ');
+          const values = fields.map((k) => (item as any)[k]);
+          values.push(item.uuid);
+          const sql = `UPDATE ${this.tableName} SET ${setters} WHERE uuid = ?`;
+          db.runSync(sql, values);
+        } else {
+          // INSERT dynamique en ignorant 'id' et les undefined
+          const fields = Object.keys(item).filter(
+            (k) => k !== 'id' && (item as any)[k] !== undefined
+          );
+          const placeholders = fields.map(() => '?').join(',');
+          const values = fields.map((k) => (item as any)[k]);
+          const insertQuery = `INSERT INTO ${this.tableName} (${fields.join(',')}) VALUES (${placeholders})`;
+          db.runSync(insertQuery, values);
+        }
       }
+      db.execSync('COMMIT');
     } catch (error) {
       console.error('Error creating or updating consultations:', error);
       Logger.log('error', 'Error creating or updating consultations', { error });
+      db.execSync('ROLLBACK');
     }
   }
 

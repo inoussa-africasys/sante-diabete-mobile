@@ -191,16 +191,17 @@ export class PatientRepository extends GenericRepository<Patient> {
         await this.createOrUpdate(patient, 'id_patient');
 
         const consultationRepository = new ConsultationRepository();
-        consultationRepository.createOrUpdateAll(
-          item.dataConsultations.map(
-            (consultation) => {
-              countConsultationsSyncedSuccess++;
-              return ConsultationMapper.DataConsultationOfGetWithPatientGetAllMedicalDataToConsultation(consultation, patient.id_patient, patient.type_diabete)
-            }
+        const consultations = item.dataConsultations.map((consultation) =>
+          ConsultationMapper.DataConsultationOfGetWithPatientGetAllMedicalDataToConsultation(
+            consultation,
+            patient.id_patient,
+            patient.type_diabete
           )
         );
+        await consultationRepository.createOrUpdateAll(consultations);
 
-        totalConsultations += item.dataConsultations.length;
+        countConsultationsSyncedSuccess += consultations.length;
+        totalConsultations += consultations.length;
         countPatientsSyncedSuccess++;
       }
     } catch (error) {
