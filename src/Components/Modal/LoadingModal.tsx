@@ -12,7 +12,7 @@ interface LoadingModalProps {
 export const LoadingModal: React.FC<LoadingModalProps> = ({
     isVisible,
     message = 'Veuillez patienter...',
-    color = 'red',
+    color = '#2196F3',
     size = 'large'
 }) => {
     return (

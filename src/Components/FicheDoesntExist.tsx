@@ -1,36 +1,136 @@
-import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import useConfigStore from '@/src/core/zustand/configStore';
+import { useFiche } from '@/src/Hooks/useFiche';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
+import { useNetworkState } from 'expo-network';
+import { router, useLocalSearchParams, usePathname } from 'expo-router';
+import React, { useState } from 'react';
 import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { APP_GREEN } from '../Constants/Colors';
+import Logger from '../utils/Logger';
+import { AlertModal, ConfirmModal, LoadingModal } from './Modal';
 
 interface FicheDoesntExistProps {
     ficheName: string;
-    gotBack: () => void;
     text?: string;
 }
 
-const FicheDoesntExist = ({ ficheName, gotBack, text }: FicheDoesntExistProps) => {
-    if(ficheName===""){
+const FicheDoesntExist = ({ ficheName, text }: FicheDoesntExistProps) => {
+    const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorDetail, setErrorDetail] = useState<string | null>(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const {downloadFiche, isLoading} = useFiche();
+    const pathname = usePathname();
+    const localParams = useLocalSearchParams();
+    const params = Object.fromEntries(
+        Object.entries(localParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : (v ?? '')])
+    );
+    const debugMode = useConfigStore((s) => s.debugMode);
+    const networkState = useNetworkState();
+
+    const handleGoToTelechargerFichePage = () => {
+        router.replace('/download-fiche');
+    }
+
+    const handleTelechargerFicheExistant = () => {
+        setShowConfirmationModal(true);
+    }
+
+    const handleDownloadFicheExistant = async () => {
+        setShowConfirmationModal(false);
+        try {
+            await downloadFiche(ficheName);
+            setShowSuccessModal(true);
+        } catch (error) {
+            console.error('Erreur lors du téléchargement de la fiche:', error);
+            setShowErrorModal(true);
+            try {
+                // Extraire un message utile
+                const err: any = error;
+                const msg = err?.message ?? (typeof err === 'string' ? err : JSON.stringify(err));
+                Logger.error('Erreur lors du téléchargement de la fiche:', msg);
+                setErrorDetail(msg);
+            } catch {
+                setErrorDetail(null);
+            }
+        }
+    }
+
+    if (ficheName === "") {
         return (
             <View style={[styles.container, styles.centerContent]}>
                 <StatusBar barStyle="light-content" />
                 <Ionicons name="document-text-outline" size={150} color="gray" />
                 <Text style={styles.errorText}>{text || "La lecture de cette consultation nécessite que vous téléchargez la fiche vierge correspondante"}</Text>
-                <TouchableOpacity onPress={gotBack} style={styles.btnBack}>
-                    <Text style={styles.btnBackText}>Retour</Text>
+                <TouchableOpacity onPress={handleGoToTelechargerFichePage} style={styles.btnBack}>
+                    <Text style={styles.btnBackText}>Telecharger</Text>
                 </TouchableOpacity>
             </View>
         );
     }
     return (
-        <View style={[styles.container, styles.centerContent]}>
-            <StatusBar barStyle="light-content" />
-            <Ionicons name="document-text-outline" size={150} color="gray" />
-            <Text style={styles.errorText}>{text || "La lecture de cette consultation nécessite que vous téléchargez la fiche vierge"}</Text>
-            <Text style={styles.errorTextFicheName}>{ficheName}</Text>
-            <TouchableOpacity onPress={gotBack} style={styles.btnBack}>
-                <Text style={styles.btnBackText}>Retour</Text>
-            </TouchableOpacity>
-        </View>
+        <>
+            <View style={[styles.container, styles.centerContent]}>
+                <StatusBar barStyle="light-content" />
+                <Ionicons name="document-text-outline" size={150} color="gray" />
+                <Text style={styles.errorText}>{text || "La lecture de cette consultation nécessite que vous téléchargez la fiche vierge"}</Text>
+                <Text style={styles.errorTextFicheName}>{ficheName}</Text>
+                <TouchableOpacity onPress={handleTelechargerFicheExistant} style={styles.btnBack}>
+                    <Text style={styles.btnBackText}>Telecharger</Text>
+                </TouchableOpacity>
+            </View>
+            <ConfirmModal
+                isVisible={showConfirmationModal}
+                customIcon={<Ionicons name="document-text-outline" size={100} color="#2196F3" />}
+                onClose={() => setShowConfirmationModal(false)}
+                title="Confirmation"
+                message={` Voulez-vous vraiment télécharger la fiche 
+                ${ficheName} ?  `}
+                confirmText="Telecharger"
+                cancelText="Annuler"
+                onConfirm={handleDownloadFicheExistant}
+            />
+            <LoadingModal
+                isVisible={isLoading}
+                message="Telechargement en cours ..."
+            />
+            <AlertModal
+                isVisible={showErrorModal}
+                title="Erreur"
+                type="error"
+                message={
+                    debugMode && errorDetail
+                        ? `Échec du téléchargement de la fiche '${ficheName}'.\nDétail: ${errorDetail}`
+                        : `Une erreur est survenue lors du téléchargement de la fiche '${ficheName}'. Veuillez réessayer.`
+                }
+                onClose={() => {
+                    setShowErrorModal(false);
+                    setErrorDetail(null);
+                }}
+            />
+            <AlertModal
+                isVisible={showSuccessModal}
+                title="Téléchargement terminé"
+                type="success"
+                customIcon={<AntDesign name="checkcircleo" size={76} color="#4CAF50" />}
+                message={`Fiche '${ficheName}' téléchargée avec succès`}
+                onClose={() => {
+                    setShowSuccessModal(false);
+                    // Rafraîchir l'écran courant
+                    if (pathname) {
+                        const query = Object.entries(params)
+                            .filter(([k, v]) => k !== 'patientId' && v !== undefined && v !== null && `${v}`.length > 0)
+                            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+                            .join('&');
+                        const target = query ? `${pathname}?${query}` : pathname;
+                        console.log(target);
+                        
+                        // @ts-expect-error: typed routes n'acceptent pas une URL dynamique, mais ici on remplace la route courante avec ses params
+                        router.replace(target);
+                    }
+                }}
+            />
+        </>
     )
 }
 
@@ -73,11 +173,11 @@ const styles = StyleSheet.create({
     headerActions: {
         flexDirection: 'row',
         alignItems: 'center',
-      },
-      headerButton: {
+    },
+    headerButton: {
         padding: 5,
         marginLeft: 15,
-      },
+    },
     list: {
         padding: 16
     },
@@ -119,7 +219,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         marginRight: 8,
         paddingHorizontal: 20,
-        backgroundColor: 'red',
+        backgroundColor: APP_GREEN,
         borderRadius: 12,
         elevation: 2,
         fontSize: 16,

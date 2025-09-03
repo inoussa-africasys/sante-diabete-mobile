@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import FicheService from '../Services/ficheService';
 import Fiche from '../models/Fiche';
+import Logger from '../utils/Logger';
 
 
 type UseFicheType = {
@@ -9,16 +10,17 @@ type UseFicheType = {
   error: string | null;
   downloadFiche: (ficheName: string) => Promise<Fiche | null>;
   getAllFicheDownloaded: () => Promise<Fiche[]>;
-  getFicheById : (ficheId: string) => Promise<Fiche | null>
-  getFicheByName : (ficheName: string) => Promise<Fiche | null>
+  getFicheById: (ficheId: string) => Promise<Fiche | null>
+  getFicheByName: (ficheName: string) => Promise<Fiche | null>
 }
 export const useFiche = (): UseFicheType => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+
 
   const getFicheList = async (): Promise<string[]> => {
     try {
+      setIsLoading(true);
       const fichesService = await FicheService.create();
       const fichesArrayString = await fichesService.fetchAllFichesOnServerQuery();
       await fichesService.insertAllFichesOnTheLocalDb(fichesArrayString);
@@ -26,24 +28,26 @@ export const useFiche = (): UseFicheType => {
     } catch (error) {
       console.error('Erreur réseau :', error);
       setError(error as string);
-      setIsLoading(false);
+      Logger.log('error', 'Error downloading fiche', { error });
       return [];
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const downloadFiche = async (ficheName: string): Promise<Fiche | null> => {
     setIsLoading(true);
     try {
-        const fichesService = await FicheService.create();
-        const fiche = await fichesService.downloadFiche(ficheName);
-        setIsLoading(false);
-        return fiche;
-      } catch (error) {
-        console.error('Erreur réseau :', error);
-        setError(error as string);
-        setIsLoading(false);
-        return null;
-      }
+      const fichesService = await FicheService.create();
+      const fiche = await fichesService.downloadFiche(ficheName);
+      setIsLoading(false);
+      return fiche;
+    } catch (error) {
+      console.error('Erreur réseau :', error);
+      setError(error as string);
+      setIsLoading(false);
+      return null;
+    }
   };
 
   const getAllFicheDownloaded = async (): Promise<Fiche[]> => {
@@ -56,12 +60,13 @@ export const useFiche = (): UseFicheType => {
     } catch (error) {
       console.error('Erreur réseau :', error);
       setError(error as string);
+      Logger.log('error', 'Error downloading fiche', { error });
       setIsLoading(false);
       return [];
     }
   };
 
-  const getFicheById = async (ficheId : string)=>{
+  const getFicheById = async (ficheId: string) => {
     try {
       setIsLoading(true);
       const fichesService = await FicheService.create();
@@ -71,13 +76,14 @@ export const useFiche = (): UseFicheType => {
     } catch (error) {
       console.error('Erreur réseau :', error);
       setError(error as string);
+      Logger.log('error', 'Error downloading fiche', { error });
       setIsLoading(false);
       return null;
     }
   }
 
 
-  const getFicheByName = async (ficheName : string)=>{
+  const getFicheByName = async (ficheName: string) => {
     try {
       setIsLoading(true);
       const fichesService = await FicheService.create();
@@ -87,6 +93,7 @@ export const useFiche = (): UseFicheType => {
     } catch (error) {
       console.error('Erreur réseau :', error);
       setError(error as string);
+      Logger.log('error', 'Error downloading fiche', { error });
       setIsLoading(false);
       return null;
     }
