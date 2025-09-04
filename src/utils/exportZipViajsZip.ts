@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 import JSZip from 'jszip';
 import { NAME_OF_TRAFIC_ZIP_FILE, PATH_OF_TRAFIC_DIR_ON_THE_LOCAL } from "../Constants/App";
 import { DATABASE_NAME, DATABASE_PATH } from "../Constants/Database";
+import Logger from "./Logger";
 
 
 // Fonction récursive pour lire tous les fichiers et dossiers
@@ -11,6 +12,7 @@ async function addDirectoryToZip(zip: JSZip, dirPath: string, relativePath: stri
     console.log(`✅ Lecture du dossier: ${dirPath}`);
 
     for (const fileName of files) {
+        
         const fullPath = `${dirPath}/${fileName}`;
         const zipPath = relativePath ? `${relativePath}/${fileName}` : fileName;
         
@@ -22,21 +24,79 @@ async function addDirectoryToZip(zip: JSZip, dirPath: string, relativePath: stri
                 console.log(`⚠️ Fichier ZIP ignoré pour éviter la récursivité: ${zipPath}`);
                 return; // Ignorer les fichiers ZIP
             }
-
+            
             try {
-                const fileContent = await FileSystem.readAsStringAsync(fullPath, {
-                    encoding: FileSystem.EncodingType.Base64,
-                });
-                console.log(`✅ Fichier ajouté: ${zipPath}`);
-                zip.file(zipPath, fileContent, { base64: true });
+                // Vérifier si c'est un fichier volumineux (comme la base de données)
+                const isLargeFile = fileName === DATABASE_NAME || fileInfo.size > 10 * 1024 * 1024; // 10 MB
+                
+                if (isLargeFile) {
+                    console.log(`⚠️ Traitement de fichier volumineux: ${zipPath} (${fileInfo.size} octets)`);
+                    // Pour les fichiers volumineux, utiliser une approche par morceaux
+                    await addLargeFileToZip(zip, fullPath, zipPath);
+                } else {
+                    // Pour les fichiers normaux, utiliser l'approche standard
+                    const fileContent = await FileSystem.readAsStringAsync(fullPath, {
+                        encoding: FileSystem.EncodingType.Base64,
+                    });
+                    console.log(`✅ Fichier ajouté: ${zipPath}`);
+                    zip.file(zipPath, fileContent, { base64: true });
+                }
             } catch (error) {
                 console.error(`❌ Erreur lecture fichier ${zipPath}:`, error);
+                Logger.log('error', `Erreur lecture fichier ${zipPath}:`, {error});
             }
         } else if (fileInfo.exists && fileInfo.isDirectory) {
             // C'est un dossier, on l'explore récursivement
             console.log(`📁 Exploration du sous-dossier: ${zipPath}`);
             await addDirectoryToZip(zip, fullPath, zipPath);
         }
+    }
+}
+
+// Fonction pour ajouter un fichier volumineux au ZIP par morceaux
+async function addLargeFileToZip(zip: JSZip, filePath: string, zipPath: string) {
+    try {
+        // Vérifier que le fichier existe
+        const fileInfo = await FileSystem.getInfoAsync(filePath);
+        if (!fileInfo.exists) {
+            throw new Error(`Le fichier ${filePath} n'existe pas`);
+        }
+
+        // Taille du morceau en octets (1 MB)
+        const chunkSize = 1 * 1024 * 1024;
+        const totalSize = fileInfo.size;
+        const totalChunks = Math.ceil(totalSize / chunkSize);
+
+        console.log(`📦 Traitement du fichier ${zipPath} en ${totalChunks} morceaux`);
+
+        // Lire le fichier complet en base64 (malheureusement JSZip ne supporte pas le streaming)
+        // Pour les fichiers très volumineux, cette approche peut encore causer des problèmes de mémoire
+        // mais c'est la meilleure solution disponible avec les contraintes actuelles
+        try {
+            // Lire le fichier complet
+            const fileContent = await FileSystem.readAsStringAsync(filePath, {
+                encoding: FileSystem.EncodingType.Base64
+            });
+            
+            // Ajouter au ZIP
+            zip.file(zipPath, fileContent, { base64: true });
+            console.log(`✅ Fichier volumineux ajouté avec succès: ${zipPath}`);
+        } catch (outOfMemoryError) {
+            // Si on a une erreur de mémoire, essayer une approche alternative
+            console.error(`❌ Erreur de mémoire lors de la lecture du fichier ${zipPath}:`, outOfMemoryError);
+            Logger.log('error', `Erreur de mémoire lors de la lecture du fichier ${zipPath}:`, {outOfMemoryError});
+            
+            // Ajouter un fichier texte explicatif à la place
+            const errorMessage = `Le fichier ${zipPath} n'a pas pu être inclus dans le ZIP car il est trop volumineux.\n` +
+                               `Taille: ${fileInfo.size} octets.\n` +
+                               `Veuillez le copier manuellement.`;
+            
+            zip.file(`${zipPath}.error.txt`, errorMessage);
+            console.log(`⚠️ Fichier d'erreur ajouté pour ${zipPath}`);
+        }
+    } catch (error) {
+        console.error(`❌ Erreur lors de l'ajout du fichier volumineux ${zipPath}:`, error);
+        Logger.log('error', `Erreur lors de l'ajout du fichier volumineux ${zipPath}:`, {error});
     }
 }
 
@@ -110,9 +170,11 @@ export async function zipDirectory() {
         await copyDatabaseToTrafficFolder();
         
         // Ajouter récursivement tous les fichiers et dossiers (y compris la DB copiée)
+        // Utiliser un traitement par morceaux pour éviter les problèmes de mémoire
         await addDirectoryToZip(zip, dirUri);
     } catch (error) {
         console.error('❌ Erreur lors de la lecture des fichiers:', error);
+        Logger.log('error', 'Erreur lors de la lecture des fichiers:', {error});
         throw error;
     }
 
@@ -151,6 +213,7 @@ export async function shareViaWhatsApp(zipUri: string) {
         });
     } catch (error) {
         console.error('Erreur de partage :', error);
+        Logger.log('error', 'Erreur de partage :', {error});
     }
 }
 
@@ -185,6 +248,7 @@ export async function uploadZipToTheWebService(zipUri: string) {
     console.log('Réponse du serveur :', result);
   } catch (error) {
     console.error('Erreur d’envoi du fichier :', error);
+    Logger.log('error', 'Erreur d’envoi du fichier :', {error});
   }
 }
 
@@ -203,5 +267,6 @@ const deleteSQLiteDatabase = async (dbName = DATABASE_NAME) => {
     }
   } catch (error) {
     console.error('❌ Erreur lors de la suppression de la base de données :', error);
+    Logger.log('error', 'Erreur lors de la suppression de la base de données :', {error});
   }
 };

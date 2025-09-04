@@ -35,7 +35,6 @@ export default class TraficAssistantService {
 
             const zipUri = await zipDirectory();
             console.log("✅ Fichiers patients zippés :", zipUri);
-
             // Partager
             // await shareViaWhatsApp(zipUri);
 
