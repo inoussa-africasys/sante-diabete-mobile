@@ -428,7 +428,7 @@ export default class PatientService extends Service {
       // Créer l'objet de retour avec toutes les statistiques
       const result: SyncPatientReturnType = {
         success: errors.length === 0,
-        message: errors.length === 0 ? "Synchronisation effectuée avec succès" : "Synchronisation terminée avec des erreurs",
+        message:  "Synchronisation effectuée avec succès",
         errors: errors.length > 0 ? errors : undefined,
         statistics: {
           syncDeletedPatients: syncDeletedPatientsResult.statistics,
