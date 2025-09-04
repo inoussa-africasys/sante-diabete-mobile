@@ -2,7 +2,6 @@ import SplashScreen from '@/src/Components/SplashScreen';
 import { AuthProvider } from '@/src/context/AuthContext';
 import { Migration } from '@/src/core/database/migrations';
 import useConfigStore from '@/src/core/zustand/configStore';
-import { resetAllFilesOnTraficFolder } from '@/src/functions/traficAssistance';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Stack } from "expo-router";
@@ -34,8 +33,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function prepare() {
-      Migration.resetDatabase();
-      await resetAllFilesOnTraficFolder();  
+      // Migration.resetDatabase();
+      //await resetAllFilesOnTraficFolder();  
       // Simuler un chargement, ex: chargement de polices, données, etc.
 
       try {
