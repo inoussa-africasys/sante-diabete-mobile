@@ -16,7 +16,7 @@ import { generateConsultationName, generateFicheAdministrativeNameForJsonSave } 
 import Logger from '../utils/Logger';
 import { sendTraficAuditEvent } from '../utils/traficAudit';
 import { TraficFolder } from '../utils/TraficFolder';
-import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
+import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_FULL_FAILDED, SYNCHRO_FULL_SUCCESS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
 import Service from "./core/Service";
 
 export default class PatientService extends Service {
@@ -418,9 +418,8 @@ export default class PatientService extends Service {
         }
       }
 
-      if (errors.length === 0) {
-        await setLastSyncDate(new Date().toISOString());
-      }
+     
+      await setLastSyncDate(new Date().toISOString());
 
       Logger.info("Patients synchronisés");
       console.log("Patients synchronisés");
@@ -440,6 +439,18 @@ export default class PatientService extends Service {
           syncPictures: syncPicturesResult.statistics
         }
       };
+
+      if (errors.length === 0) {
+        await sendTraficAuditEvent(SYNCHRO_FULL_SUCCESS, `Synchronisation des patients effectuée avec succès ==> ${JSON.stringify(result)}`);
+      } else{
+        await sendTraficAuditEvent(SYNCHRO_FULL_FAILDED, `Synchronisation des patients echouée ==> ${JSON.stringify({
+          success: false,
+          message: "Erreur lors de la synchronisation des patients",
+          errors: errors,
+          statistics: result.statistics
+        })}`);
+      }
+
 
       return result;
     } catch (error) {

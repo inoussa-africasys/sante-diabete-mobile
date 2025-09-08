@@ -65,6 +65,8 @@ export default class FicheService extends Service {
                 method: 'GET',
                 headers: API_HEADER
             })
+
+            console.log("Download fiche url : ", this.getFullUrl(`/api/json/mobile/forms/${ficheName}/content`));
             
 
             if (!response.ok) {

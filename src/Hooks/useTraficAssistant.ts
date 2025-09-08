@@ -4,7 +4,7 @@ import useDeviceInfo from "./useDeviceInfo";
 
 interface UseTraficAssistantType {
     isLoading: boolean;
-    handleSendData: () => void;
+    handleSendData: () => Promise<string | null>;
 }
 
 export default function useTraficAssistant(): UseTraficAssistantType {
@@ -15,7 +15,7 @@ export default function useTraficAssistant(): UseTraficAssistantType {
         osVersion,
       } = useDeviceInfo();
 
-    const handleSendData = async () => {
+    const handleSendData = async (): Promise<string | null> => {
         setIsLoading(true);
         const zipUri = await TraficAssistantService.zipPatientDirectory();
         await TraficAssistantService.sendZipFileToTheBackend({
@@ -26,6 +26,7 @@ export default function useTraficAssistant(): UseTraficAssistantType {
         });
         setIsLoading(false);
         console.log("✅ Fichiers patients zippés :", zipUri);
+        return zipUri ?? null;
     }
 
     return {
