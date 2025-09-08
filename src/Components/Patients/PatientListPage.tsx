@@ -1,5 +1,6 @@
 import PatientScanner from '@/app/(protected)/patient/scanner';
 import { APP_GREEN } from '@/src/Constants/Colors';
+import { usePatientSearch } from '@/src/Contexts/PatientSearchContext';
 import { useSyncPatientsUI } from '@/src/Hooks/useSyncPatientsUI';
 import { formatPatientDate } from '@/src/functions/helpers';
 import Patient from '@/src/models/Patient';
@@ -32,8 +33,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   onQRCodeScan
 }) => {
   const router = useRouter();
-  const [showSearchbar, setShowSearchbar] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { searchQuery, setSearchQuery, showSearchbar, setShowSearchbar } = usePatientSearch();
   const [isLoadingFetch, setIsLoadingFetch] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [showPatientScanner, setShowPatientScanner] = useState(false);
@@ -64,27 +64,50 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     }
   });
 
+  // Référence pour éviter les appels inutiles à l'API
+  const initialLoadDoneRef = useRef(false);
+  const lastSearchQueryRef = useRef(searchQuery);
+  
+  // Utiliser useCallback pour créer une fonction stable qui ne changera pas à chaque rendu
+  const fetchPatientsStable = useCallback(async () => {
+    // Ne pas recharger si la recherche n'a pas changé et qu'on a déjà chargé les données
+    if (initialLoadDoneRef.current && lastSearchQueryRef.current === searchQuery) {
+      return;
+    }
+    
+    setIsLoadingFetch(true);
+    try {
+      const p = await getAllOnTheLocalDbPatients();
+      setPatients(p);
+      
+      // Appliquer la recherche si elle existe déjà
+      if (searchQuery !== '') {
+        const filteredPs = p.filter((patient) => {
+          const name = patient.id_patient.toLowerCase() + ' ' + patient.last_name.toLowerCase() + ' ' + patient.first_name.toLowerCase();
+          return name.includes(searchQuery.toLowerCase());
+        });
+        setFilteredPatients(filteredPs);
+        setShowSearchbar(true);
+      } else {
+        setFilteredPatients(p);
+      }
+      
+      // Mettre à jour les références
+      lastSearchQueryRef.current = searchQuery;
+      initialLoadDoneRef.current = true;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des patients:', error);
+    } finally {
+      setIsLoadingFetch(false);
+    }
+  }, [getAllOnTheLocalDbPatients, searchQuery, setShowSearchbar]);
+  
   useFocusEffect(
     useCallback(() => {
-      const fetchPatients = async () => {
-        setIsLoadingFetch(true);
-        try {
-          const p = await getAllOnTheLocalDbPatients();
-          setPatients(p);
-          setFilteredPatients(p); // Mettre à jour filteredPatients avec les données récupérées
-          if (searchQuery !== '') {
-            handleSearch(searchQuery);
-            setShowSearchbar(true);
-          }
-        } catch (error) {
-          console.error('Erreur lors de la récupération des patients:', error);
-        } finally {
-          setIsLoadingFetch(false);
-        }
-      };
-
-      fetchPatients();
-    }, [])
+      fetchPatientsStable();
+      
+      // Pas besoin d'inclure fetchPatientsStable dans les dépendances car elle est stable
+    }, [fetchPatientsStable])
   )
 
 
