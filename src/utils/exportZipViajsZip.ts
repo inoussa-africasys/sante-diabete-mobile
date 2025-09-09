@@ -2,12 +2,12 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from 'expo-sharing';
 import JSZip from 'jszip';
 import { NAME_OF_TRAFIC_ZIP_FILE, PATH_OF_TRAFIC_DIR_ON_THE_LOCAL } from "../Constants/App";
-import { DATABASE_NAME, DATABASE_PATH } from "../Constants/Database";
+import { DATABASE_NAME } from "../Constants/Database";
 import Logger from "./Logger";
 
 
 // Fonction récursive pour lire tous les fichiers et dossiers
-async function addDirectoryToZip(zip: JSZip, dirPath: string, relativePath: string = '') {
+async function addDirectoryToZip(zip: JSZip, dirPath: string, relativePath: string = '', skipped: string[] = []) {
     const files = await FileSystem.readDirectoryAsync(dirPath);
     console.log(`✅ Lecture du dossier: ${dirPath}`);
 
@@ -26,15 +26,15 @@ async function addDirectoryToZip(zip: JSZip, dirPath: string, relativePath: stri
             }
             
             try {
-                // Vérifier si c'est un fichier volumineux (comme la base de données)
-                const isLargeFile = fileName === DATABASE_NAME || fileInfo.size > 10 * 1024 * 1024; // 10 MB
-                
-                if (isLargeFile) {
-                    console.log(`⚠️ Traitement de fichier volumineux: ${zipPath} (${fileInfo.size} octets)`);
-                    // Pour les fichiers volumineux, utiliser une approche par morceaux
-                    await addLargeFileToZip(zip, fullPath, zipPath);
+                // Si le fichier est trop volumineux (ex: base de données), ne pas l'inclure pour éviter OOM
+                const isLarge = fileName === DATABASE_NAME || (fileInfo.size ?? 0) > 10 * 1024 * 1024; // >10MB
+                if (isLarge) {
+                    const notice = `Le fichier ${zipPath} a été ignoré car il est volumineux (${fileInfo.size} octets) et pourrait provoquer des problèmes de mémoire lors de la création du ZIP.\n` +
+                                   `Veuillez transférer ce fichier séparément si nécessaire.`;
+                    zip.file(`${zipPath}.skipped.txt`, notice);
+                    skipped.push(zipPath);
+                    console.log(`⚠️ Fichier volumineux ignoré et remplacé par un avis: ${zipPath}`);
                 } else {
-                    // Pour les fichiers normaux, utiliser l'approche standard
                     const fileContent = await FileSystem.readAsStringAsync(fullPath, {
                         encoding: FileSystem.EncodingType.Base64,
                     });
@@ -48,12 +48,13 @@ async function addDirectoryToZip(zip: JSZip, dirPath: string, relativePath: stri
         } else if (fileInfo.exists && fileInfo.isDirectory) {
             // C'est un dossier, on l'explore récursivement
             console.log(`📁 Exploration du sous-dossier: ${zipPath}`);
-            await addDirectoryToZip(zip, fullPath, zipPath);
+            await addDirectoryToZip(zip, fullPath, zipPath, skipped);
         }
     }
 }
 
-// Fonction pour ajouter un fichier volumineux au ZIP par morceaux
+
+/*// Fonction pour ajouter un fichier volumineux au ZIP par morceaux
 async function addLargeFileToZip(zip: JSZip, filePath: string, zipPath: string) {
     try {
         // Vérifier que le fichier existe
@@ -99,11 +100,12 @@ async function addLargeFileToZip(zip: JSZip, filePath: string, zipPath: string) 
         Logger.log('error', `Erreur lors de l'ajout du fichier volumineux ${zipPath}:`, {error});
     }
 }
+*/
 
 // Fonction simple pour copier la base de données dans le dossier de trafic
 async function copyDatabaseToTrafficFolder() {
     try {
-        const dbPath = `${DATABASE_PATH}${DATABASE_NAME}`;
+        const dbPath = `${FileSystem.documentDirectory}SQLite/${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}${DATABASE_NAME}`;
         const tempDbPath = `${FileSystem.documentDirectory}${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}${DATABASE_NAME}`;
         
         console.log(`📋 Copie de la base de données...`);
@@ -138,26 +140,10 @@ async function copyDatabaseToTrafficFolder() {
     }
 }
 
-
-// Fonction pour nettoyer le fichier temporaire de la base de données
-async function cleanupTempDatabase() {
-    try {
-        const tempDbPath = `${FileSystem.documentDirectory}${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}${DATABASE_NAME}`;
-        const tempDbInfo = await FileSystem.getInfoAsync(tempDbPath);
-        
-        if (tempDbInfo.exists) {
-            await FileSystem.deleteAsync(tempDbPath);
-            console.log(`🧹 Fichier temporaire de la base de données supprimé: ${DATABASE_NAME}`);
-        }
-    } catch (error) {
-        console.log('⚠️ Impossible de supprimer le fichier temporaire de la base de données:', error);
-        // Ce n'est pas critique, on continue
-    }
-}
-
 export async function zipDirectory() {
     const dirUri = `${FileSystem.documentDirectory}${PATH_OF_TRAFIC_DIR_ON_THE_LOCAL}`;
     const zip = new JSZip();
+    const skipped: string[] = [];
 
     try {
         // Vérifier que le dossier principal existe
@@ -170,12 +156,23 @@ export async function zipDirectory() {
         await copyDatabaseToTrafficFolder();
         
         // Ajouter récursivement tous les fichiers et dossiers (y compris la DB copiée)
-        // Utiliser un traitement par morceaux pour éviter les problèmes de mémoire
-        await addDirectoryToZip(zip, dirUri);
+        await addDirectoryToZip(zip, dirUri, '', skipped);
     } catch (error) {
         console.error('❌ Erreur lors de la lecture des fichiers:', error);
         Logger.log('error', 'Erreur lors de la lecture des fichiers:', {error});
         throw error;
+    }
+
+    // Ajouter un récapitulatif des éléments ignorés, si nécessaire
+    if (skipped.length > 0) {
+        const summary = [
+            'Certains fichiers ont été ignorés pour éviter des problèmes de mémoire.',
+            'Liste des fichiers ignorés:',
+            ...skipped.map(p => `- ${p}`),
+            '',
+            'Ces fichiers peuvent être transférés séparément si besoin.'
+        ].join('\n');
+        zip.file('SKIPPED_FILES.txt', summary);
     }
 
     // Générer le fichier zip
@@ -190,10 +187,6 @@ export async function zipDirectory() {
     });
 
     console.log('✅ ZIP créé ici :', zipUri);
-    
-    // Nettoyer le fichier temporaire de la base de données s'il existe
-    // await cleanupTempDatabase();
-
     return zipUri;
 }
 
@@ -221,11 +214,6 @@ export async function shareViaWhatsApp(zipUri: string) {
 export async function uploadZipToTheWebService(zipUri: string) {
     const apiUrl = 'https://ton-backend.com/upload';
 
-  // Lire le fichier en base64
-  const base64 = await FileSystem.readAsStringAsync(zipUri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-
     const filename = 'archive.zip';
 
   const formData = new FormData();
@@ -251,22 +239,3 @@ export async function uploadZipToTheWebService(zipUri: string) {
     Logger.log('error', 'Erreur d’envoi du fichier :', {error});
   }
 }
-
-
-
-const deleteSQLiteDatabase = async (dbName = DATABASE_NAME) => {
-  const dbPath = FileSystem.documentDirectory + 'SQLite/' + dbName;
-
-  try {
-    const fileInfo = await FileSystem.getInfoAsync(dbPath);
-    if (fileInfo.exists) {
-      await FileSystem.deleteAsync(dbPath, { idempotent: true });
-      console.log(`🗑️ Base de données "${dbName}" supprimée avec succès.`);
-    } else {
-      console.log(`⚠️ Base de données "${dbName}" introuvable.`);
-    }
-  } catch (error) {
-    console.error('❌ Erreur lors de la suppression de la base de données :', error);
-    Logger.log('error', 'Erreur lors de la suppression de la base de données :', {error});
-  }
-};

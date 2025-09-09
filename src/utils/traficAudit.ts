@@ -16,13 +16,19 @@ export async function sendTraficAuditEvent(event_type: EventType, event_msg: Eve
     const url = `${BASE_URL}/api/v2/json/mobile/trafic/events/${event_type}?token=${TOKEN}&app_version=${APP_VERSION}&user_last_sync_date=${USER_LAST_SYNC_DATE}`;
 
     const payload = {
-      data: JSON.stringify(event_msg),
+      data: event_msg,
     };
 
-    const response = await axios.post(url, payload);
+    Logger.info("sendTraficAuditEvent url: ", { url });
+    Logger.info("sendTraficAuditEvent payload: ", { payload });
+    console.log("sendTraficAuditEvent url: ", { url });
+    console.log("sendTraficAuditEvent payload: ", payload );
+    const response = await axios.post(url, payload.data);
     Logger.info(`AuditEvent: ${response.data}`);
+    console.log(`AuditEvent: ${response.data}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     Logger.error(`Error occurred in sendTraficAuditEvent: ${errorMessage}`);
+    console.log(`Error occurred in sendTraficAuditEvent: ${errorMessage}`);
   }
 }

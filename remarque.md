@@ -1,1 +1,4 @@
--  
+- les variable a ajouter dans le json
+- la date au niveau de traffic 
+- patient sans fiche admin (fiche admin creer par vias le modal de creation de fiche) nest pas rattacher a au patient en question
+-  inverstion de nom prenom sur la liste des patients

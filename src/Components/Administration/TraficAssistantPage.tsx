@@ -1,7 +1,7 @@
 import { Images } from '@/src/Constants';
 import useTraficAssistant from '@/src/Hooks/useTraficAssistant';
 import Logger from '@/src/utils/Logger';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AlertModal } from '../Modal';
@@ -15,14 +15,34 @@ const { width: screenWidth } = Dimensions.get('window')
 
 const TraficAssistantPage = ({ goBack }: TraficAssistantPageProps) => {
   const [isSendSuccess, setIsSendSuccess] = useState(false);
+  const [errorModal, setErrorModal] = useState(false);
   
-  const { handleSendData : handleSendDataTraficAssistant, isLoading } = useTraficAssistant();
+  const { handleSendData : handleSendDataTraficAssistant, isLoading, error : errorTraficAssistant} = useTraficAssistant();
 
     const handleSendData = async () => {
-      const zipUri = await handleSendDataTraficAssistant();
-      console.log('✅ Trafic Assistant reussi :', zipUri);
-      Logger.info('✅ Trafic Assistant reussi :', {zipUri});
-      setIsSendSuccess(true);
+      setIsSendSuccess(false);
+      try {
+        const zipUri = await handleSendDataTraficAssistant();
+
+        if (errorTraficAssistant || !zipUri) {
+          setErrorModal(true);
+          setIsSendSuccess(false);
+          if (errorTraficAssistant) {
+            console.log('❌ Trafic Assistant échoué :', errorTraficAssistant);
+            Logger.error('❌ Trafic Assistant échoué :', { errorTraficAssistant });
+          }
+          return;
+        }
+
+        console.log('✅ Trafic Assistant réussi :', zipUri);
+        Logger.info('✅ Trafic Assistant réussi :', { zipUri });
+        setIsSendSuccess(true);
+      } catch (error) {
+        setIsSendSuccess(false);
+        setErrorModal(true);
+        console.log('❌ Trafic Assistant échoué (exception) :', error);
+        Logger.error('❌ Trafic Assistant échoué (exception) :', { error });
+      }
     }
   
   return (
@@ -59,6 +79,16 @@ const TraficAssistantPage = ({ goBack }: TraficAssistantPageProps) => {
         customIcon={<Ionicons name="cloud-done-sharp" size={76} color="#4CAF50" />}
         title="Envoi des données"
         message={"L'equipe de support a bien reçu les données de votre appareil et va les traiter. Merci!."}
+      />
+      <AlertModal 
+        isVisible={errorModal}
+        type='error'
+        onClose={() => {
+          setErrorModal(false);
+        }}
+        customIcon={<MaterialCommunityIcons name="cloud-alert" size={76} color="red" />}
+        title="Erreur "
+        message={"Une erreur est survenue lors de l'envoi des données. Veuillez reessayer."}
       />
       
     </View>
