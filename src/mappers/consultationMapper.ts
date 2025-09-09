@@ -1,8 +1,9 @@
 import { Consultation } from "../models/Consultation";
 import { FicheRepository } from "../Repositories/FicheRepository";
 import { ConsultationCreatedSyncData, ConsultationFormData, DataConsultationOfGetWithPatientGetAllServer } from "../types";
-import { generateConsultationFileName } from "../utils/consultation";
+import { generateConsultationFileName, traficConstultationDateFormat } from "../utils/consultation";
 
+type AddMetaDataParams = {data: any,startDate: Date,endDate: Date,lon: string,uuid: string,instanceID: string,formName: string,traficIdentifiant: string,traficUtilisateur: string,form_name: string,lat: string,id_patient: string}
 export class ConsultationMapper {
     static toConsultationFormData(consultation: Consultation): ConsultationFormData {
         return {
@@ -53,5 +54,21 @@ export class ConsultationMapper {
         consultation.ficheName = dataConsultationOfGetWithPatientGetAllServer.form_name;
         consultation.date = dataConsultationOfGetWithPatientGetAllServer.date_consultation;
         return consultation;
+    }
+
+    static addMetaData({data,startDate,endDate,lon,uuid,instanceID,formName,traficIdentifiant,traficUtilisateur,form_name,lat,id_patient}:AddMetaDataParams) {
+        data.start = startDate || new Date();
+        data.end = endDate || new Date();
+        data.date_consultation = traficConstultationDateFormat(endDate || new Date());
+        data.lon = lon || "";
+        data.uuid = uuid || "";
+        data.instanceID = instanceID || "";
+        data.formName = formName || "";
+        data.traficIdentifiant = traficIdentifiant || "";
+        data.traficUtilisateur = traficUtilisateur || "";
+        data.form_name = form_name || "";
+        data.lat = lat || "";
+        data.id_patient = id_patient || "";
+        return data;
     }
 }

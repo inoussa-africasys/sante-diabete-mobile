@@ -41,3 +41,12 @@ export const checkIfConsultationIsAFicheAdministrative = async (consultation: Co
 }
 
 
+export const checkIfFicheIsAFicheAdministrativeByFicheName = async (ficheName: string): Promise<boolean> => {
+    const regex = /^dt[12]_.*administrative.*_v([0-9]+)$/;
+    const match = ficheName.match(regex);
+    if (!match) {
+        return false;
+    }
+    return true;
+}
+

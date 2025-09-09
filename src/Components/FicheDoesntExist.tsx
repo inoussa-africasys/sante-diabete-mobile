@@ -12,9 +12,10 @@ import { AlertModal, ConfirmModal, LoadingModal } from './Modal';
 interface FicheDoesntExistProps {
     ficheName: string;
     text?: string;
+    noBackButton?: boolean;
 }
 
-const BtnBackText = ({onPress}: {onPress: () => void}) => {
+const BtnBack = ({onPress}: {onPress: () => void}) => {
     return (
         <TouchableOpacity onPress={onPress} style={styles.btnBack}>
             <Ionicons name="arrow-back" size={32} color="white" />
@@ -22,7 +23,7 @@ const BtnBackText = ({onPress}: {onPress: () => void}) => {
     )
 }
 
-const FicheDoesntExist = ({ ficheName, text }: FicheDoesntExistProps) => {
+const FicheDoesntExist = ({ ficheName, text, noBackButton = false }: FicheDoesntExistProps) => {
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [errorDetail, setErrorDetail] = useState<string | null>(null);
@@ -80,7 +81,7 @@ const FicheDoesntExist = ({ ficheName, text }: FicheDoesntExistProps) => {
         <>
             <View style={[styles.container, styles.centerContent]}>
                 <StatusBar barStyle="light-content" />
-                <BtnBackText onPress={() => router.back()} />
+                {noBackButton ? null : <BtnBack onPress={() => router.back()} />}
                 <Ionicons name="document-text-outline" size={150} color="gray" />
                 <Text style={styles.errorText}>{text || "La lecture de cette consultation nécessite que vous téléchargez la fiche vierge"}</Text>
                 <Text style={styles.errorTextFicheName}>{ficheName}</Text>

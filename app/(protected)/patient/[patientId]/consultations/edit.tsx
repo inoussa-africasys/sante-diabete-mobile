@@ -1,14 +1,18 @@
 import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { AlertModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
+import { useDiabetes } from '@/src/context/DiabetesContext';
 import { parseSurveyData } from "@/src/functions/helpers";
+import { getUserName } from '@/src/functions/qrcodeFunctions';
 import useConsultation from "@/src/Hooks/useConsultation";
 import { useFiche } from "@/src/Hooks/useFiche";
 import { usePatient } from "@/src/Hooks/usePatient";
+import { ConsultationMapper } from '@/src/mappers/consultationMapper';
 import { Consultation } from "@/src/models/Consultation";
 import Fiche from "@/src/models/Fiche";
 import Patient from "@/src/models/Patient";
-import { ConsultationFormData } from "@/src/types";
+import { ConsultationFormData, DiabeteType } from "@/src/types";
+import { generateUUID } from '@/src/utils/consultation';
 import Logger from '@/src/utils/Logger';
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -33,6 +37,8 @@ export default function EditConsultationScreen() {
   const { getFicheByName } = useFiche();
   const { updateConsultationByIdOnLocalDB } = useConsultation();
   const [startDate, setStartDate] = useState<Date | null>(null);
+
+  const {diabetesType} = useDiabetes();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,11 +80,27 @@ export default function EditConsultationScreen() {
     }
     const endDate = new Date();
     data.date_consultation = endDate;
-    data.start = startDate;
-    data.end = endDate;
-    const consultationFormData: ConsultationFormData = { data: data, id_fiche: consultation.id_fiche };
+    const uuid = generateUUID();
+    const dataWithMetaData = ConsultationMapper.addMetaData({
+          data,
+          startDate : JSON.parse(consultation.data).startDate || startDate || new Date(),
+          endDate : JSON.parse(consultation.data).endDate || endDate || new Date(),
+          lon : consultation.longitude.toString() || "",
+          uuid : consultation.uuid || uuid,
+          instanceID : consultation.uuid || uuid,
+          formName : fiche?.name || "",
+          traficIdentifiant : patient?.id_patient || "",
+          traficUtilisateur : consultation.createdBy || await getUserName(diabetesType as DiabeteType) || "",
+          form_name : fiche?.name || "",
+          lat : consultation.latitude.toString(),
+          id_patient : patientId
+        })
+    
+
+    const consultationFormData: ConsultationFormData = { data: dataWithMetaData, id_fiche: consultation.id_fiche };
     const result = await updateConsultationByIdOnLocalDB(consultationId, consultationFormData);
     if (result) {
+      
       setLoading(false);
       setShowSuccessModal(true);
       return;
