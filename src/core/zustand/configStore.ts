@@ -78,12 +78,10 @@ const useConfigStore = create<ConfigState>()(
             
             
 
-            timer1: 30,
-            timer2: 60,
-            timer3: 90,
-
-            // Par défaut: 30 jours
-            syncPeriodDays: 30,
+            timer1: 0,
+            timer2: 0,
+            timer3: 0,
+            syncPeriodDays: 7,
 
             toggle: (key) => set((state) => ({ [key]: !state[key] })),
             setValue: (key, value) => set(() => ({ [key]: value })),

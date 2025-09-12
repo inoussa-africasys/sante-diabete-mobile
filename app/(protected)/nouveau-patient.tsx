@@ -20,7 +20,6 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-
 export default function NouveauPatientScreen() {
   const router = useRouter();
   const { patientId } = useLocalSearchParams();
@@ -351,6 +350,7 @@ export default function NouveauPatientScreen() {
           customIcon={<Ionicons name="checkmark-circle-outline" size={76} color="#4CAF50" />}
           onClose={() => {
             setIsOpenSuccessModal(false);
+            // Utiliser router.replace pour forcer un rechargement complet de la page
             router.replace('/liste-patient');
           }}
           isVisible={isOpenSuccessModal}

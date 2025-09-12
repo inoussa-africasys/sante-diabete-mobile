@@ -68,46 +68,46 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const initialLoadDoneRef = useRef(false);
   const lastSearchQueryRef = useRef(searchQuery);
   
-  // Utiliser useCallback pour créer une fonction stable qui ne changera pas à chaque rendu
-  const fetchPatientsStable = useCallback(async () => {
-    // Ne pas recharger si la recherche n'a pas changé et qu'on a déjà chargé les données
-    if (initialLoadDoneRef.current && lastSearchQueryRef.current === searchQuery) {
-      return;
-    }
-    
-    setIsLoadingFetch(true);
-    try {
-      const p = await getAllOnTheLocalDbPatients();
-      setPatients(p);
-      
-      // Appliquer la recherche si elle existe déjà
-      if (searchQuery !== '') {
-        const filteredPs = p.filter((patient) => {
-          const name = patient.id_patient.toLowerCase() + ' ' + patient.last_name.toLowerCase() + ' ' + patient.first_name.toLowerCase();
-          return name.includes(searchQuery.toLowerCase());
-        });
-        setFilteredPatients(filteredPs);
-        setShowSearchbar(true);
-      } else {
-        setFilteredPatients(p);
-      }
-      
-      // Mettre à jour les références
-      lastSearchQueryRef.current = searchQuery;
-      initialLoadDoneRef.current = true;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des patients:', error);
-    } finally {
-      setIsLoadingFetch(false);
-    }
-  }, [getAllOnTheLocalDbPatients, searchQuery, setShowSearchbar]);
-  
+  // Utiliser un effet de focus sans dépendance à fetchPatientsStable pour éviter les rendus infinis
   useFocusEffect(
     useCallback(() => {
-      fetchPatientsStable();
+      // Créer une fonction locale pour éviter les problèmes de dépendances
+      const loadData = async () => {
+        setIsLoadingFetch(true);
+        try {
+          const p = await getAllOnTheLocalDbPatients();
+          setPatients(p);
+          
+          // Appliquer la recherche si elle existe déjà
+          if (searchQuery !== '') {
+            const filteredPs = p.filter((patient) => {
+              const name = patient.id_patient.toLowerCase() + ' ' + patient.last_name.toLowerCase() + ' ' + patient.first_name.toLowerCase();
+              return name.includes(searchQuery.toLowerCase());
+            });
+            setFilteredPatients(filteredPs);
+            setShowSearchbar(true);
+          } else {
+            setFilteredPatients(p);
+          }
+          
+          // Mettre à jour les références
+          lastSearchQueryRef.current = searchQuery;
+          initialLoadDoneRef.current = true;
+        } catch (error) {
+          console.error('Erreur lors de la récupération des patients:', error);
+        } finally {
+          setIsLoadingFetch(false);
+        }
+      };
       
-      // Pas besoin d'inclure fetchPatientsStable dans les dépendances car elle est stable
-    }, [fetchPatientsStable])
+      // Charger les données à chaque fois que la page est affichée
+      loadData();
+      
+      // Fonction de nettoyage
+      return () => {
+        // Annuler les requêtes en cours si nécessaire
+      };
+    }, [searchQuery])
   )
 
 

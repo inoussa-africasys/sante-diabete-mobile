@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import uuid from 'react-native-uuid';
 import config from '../Config';
 import { API_HEADER, APP_VERSION, PATH_OF_PATIENTS_DIR_ON_THE_LOCAL } from '../Constants/App';
+import useConfigStore from '../core/zustand/configStore';
 import { getDiabetesType } from '../functions/auth';
 import { getLastSyncDate, setLastSyncDate } from '../functions/syncHelpers';
 import { ConsultationMapper } from '../mappers/consultationMapper';
@@ -14,6 +15,7 @@ import { PatientRepository } from '../Repositories/PatientRepository';
 import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError, SyncOnlyOnTraitementReturnType, SyncPatientReturnType, SyncPatientsAndConsultationsReturnType } from '../types';
 import { generateConsultationName, generateFicheAdministrativeNameForJsonSave } from '../utils/consultation';
 import Logger from '../utils/Logger';
+import { sleep } from '../utils/sleep';
 import { sendTraficAuditEvent } from '../utils/traficAudit';
 import { TraficFolder } from '../utils/TraficFolder';
 import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_FULL_FAILDED, SYNCHRO_FULL_SUCCESS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
@@ -22,6 +24,9 @@ import Service from "./core/Service";
 export default class PatientService extends Service {
   private patientRepository: PatientRepository;
   private consultationRepository: ConsultationRepository;
+  private timer1 = useConfigStore.getState().timer1
+  private timer2 = useConfigStore.getState().timer2
+  private timer3 = useConfigStore.getState().timer3
 
 
   constructor() {
@@ -373,6 +378,7 @@ export default class PatientService extends Service {
           errors.push(...sendCreatedConsultationsResult.errors);
         }
       }
+      await sleep(1000*this.timer1)
 
       // Récupérer tous les patients du serveur
       const getAllPatientResult = await this.getAllPatientOnServer();
@@ -386,6 +392,8 @@ export default class PatientService extends Service {
         }
       }
 
+      await sleep(1000*this.timer2)
+
       // Récupérer tous les patients supprimés du serveur
       const getAllDeletedPatientResult = await this.getAllDeletedPatientOnServer();
       console.log("Patients supprimés synchronisés on the server:", getAllDeletedPatientResult.success);
@@ -397,6 +405,8 @@ export default class PatientService extends Service {
           errors.push(...getAllDeletedPatientResult.errors);
         }
       }
+
+      await sleep(1000 * this.timer3)
 
       // Synchroniser les images si activé
       let syncPicturesResult: SyncOnlyOnTraitementReturnType = {
