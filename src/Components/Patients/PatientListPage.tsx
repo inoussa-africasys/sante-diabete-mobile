@@ -150,7 +150,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       onPress={() => onPatientPress(item.id_patient)}
     >
       <View style={styles.patientInfo}>
-        <Text style={styles.patientName}>{item.first_name.toUpperCase()} {item.last_name}</Text>
+        <Text style={styles.patientName}>{item.first_name} {item.last_name}</Text>
         <View style={styles.patientDetails}>
           <View style={styles.dateContainer}>
             <Text style={styles.dateText}>Date: {formatPatientDate(item.date_of_birth)}</Text>

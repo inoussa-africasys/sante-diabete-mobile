@@ -221,16 +221,15 @@ export default class ConsultationService extends Service {
       await this.consultationRepository.update(consultationId, consultationToCreate);
 
       if (await consultationToCreate.isFicheAdministrative()) {
-        console.log("start update Patient");
+        console.log("start update Patient fiche admin");
         const patientService = await PatientService.create();
-        console.log("consultationToCreate", consultationToCreate.data);
-        const patientData: FicheAdministrativeFormData = consultationToCreate.data as unknown as FicheAdministrativeFormData;
+        const patientData: FicheAdministrativeFormData = JSON.parse(consultationToCreate.data) as unknown as FicheAdministrativeFormData;
         const patientData2 = PatientMapper.ficheAdminToFormPatient(patientData, consultationToCreate.ficheName);
         
         // S'assurer que cette fiche administrative est définie comme la fiche principale du patient
         patientData2.fiche_administrative_name = consultationToCreate.ficheName;
         
-        console.log("end update Patient");
+        console.log("end update Patient fiche admin");
         await patientService.updateOnTheLocalDb(consultationToCreate.id_patient, patientData2);
         
         // Vérifier également si le patient a besoin d'être mis à jour directement dans la base de données

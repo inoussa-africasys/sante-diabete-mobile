@@ -97,7 +97,7 @@ export default function EditConsultationScreen() {
         })
     
 
-    const consultationFormData: ConsultationFormData = { data: dataWithMetaData, id_fiche: consultation.id_fiche };
+    const consultationFormData: ConsultationFormData = { data: JSON.stringify(dataWithMetaData), id_fiche: consultation.id_fiche };
     const result = await updateConsultationByIdOnLocalDB(consultationId, consultationFormData);
     if (result) {
       
