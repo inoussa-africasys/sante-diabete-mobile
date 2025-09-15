@@ -11,7 +11,7 @@ import { ConsultationMapper } from '@/src/mappers/consultationMapper';
 import { PatientMapper } from '@/src/mappers/patientMapper';
 import { DiabeteType } from '@/src/types';
 import { ConsultationFormData, FicheAdministrativeFormData, PatientFormData } from '@/src/types/patient';
-import { generateUUID } from '@/src/utils/consultation';
+import { generateUUID, traficConstultationDateFormat } from '@/src/utils/consultation';
 import Logger from '@/src/utils/Logger';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -130,23 +130,56 @@ export default function NouveauPatientScreen() {
         if (!patient) {
           throw new Error('Patient avec l\'ID ' + patientId + ' est introuvable ');
         }
-        const endDate = new Date();
-        data.date_consultation = endDate;
-        data.start = startDate;
-        data.end = endDate;
-        const consultationFormData: ConsultationFormData = {
-          data: JSON.stringify(data),
-          id_fiche: ficheAdministrative?.id?.toString() || ''
-        }
+
         const consultation = await patient.ficheAdministrative();
         if (!consultation || !consultation.id) {
           throw new Error('Le patient avec l\'ID ' + patientId + ' n\'a pas de fiche administrative');
         }
+
+        const endDate = new Date();
+        data.date_consultation = traficConstultationDateFormat(endDate);
+
+        const location = await getCurrentLocation();
+        // Utiliser les valeurs existantes ou des valeurs par défaut
+        const uuid = generateUUID();
+
+        // Éviter de parser plusieurs fois les mêmes données JSON
+        let parsedData;
+        try {
+          parsedData = JSON.parse(consultation.data);
+        } catch (e) {
+          console.error("Erreur lors du parsing des données de consultation:", e);
+          parsedData = {};
+        }
+
+        const dataWithMetaData = ConsultationMapper.addMetaData({
+          data,
+          startDate: parsedData.startDate || startDate || new Date(),
+          endDate: parsedData.endDate || endDate,
+          lon: location?.coords.longitude?.toString() || "",
+          uuid: consultation.uuid || uuid,
+          instanceID: consultation.uuid || uuid,
+          formName: ficheAdministrative?.name || "",
+          traficIdentifiant: patient?.id_patient || "",
+          traficUtilisateur: await getUserName(diabetesType as DiabeteType) || "",
+          form_name: ficheAdministrative?.name || "",
+          lat: location?.coords.latitude?.toString() || "",
+          id_patient: patientId as string || ""
+        });
+
+        const consultationFormData: ConsultationFormData = {
+          data: JSON.stringify(dataWithMetaData),
+          id_fiche: ficheAdministrative?.id?.toString() || ''
+        };
+
+
+
         const patientFormData = PatientMapper.ficheAdminToFormPatient(data, consultation.ficheName);
         const patientUpdatedResult = await updatePatientOnTheLocalDb(patient.id_patient, patientFormData);
         if (!patientUpdatedResult) {
           throw new Error('Le patient avec l\'ID ' + patientId + ' n\'a pas pu etre mis à jour ');
         }
+
         const consultationUpdatedResult = await updateConsultationByIdOnLocalDB(consultation.id.toString(), consultationFormData);
         if (!consultationUpdatedResult) {
           throw new Error('La consultation avec l\'ID ' + consultation.id.toString() + ' n\'a pas pu etre mise à jour');

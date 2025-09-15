@@ -202,7 +202,7 @@ export default function PatientDetailScreen() {
                       size={24}
                       color="#9E9E9E"
                     />
-                    <Text style={styles.folderDate}>{formatDate(date).toLowerCase()=="invalid date" ? "" : formatDate(date)}</Text>
+                    <Text style={styles.folderDate}>{formatDate(date)=="Invalid Date" || formatDate(date).toLowerCase()=="invalid date" ? "" : formatDate(date)}</Text>
                     <FontAwesome5
                       name={expandedFolders[date] ? 'chevron-down' : 'chevron-right'}
                       size={16}
