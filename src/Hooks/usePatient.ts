@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDiabetes } from "../context/DiabetesContext";
+import useConfigStore from "../core/zustand/configStore";
 import { PatientMapper } from "../mappers/patientMapper";
 import { Consultation } from "../models/Consultation";
 import Fiche from "../models/Fiche";
@@ -35,6 +36,7 @@ export const usePatient = () : usePatientReturnType => {
     const {diabetesType} = useDiabetes();
     const [ficheAdministrative, setFicheAdministrative] = useState<Fiche | null>(null);
     const [ficheAdministrativeName, setFicheAdministrativeName] = useState<string | null>(null);
+    const {fullSync} = useConfigStore()
 
     const getFicheAdministrative = async () => {
         try {
@@ -173,7 +175,12 @@ export const usePatient = () : usePatientReturnType => {
         try {
             setIsLoading(true);
             const patientsService = await PatientService.create();
-            const syncResult = await patientsService.syncPatients();
+            let syncResult
+            if(fullSync){
+                syncResult = await patientsService.fullSyncPatients();
+            } else { 
+                syncResult = await patientsService.syncPatients();
+            }
             setIsLoading(false);
             return syncResult;
         } catch (error) {

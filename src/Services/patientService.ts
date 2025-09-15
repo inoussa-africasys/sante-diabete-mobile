@@ -484,6 +484,155 @@ export default class PatientService extends Service {
     }
   }
 
+
+
+  async fullSyncPatients(): Promise<SyncPatientReturnType> {
+    try {
+      const errors: string[] = [];
+
+      // Synchroniser les patients supprimés
+      const syncDeletedPatientsResult = await this.syncDeletedPatients();
+      console.log("FULLSYNCHRO - Patients supprimés synchronisés in local db:", syncDeletedPatientsResult.success);
+      Logger.info("FULLSYNCHRO - Patients supprimés synchronisés in local db:", { success: syncDeletedPatientsResult.success });
+      if (!syncDeletedPatientsResult.success) {
+        Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients supprimés");
+        console.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients supprimés");
+        if (syncDeletedPatientsResult.errors) {
+          errors.push(...syncDeletedPatientsResult.errors);
+        }
+      }
+
+      // Envoyer les patients créés ou mis à jour au serveur
+      const sendCreatedOrUpdatedPatientsResult = await this.sendCreatedOrUpdatedPatientsToServer();
+      console.log("FULLSYNCHRO - Patients mis à jour synchronisés in local db:", sendCreatedOrUpdatedPatientsResult.success);
+      Logger.info("FULLSYNCHRO - Patients mis à jour synchronisés in local db:", { success: sendCreatedOrUpdatedPatientsResult.success });  
+      if (!sendCreatedOrUpdatedPatientsResult.success) {
+        Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients mis à jour");
+        console.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients mis à jour");
+        if (sendCreatedOrUpdatedPatientsResult.errors) {
+          errors.push(...sendCreatedOrUpdatedPatientsResult.errors);
+        }
+      }
+
+      // Envoyer les consultations créées au serveur
+      const sendCreatedConsultationsResult = await this.sendCreatedConsultationsToServer();
+      console.log("FULLSYNCHRO - Consultations créées synchronisées in local db:", sendCreatedConsultationsResult.success);
+      Logger.info("FULLSYNCHRO - Consultations créées synchronisées in local db:", { success: sendCreatedConsultationsResult.success });
+      if (!sendCreatedConsultationsResult.success) {
+        Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des consultations créées");
+        console.error("FULLSYNCHRO - Erreur lors de la synchronisation des consultations créées");
+        if (sendCreatedConsultationsResult.errors) {
+          errors.push(...sendCreatedConsultationsResult.errors);
+        }
+      }
+      await sleep(1000*this.timer1)
+
+      // Récupérer tous les patients du serveur
+      const getAllPatientResult = await this.getAllPatientOnServer();
+      console.log("FULLSYNCHRO - Patients synchronisés get Medical Data:", getAllPatientResult.success);
+      Logger.info("FULLSYNCHRO - Patients synchronisés get Medical Data:", { success: getAllPatientResult.success });
+      if (!getAllPatientResult.success) {
+        Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients");
+        console.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients");
+        if (getAllPatientResult.errors) {
+          errors.push(...getAllPatientResult.errors);
+        }
+      }
+
+      await sleep(1000*this.timer2)
+
+      // Récupérer tous les patients supprimés du serveur
+      const getAllDeletedPatientResult = await this.getAllDeletedPatientOnServer();
+      console.log("FULLSYNCHRO - Patients supprimés synchronisés on the server:", getAllDeletedPatientResult.success);
+      Logger.info("FULLSYNCHRO - Patients supprimés synchronisés on the server:", { success: getAllDeletedPatientResult.success });
+      if (!getAllDeletedPatientResult.success) {
+        Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients supprimés");
+        console.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients supprimés");
+        if (getAllDeletedPatientResult.errors) {
+          errors.push(...getAllDeletedPatientResult.errors);
+        }
+      }
+
+      await sleep(1000 * this.timer3)
+
+      // Synchroniser les images si activé
+      let syncPicturesResult: SyncOnlyOnTraitementReturnType = {
+        success: true,
+        message: "Synchronisation des images ignorée (désactivée)",
+        statistics: { total: 0, success: 0, failed: 0 }
+      };
+
+      if (config.isPictureSyncEnabled) {
+        /* syncPicturesResult = await this.syncPictures(); */
+        console.log("FULLSYNCHRO - Images synchronisées on the server:", syncPicturesResult.success);
+        Logger.info("FULLSYNCHRO - Images synchronisées on the server:", { success: syncPicturesResult.success });
+        if (!syncPicturesResult.success) {
+          Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des images");
+          console.error("FULLSYNCHRO - Erreur lors de la synchronisation des images");
+          if (syncPicturesResult.errors) {
+            errors.push(...syncPicturesResult.errors);
+          }
+        }
+      }
+
+     
+      await setLastSyncDate(new Date().toISOString());
+
+      Logger.info("FULLSYNCHRO - Patients synchronisés");
+      console.log("FULLSYNCHRO - Patients synchronisés");
+
+      // Créer l'objet de retour avec toutes les statistiques
+      const result: SyncPatientReturnType = {
+        success: errors.length === 0,
+        message:  "Synchronisation effectuée avec succès",
+        errors: errors.length > 0 ? errors : undefined,
+        statistics: {
+          syncDeletedPatients: syncDeletedPatientsResult.statistics,
+          sendCreatedOrUpdatedPatientsToServer: sendCreatedOrUpdatedPatientsResult.statistics,
+          sendCreatedConsultationsToServer: sendCreatedConsultationsResult.statistics,
+          getAllPatientOnServer: getAllPatientResult.statistics,
+          getAllDeletedPatientOnServer: getAllDeletedPatientResult.statistics,
+          getAllConsultationsOnServer: getAllPatientResult.consultationsStatistics,
+          syncPictures: syncPicturesResult.statistics
+        }
+      };
+
+      if (errors.length === 0) {
+        await sendTraficAuditEvent(SYNCHRO_FULL_SUCCESS, `FULLSYNCHRO - Synchronisation des patients effectuée avec succès ==> ${JSON.stringify(result)}`);
+      } else{
+        await sendTraficAuditEvent(SYNCHRO_FULL_FAILDED, `FULLSYNCHRO - Synchronisation des patients echouée ==> ${JSON.stringify({
+          success: false,
+          message: "Erreur lors de la synchronisation des patients",
+          errors: errors,
+          statistics: result.statistics
+        })}`);
+      }
+
+
+      return result;
+    } catch (error) {
+      console.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients :", error);
+      Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients", { error });
+
+      return {
+        success: false,
+        message: "Erreur lors de la synchronisation des patients",
+        errors: [error instanceof Error ? error.message : JSON.stringify(error)],
+        statistics: {
+          syncDeletedPatients: { total: 0, success: 0, failed: 0 },
+          sendCreatedOrUpdatedPatientsToServer: { total: 0, success: 0, failed: 0 },
+          sendCreatedConsultationsToServer: { total: 0, success: 0, failed: 0 },
+          getAllPatientOnServer: { total: 0, success: 0, failed: 0 },
+          getAllDeletedPatientOnServer: { total: 0, success: 0, failed: 0 },
+          getAllConsultationsOnServer: { total: 0, success: 0, failed: 0 },
+          syncPictures: { total: 0, success: 0, failed: 0 }
+        }
+      };
+    }
+  }
+
+
+
   private async syncDeletedPatients(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
       const deletedPatients = await this.patientRepository.getDeletedPatientsOnLocalDB();
