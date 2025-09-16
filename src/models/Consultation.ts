@@ -52,6 +52,7 @@ export class Consultation extends BaseModel {
     }
 
     public parseDataToJson() {
+        console.log("donne data a afficher dans le json",this.data);
         return JSON.parse(this.data);
     }
 

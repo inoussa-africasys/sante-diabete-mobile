@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import PatientListPage from '../../src/Components/Patients/PatientListPage';
+import { PatientSearchProvider } from '../../src/Contexts/PatientSearchContext';
 
 export default function ListePatientScreen() {
   
@@ -11,10 +12,12 @@ export default function ListePatientScreen() {
   };
 
   return (
-    <PatientListPage
-      onPatientPress={handlePatientPress}
-      onBackPress={() => router.back()}
-      onAddPress={() => router.push('/nouveau-patient')}
-    />
+    <PatientSearchProvider>
+      <PatientListPage
+        onPatientPress={handlePatientPress}
+        onBackPress={() => router.back()}
+        onAddPress={() => router.push('/nouveau-patient')}
+      />
+    </PatientSearchProvider>
   );
 }

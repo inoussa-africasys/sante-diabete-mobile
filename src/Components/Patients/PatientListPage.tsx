@@ -1,5 +1,6 @@
 import PatientScanner from '@/app/(protected)/patient/scanner';
 import { APP_GREEN } from '@/src/Constants/Colors';
+import { usePatientSearch } from '@/src/Contexts/PatientSearchContext';
 import { useSyncPatientsUI } from '@/src/Hooks/useSyncPatientsUI';
 import { formatPatientDate } from '@/src/functions/helpers';
 import Patient from '@/src/models/Patient';
@@ -32,8 +33,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   onQRCodeScan
 }) => {
   const router = useRouter();
-  const [showSearchbar, setShowSearchbar] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { searchQuery, setSearchQuery, showSearchbar, setShowSearchbar } = usePatientSearch();
   const [isLoadingFetch, setIsLoadingFetch] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [showPatientScanner, setShowPatientScanner] = useState(false);
@@ -64,27 +64,50 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     }
   });
 
+  // Référence pour éviter les appels inutiles à l'API
+  const initialLoadDoneRef = useRef(false);
+  const lastSearchQueryRef = useRef(searchQuery);
+  
+  // Utiliser un effet de focus sans dépendance à fetchPatientsStable pour éviter les rendus infinis
   useFocusEffect(
     useCallback(() => {
-      const fetchPatients = async () => {
+      // Créer une fonction locale pour éviter les problèmes de dépendances
+      const loadData = async () => {
         setIsLoadingFetch(true);
         try {
           const p = await getAllOnTheLocalDbPatients();
           setPatients(p);
-          setFilteredPatients(p); // Mettre à jour filteredPatients avec les données récupérées
+          
+          // Appliquer la recherche si elle existe déjà
           if (searchQuery !== '') {
-            handleSearch(searchQuery);
+            const filteredPs = p.filter((patient) => {
+              const name = patient.id_patient.toLowerCase() + ' ' + patient.last_name.toLowerCase() + ' ' + patient.first_name.toLowerCase();
+              return name.includes(searchQuery.toLowerCase());
+            });
+            setFilteredPatients(filteredPs);
             setShowSearchbar(true);
+          } else {
+            setFilteredPatients(p);
           }
+          
+          // Mettre à jour les références
+          lastSearchQueryRef.current = searchQuery;
+          initialLoadDoneRef.current = true;
         } catch (error) {
           console.error('Erreur lors de la récupération des patients:', error);
         } finally {
           setIsLoadingFetch(false);
         }
       };
-
-      fetchPatients();
-    }, [])
+      
+      // Charger les données à chaque fois que la page est affichée
+      loadData();
+      
+      // Fonction de nettoyage
+      return () => {
+        // Annuler les requêtes en cours si nécessaire
+      };
+    }, [searchQuery])
   )
 
 
@@ -127,7 +150,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       onPress={() => onPatientPress(item.id_patient)}
     >
       <View style={styles.patientInfo}>
-        <Text style={styles.patientName}>{item.last_name.toUpperCase()} {item.first_name}</Text>
+        <Text style={styles.patientName}>{item.first_name} {item.last_name}</Text>
         <View style={styles.patientDetails}>
           <View style={styles.dateContainer}>
             <Text style={styles.dateText}>Date: {formatPatientDate(item.date_of_birth)}</Text>

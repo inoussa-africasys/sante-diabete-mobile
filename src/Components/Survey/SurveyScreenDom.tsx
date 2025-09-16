@@ -1,4 +1,6 @@
 "use dom";
+import React from "react";
+import "survey-core/i18n/french";
 import 'survey-core/survey-core.css';
 import { Model, Survey } from 'survey-react-ui';
 

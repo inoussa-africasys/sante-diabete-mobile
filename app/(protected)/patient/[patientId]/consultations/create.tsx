@@ -1,12 +1,18 @@
 import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { AlertModal, ConfirmDualModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
+import { useDiabetes } from '@/src/context/DiabetesContext';
+import { getUserName } from '@/src/functions/qrcodeFunctions';
 import useConsultation from "@/src/Hooks/useConsultation";
 import { useFiche } from "@/src/Hooks/useFiche";
 import { usePatient } from "@/src/Hooks/usePatient";
+import { ConsultationMapper } from '@/src/mappers/consultationMapper';
+import { PatientMapper } from '@/src/mappers/patientMapper';
 import Fiche from "@/src/models/Fiche";
 import Patient from "@/src/models/Patient";
-import { ConsultationFormData } from "@/src/types";
+import { ConsultationFormData, DiabeteType } from "@/src/types";
+import { generateUUID } from '@/src/utils/consultation';
+import { checkIfFicheIsAFicheAdministrativeByFicheName } from '@/src/utils/ficheAdmin';
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
@@ -35,11 +41,12 @@ export default function CreateConsultationScreen() {
   const [showAdminExistsModal, setShowAdminExistsModal] = useState<boolean>(false);
 
   const { getFicheById, error: getFicheError } = useFiche();
-  const { getPatientOnTheLocalDb, error: getPatientError } = usePatient();
-  const { createConsultationOnLocalDB } = useConsultation();
+  const { getPatientOnTheLocalDb, error: getPatientError, updatePatientOnTheLocalDb, associateFicheAdministrativeToPatient } = usePatient();
 
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [startDate, setStartDate] = useState<Date | null>(null);
+  const {diabetesType} = useDiabetes();
+  const { createConsultationOnLocalDB, getConsultationById } = useConsultation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,7 +66,7 @@ export default function CreateConsultationScreen() {
 
         // Si la fiche est administrative, vérifier si une fiche admin active existe déjà pour ce patient
         const isAdministrative = (ficheFetched as any)?.is_administrative === 1
-          || (ficheFetched?.name || '').toLowerCase().includes('administrative');
+          || await checkIfFicheIsAFicheAdministrativeByFicheName(ficheFetched?.name || '');
         if (isAdministrative && patientFetched) {
           try {
             const adminConsultation = await patientFetched.donneesAdministratives();
@@ -69,8 +76,9 @@ export default function CreateConsultationScreen() {
               setExistingAdminConsultationId(adminConsultation.id?.toString() || null);
               setShowAdminExistsModal(true);
             }
-          } catch (e) {
+          } catch (error) {
             // Pas bloquant: si la méthode n'existe pas ou renvoie une erreur, on laisse le garde-fou applicatif gérer
+            console.debug('Erreur non bloquante lors de la vérification de la fiche administrative:', error);
           }
         }
       } catch (e) {
@@ -102,7 +110,8 @@ export default function CreateConsultationScreen() {
     getCurrentLocation();
 
     fetchData();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ficheId, patientId]);
 
 
   const handleCompletSurveyForm = async (data: any) => {
@@ -112,17 +121,70 @@ export default function CreateConsultationScreen() {
       return;
     }
     const endDate = new Date();
-    data.date_consultation = endDate;
-    data.start = startDate;
-    data.end = endDate;
+    const uuid = generateUUID();
+    const dataWithMetaData = ConsultationMapper.addMetaData({
+      data,
+      startDate : startDate || new Date(),
+      endDate,
+      lon : location.coords.longitude.toString(),
+      uuid : uuid,
+      instanceID : uuid,
+      formName : fiche?.name || "",
+      traficIdentifiant : patient?.id_patient || "",
+      traficUtilisateur : await getUserName(diabetesType as DiabeteType) || "",
+      form_name : fiche?.name || "",
+      lat : location.coords.latitude.toString(),
+      id_patient : patientId
+    })
 
     const consultation : ConsultationFormData = {
-      data : JSON.stringify(data),  
+      data : dataWithMetaData,  
       id_fiche : ficheId,
     }
-    await createConsultationOnLocalDB(consultation,patientId,location.coords);
-    setShowSuccessModal(true);
-    //router.push(`/patient/${patientId}`);
+    
+    try {
+      // Créer la consultation
+      const consultationCreated = await createConsultationOnLocalDB(consultation, patientId, location.coords);
+      const isFicheAdministrative = (fiche as any)?.is_administrative === 1 || await checkIfFicheIsAFicheAdministrativeByFicheName(fiche?.name || '');
+      
+      if (isFicheAdministrative) {
+        if (consultationCreated && consultationCreated.id) {
+          const consultationUpdated = await getConsultationById(consultationCreated.id.toString());
+          if (!consultationUpdated) {
+            throw new Error('Consultation avec l\'ID ' + consultationCreated.id.toString() + ' n\'a pas pu etre mise à jour');
+          }
+          
+          // Associer la fiche administrative au patient
+          const result = await associateFicheAdministrativeToPatient(patient?.id_patient || '', consultationUpdated);
+          if (!result) {
+            throw new Error('Impossible d\'associer la fiche administrative au patient');
+          }
+          
+          // Mettre à jour les informations du patient avec les données de la fiche administrative
+          if (patient) {
+            try {
+              // Convertir les données de la fiche administrative en données de patient
+              const patientFormData = PatientMapper.ficheAdminToFormPatient(data, consultationUpdated.ficheName);
+              
+              // Mettre à jour le patient avec les nouvelles données
+              await updatePatientOnTheLocalDb(patient.id_patient, patientFormData);
+              console.log(`✅ Patient ${patient.id_patient} mis à jour avec les données de la fiche administrative`);
+            } catch (error) {
+              console.error('Erreur lors de la mise à jour des informations du patient:', error);
+              // Ne pas bloquer la création de la consultation si la mise à jour du patient échoue
+            }
+          }
+        } else {
+          throw new Error('Impossible d\'enregistrer la fiche administrative');
+        }
+      }
+      
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Erreur lors de la création de la consultation:', error);
+      setErrorMsg(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      setShowGpsErrorModal(true); // Réutilisation de la modal pour afficher l'erreur
+    }
   };
 
 
@@ -206,7 +268,7 @@ export default function CreateConsultationScreen() {
         message="La consultation a été créée avec succès."
         onClose={() => {
           setShowSuccessModal(false);
-          router.back();
+          router.replace(`/patient/${patientId}`);
         }}
       />
       <ConfirmDualModal

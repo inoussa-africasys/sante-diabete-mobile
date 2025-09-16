@@ -2,11 +2,16 @@ import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import FicheDoesntExist from '@/src/Components/FicheDoesntExist';
 import { AlertModal, ConfirmDualModal, LoadingModal } from '@/src/Components/Modal';
 import SurveyScreenDom from '@/src/Components/Survey/SurveyScreenDom';
+import { useDiabetes } from '@/src/context/DiabetesContext';
 import { getLastElement } from '@/src/functions/helpers';
+import { getUserName } from '@/src/functions/qrcodeFunctions';
 import useConsultation from '@/src/Hooks/useConsultation';
 import { usePatient } from '@/src/Hooks/usePatient';
+import { ConsultationMapper } from '@/src/mappers/consultationMapper';
 import { PatientMapper } from '@/src/mappers/patientMapper';
+import { DiabeteType } from '@/src/types';
 import { ConsultationFormData, FicheAdministrativeFormData, PatientFormData } from '@/src/types/patient';
+import { generateUUID, traficConstultationDateFormat } from '@/src/utils/consultation';
 import Logger from '@/src/utils/Logger';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -14,7 +19,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 
 export default function NouveauPatientScreen() {
   const router = useRouter();
@@ -48,6 +52,8 @@ export default function NouveauPatientScreen() {
   const [simpleAlert, setSimpleAlert] = useState<{ visible: boolean; title: string; message: string; type: 'error' | 'warning' | 'success'; onClose: (() => void) | null }>({ visible: false, title: '', message: '', type: 'error', onClose: null });
   const [simpleAlertOnClose, setSimpleAlertOnClose] = useState<(() => void) | null>(null);
   const [showNoAdminFicheModal, setShowNoAdminFicheModal] = useState<boolean>(false);
+
+  const { diabetesType } = useDiabetes();
 
   useEffect(() => {
     (async () => {
@@ -124,23 +130,56 @@ export default function NouveauPatientScreen() {
         if (!patient) {
           throw new Error('Patient avec l\'ID ' + patientId + ' est introuvable ');
         }
-        const endDate = new Date();
-        data.date_consultation = endDate;
-        data.start = startDate;
-        data.end = endDate;
-        const consultationFormData: ConsultationFormData = {
-          data: JSON.stringify(data),
-          id_fiche: ficheAdministrative?.id?.toString() || ''
-        }
+
         const consultation = await patient.ficheAdministrative();
         if (!consultation || !consultation.id) {
           throw new Error('Le patient avec l\'ID ' + patientId + ' n\'a pas de fiche administrative');
         }
+
+        const endDate = new Date();
+        data.date_consultation = traficConstultationDateFormat(endDate);
+
+        const location = await getCurrentLocation();
+        // Utiliser les valeurs existantes ou des valeurs par défaut
+        const uuid = generateUUID();
+
+        // Éviter de parser plusieurs fois les mêmes données JSON
+        let parsedData;
+        try {
+          parsedData = JSON.parse(consultation.data);
+        } catch (e) {
+          console.error("Erreur lors du parsing des données de consultation:", e);
+          parsedData = {};
+        }
+
+        const dataWithMetaData = ConsultationMapper.addMetaData({
+          data,
+          startDate: parsedData.startDate || startDate || new Date(),
+          endDate: parsedData.endDate || endDate,
+          lon: location?.coords.longitude?.toString() || "",
+          uuid: consultation.uuid || uuid,
+          instanceID: consultation.uuid || uuid,
+          formName: ficheAdministrative?.name || "",
+          traficIdentifiant: patient?.id_patient || "",
+          traficUtilisateur: await getUserName(diabetesType as DiabeteType) || "",
+          form_name: ficheAdministrative?.name || "",
+          lat: location?.coords.latitude?.toString() || "",
+          id_patient: patientId as string || ""
+        });
+
+        const consultationFormData: ConsultationFormData = {
+          data: JSON.stringify(dataWithMetaData),
+          id_fiche: ficheAdministrative?.id?.toString() || ''
+        };
+
+
+
         const patientFormData = PatientMapper.ficheAdminToFormPatient(data, consultation.ficheName);
         const patientUpdatedResult = await updatePatientOnTheLocalDb(patient.id_patient, patientFormData);
         if (!patientUpdatedResult) {
           throw new Error('Le patient avec l\'ID ' + patientId + ' n\'a pas pu etre mis à jour ');
         }
+
         const consultationUpdatedResult = await updateConsultationByIdOnLocalDB(consultation.id.toString(), consultationFormData);
         if (!consultationUpdatedResult) {
           throw new Error('La consultation avec l\'ID ' + consultation.id.toString() + ' n\'a pas pu etre mise à jour');
@@ -204,12 +243,25 @@ export default function NouveauPatientScreen() {
     }
 
     const endDate = new Date();
-    data.date_consultation = endDate;
-    data.start = startDate;
-    data.end = endDate;
+    const uuid = generateUUID();
+
+    const consultationData = ConsultationMapper.addMetaData({
+      data,
+      startDate: startDate || new Date(),
+      endDate,
+      lon: "",
+      uuid: uuid,
+      instanceID: uuid,
+      formName: ficheAdministrative?.name || "",
+      traficIdentifiant: patientCreated.id_patient || "",
+      traficUtilisateur: await getUserName(diabetesType as DiabeteType) || "",
+      form_name: ficheAdministrative?.name || "",
+      lat: "",
+      id_patient: patientCreated.id_patient
+    })
 
     const consultationFormData: ConsultationFormData = {
-      data: JSON.stringify(data),
+      data: consultationData,
       id_fiche: ficheAdministrative?.id?.toString() || ''
     }
     const coordinates = await getCurrentLocation();
@@ -267,7 +319,6 @@ export default function NouveauPatientScreen() {
       <View style={styles.container}>
         <FicheDoesntExist
           ficheName={ficheAdministrativeName ?? ""}
-          gotBack={() => router.back()}
           text="La creation d'un patient nécessite que vous téléchargez au moins une fiche administrative"
         />
       </View>
@@ -313,7 +364,7 @@ export default function NouveauPatientScreen() {
         ) : (
           <FicheDoesntExist
             ficheName={ficheAdministrativeName ?? ""}
-            gotBack={() => router.back()}
+            noBackButton={true}
             text="La creation du patient nécessite que vous téléchargez une fiche administrative : "
           />
         )
@@ -332,6 +383,7 @@ export default function NouveauPatientScreen() {
           customIcon={<Ionicons name="checkmark-circle-outline" size={76} color="#4CAF50" />}
           onClose={() => {
             setIsOpenSuccessModal(false);
+            // Utiliser router.replace pour forcer un rechargement complet de la page
             router.replace('/liste-patient');
           }}
           isVisible={isOpenSuccessModal}

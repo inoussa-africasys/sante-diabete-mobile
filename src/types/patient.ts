@@ -14,7 +14,7 @@ export interface PatientFormData {
 
 
 export interface ConsultationFormData {
-  data: string;
+  data: any;
   id_fiche: string;
 }
 

@@ -33,6 +33,10 @@ export function getAuthBaseUrlKey(DiabeteType: DiabeteType): string {
   return `auth_base_url_${DiabeteType.toLowerCase()}`;
 }
 
+export async function getUserName(DiabeteType: DiabeteType): Promise<string | null> {
+  return await SecureStore.getItemAsync(getUserNameKey(DiabeteType));
+}
+
 export async function getBaseUrl(DiabeteType: DiabeteType): Promise<string | null> {
     /* const repo = new QRCodeRepository();
     const qrCode = await repo.findAll();

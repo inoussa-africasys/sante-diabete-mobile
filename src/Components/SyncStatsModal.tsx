@@ -1,6 +1,7 @@
 import { APP_GREEN } from '@/src/Constants/Colors';
 import React from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import useConfigStore from '../core/zustand/configStore';
 import { SyncPatientReturnType } from '../types/patient';
 
 export interface SyncStatsModalProps {
@@ -10,6 +11,8 @@ export interface SyncStatsModalProps {
 }
 
 export const SyncStatsModal: React.FC<SyncStatsModalProps> = ({ visible, stats, onClose }) => {
+
+    const {debugMode} = useConfigStore()
     return (
         <Modal
             visible={visible}
@@ -19,8 +22,8 @@ export const SyncStatsModal: React.FC<SyncStatsModalProps> = ({ visible, stats, 
         >
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
-                    <Text style={[styles.modalTitle,stats?.success ? styles.successTitle : styles.errorTitle]}>
-                        {stats?.success ? 'Synchronisation réussie' : 'Synchronisation terminée avec des erreurs'}
+                    <Text style={[styles.modalTitle, styles.successTitle ]}>
+                        Synchronisation réussie
                     </Text>
 
                     <ScrollView style={styles.statsScrollView}>
@@ -85,18 +88,26 @@ export const SyncStatsModal: React.FC<SyncStatsModalProps> = ({ visible, stats, 
                                 </View>
                             )}
 
-                            {stats?.statistics?.syncPictures && (
+{/*                             {stats?.statistics?.syncPictures && (
                                 <View style={styles.statItem}>
                                     <Text style={styles.statLabel}>Images synchronisées</Text>
                                     <Text style={styles.statValue}>
                                         {stats.statistics.syncPictures.success}/{stats.statistics.syncPictures.total}
                                     </Text>
                                 </View>
+                            )} */}
+                             { (
+                                <View style={styles.statItem}>
+                                    <Text style={styles.statLabel}>Traces techniques</Text>
+                                    <Text style={styles.statValue}>
+                                        {stats?.errors?.length || 0}
+                                    </Text>
+                                </View>
                             )}
                         </View>
 
                         {/* Erreurs */}
-                        {!!stats?.errors?.length && stats.errors.length > 0 && (
+                        { debugMode && !!stats?.errors?.length && stats.errors.length > 0 && (
                             <View style={styles.errorsSection}>
                                 <Text style={styles.errorsSectionTitle}>Erreurs rencontrées</Text>
                                 {stats.errors.map((error, index) => (

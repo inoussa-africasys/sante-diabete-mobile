@@ -36,11 +36,12 @@ export default class ConsultationService extends Service {
       consultationToCreate.synced = false;
       consultationToCreate.longitude = coordinates.longitude;
       consultationToCreate.latitude = coordinates.latitude;
-      consultationToCreate.uuid = generateUUID();
+      consultationToCreate.uuid = consultation.data.uuid || generateUUID();
       consultationToCreate.createdBy = this.getConnectedUsername();
       consultationToCreate.createdAt = new Date().toISOString();
       consultationToCreate.updatedAt = new Date().toISOString();
       consultationToCreate.date = new Date().toISOString();
+      consultationToCreate.data = JSON.stringify(consultation.data);
 
       // Garde-fou: empêcher plusieurs fiches administratives pour un même patient
       if (await consultationToCreate.isFicheAdministrative()) {
@@ -63,6 +64,27 @@ export default class ConsultationService extends Service {
         throw new Error('L\'id de la consultation locale n\'a pas pu etre recupere');
       }
       await this.consultationRepository.update(consultationCreated.id, consultationCreated);
+      
+      // Si c'est une fiche administrative, mettre à jour le patient pour définir cette fiche comme sa fiche administrative
+      if (await consultationCreated.isFicheAdministrative()) {
+        try {
+          // Récupérer le patient
+          const patient = await this.patientRepository.findByPatientId(patientId);
+          if (patient && (!patient.fiche_administrative_name || patient.fiche_administrative_name.trim() === '')) {
+            // Mettre à jour le patient avec le nom de la fiche administrative
+            patient.fiche_administrative_name = consultationCreated.ficheName;
+            if (patient.id) {
+              await this.patientRepository.update(patient.id, patient);
+              console.log(`✅ Patient ${patientId} mis à jour avec la fiche administrative ${consultationCreated.ficheName}`);
+            }
+          }
+        } catch (error) {
+          console.error('Erreur lors de la mise à jour du patient avec la fiche administrative :', error);
+          Logger.log('error', 'Error updating patient with administrative file', { error });
+          // Ne pas bloquer la création de la consultation si la mise à jour du patient échoue
+        }
+      }
+      
       return consultationCreated;
     } catch (error) {
       console.error('Erreur de creation de la consultation locale :', error);
@@ -199,13 +221,34 @@ export default class ConsultationService extends Service {
       await this.consultationRepository.update(consultationId, consultationToCreate);
 
       if (await consultationToCreate.isFicheAdministrative()) {
-        console.log("start update Patient");
+        console.log("start update Patient fiche admin");
         const patientService = await PatientService.create();
-        console.log("consultationToCreate", consultationToCreate.data);
-        const patientData: FicheAdministrativeFormData = consultationToCreate.data as unknown as FicheAdministrativeFormData;
+        const patientData: FicheAdministrativeFormData = JSON.parse(consultationToCreate.data) as unknown as FicheAdministrativeFormData;
         const patientData2 = PatientMapper.ficheAdminToFormPatient(patientData, consultationToCreate.ficheName);
-        console.log("end update Patient");
+        
+        // S'assurer que cette fiche administrative est définie comme la fiche principale du patient
+        patientData2.fiche_administrative_name = consultationToCreate.ficheName;
+        
+        console.log("end update Patient fiche admin");
         await patientService.updateOnTheLocalDb(consultationToCreate.id_patient, patientData2);
+        
+        // Vérifier également si le patient a besoin d'être mis à jour directement dans la base de données
+        try {
+          const patient = await this.patientRepository.findByPatientId(consultationToCreate.id_patient);
+          if (patient && (!patient.fiche_administrative_name || patient.fiche_administrative_name.trim() === '' || 
+              patient.fiche_administrative_name !== consultationToCreate.ficheName)) {
+            // Mettre à jour le patient avec le nom de la fiche administrative
+            patient.fiche_administrative_name = consultationToCreate.ficheName;
+            if (patient.id) {
+              await this.patientRepository.update(patient.id, patient);
+              console.log(`✅ Patient ${consultationToCreate.id_patient} mis à jour avec la fiche administrative ${consultationToCreate.ficheName}`);
+            }
+          }
+        } catch (error) {
+          console.error('Erreur lors de la mise à jour du patient avec la fiche administrative :', error);
+          Logger.log('error', 'Error updating patient with administrative file', { error });
+          // Ne pas bloquer la mise à jour de la consultation si la mise à jour du patient échoue
+        }
       }
 
       // Ensuite mettre à jour le fichier JSON
@@ -358,6 +401,29 @@ export default class ConsultationService extends Service {
         throw new Error('L\'id de la consultation locale n\'a pas pu etre recupere');
       }
       await this.consultationRepository.update(consultationCreated.id, consultationCreated);
+      
+      // Si c'est une fiche administrative, mettre à jour le patient pour définir cette fiche comme sa fiche administrative
+      if (await consultationCreated.isFicheAdministrative()) {
+        const pid = consultationCreated.id_patient;
+        if (pid && pid.trim() !== '') {
+          try {
+            // Récupérer le patient
+            const patient = await this.patientRepository.findByPatientId(pid);
+            if (patient && (!patient.fiche_administrative_name || patient.fiche_administrative_name.trim() === '')) {
+              // Mettre à jour le patient avec le nom de la fiche administrative
+              patient.fiche_administrative_name = consultationCreated.ficheName;
+              if (patient.id) {
+                await this.patientRepository.update(patient.id, patient);
+                console.log(`✅ Patient ${pid} mis à jour avec la fiche administrative ${consultationCreated.ficheName}`);
+              }
+            }
+          } catch (error) {
+            console.error('Erreur lors de la mise à jour du patient avec la fiche administrative :', error);
+            Logger.log('error', 'Error updating patient with administrative file', { error });
+            // Ne pas bloquer la création de la consultation si la mise à jour du patient échoue
+          }
+        }
+      }
 
       return consultationCreated;
     } catch (error) {

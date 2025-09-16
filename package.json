@@ -40,6 +40,7 @@
     "expo-location": "18.1.6",
     "expo-network": "~7.1.5",
     "expo-router": "5.1.4",
+    "expo-screen-orientation": "~8.1.7",
     "expo-secure-store": "~14.2.3",
     "expo-sharing": "~13.1.5",
     "expo-splash-screen": "0.30.10",
@@ -57,15 +58,14 @@
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "4.11.1",
+    "react-native-svg": "15.11.2",
     "react-native-uuid": "^2.0.3",
     "react-native-web": "^0.20.0",
     "react-native-webview": "13.13.5",
     "react-native-zip-archive": "^7.0.2",
     "survey-react-ui": "^2.2.1",
     "tailwindcss": "3.4.17",
-    "zustand": "^5.0.6",
-    "react-native-svg": "15.11.2",
-    "expo-screen-orientation": "~8.1.7"
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

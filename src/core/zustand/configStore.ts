@@ -27,6 +27,7 @@ interface ConfigState {
 
     // Période de synchronisation (en jours)
     syncPeriodDays: number;
+    fullSync : boolean;
 
     // Fonctions
     toggle: (key: ToggleKeys) => void;
@@ -50,7 +51,8 @@ type ToggleKeys =
     | 'showMedication'
     | 'showSyncButton'
     | 'showFicheRemplieButton'
-    | 'showFicheEditerButton';
+    | 'showFicheEditerButton'
+    | 'fullSync';
 
 type ConfigKeys = keyof Omit<ConfigState, 'toggle' | 'setValue' | 'getValue'>;
 
@@ -78,12 +80,11 @@ const useConfigStore = create<ConfigState>()(
             
             
 
-            timer1: 30,
-            timer2: 60,
-            timer3: 90,
-
-            // Par défaut: 30 jours
-            syncPeriodDays: 30,
+            timer1: 0,
+            timer2: 0,
+            timer3: 0,
+            syncPeriodDays: 7,
+            fullSync : false,
 
             toggle: (key) => set((state) => ({ [key]: !state[key] })),
             setValue: (key, value) => set(() => ({ [key]: value })),

@@ -12,9 +12,18 @@ import { AlertModal, ConfirmModal, LoadingModal } from './Modal';
 interface FicheDoesntExistProps {
     ficheName: string;
     text?: string;
+    noBackButton?: boolean;
 }
 
-const FicheDoesntExist = ({ ficheName, text }: FicheDoesntExistProps) => {
+const BtnBack = ({onPress}: {onPress: () => void}) => {
+    return (
+        <TouchableOpacity onPress={onPress} style={styles.btnBack}>
+            <Ionicons name="arrow-back" size={32} color="white" />
+        </TouchableOpacity>
+    )
+}
+
+const FicheDoesntExist = ({ ficheName, text, noBackButton = false }: FicheDoesntExistProps) => {
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [errorDetail, setErrorDetail] = useState<string | null>(null);
@@ -62,8 +71,8 @@ const FicheDoesntExist = ({ ficheName, text }: FicheDoesntExistProps) => {
                 <StatusBar barStyle="light-content" />
                 <Ionicons name="document-text-outline" size={150} color="gray" />
                 <Text style={styles.errorText}>{text || "La lecture de cette consultation nécessite que vous téléchargez la fiche vierge correspondante"}</Text>
-                <TouchableOpacity onPress={handleGoToTelechargerFichePage} style={styles.btnBack}>
-                    <Text style={styles.btnBackText}>Telecharger</Text>
+                <TouchableOpacity onPress={handleGoToTelechargerFichePage} style={styles.btnDownload}>
+                    <Text style={styles.btnDownloadText}>Telecharger</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -72,11 +81,12 @@ const FicheDoesntExist = ({ ficheName, text }: FicheDoesntExistProps) => {
         <>
             <View style={[styles.container, styles.centerContent]}>
                 <StatusBar barStyle="light-content" />
+                {noBackButton ? null : <BtnBack onPress={() => router.back()} />}
                 <Ionicons name="document-text-outline" size={150} color="gray" />
                 <Text style={styles.errorText}>{text || "La lecture de cette consultation nécessite que vous téléchargez la fiche vierge"}</Text>
                 <Text style={styles.errorTextFicheName}>{ficheName}</Text>
-                <TouchableOpacity onPress={handleTelechargerFicheExistant} style={styles.btnBack}>
-                    <Text style={styles.btnBackText}>Telecharger</Text>
+                <TouchableOpacity onPress={handleTelechargerFicheExistant} style={styles.btnDownload}>
+                    <Text style={styles.btnDownloadText}>Telecharger</Text>
                 </TouchableOpacity>
             </View>
             <ConfirmModal
@@ -212,7 +222,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: 'bold',
     },
-    btnBack: {
+    btnDownload: {
         marginTop: 16,
         flexDirection: 'row',
         alignItems: 'center',
@@ -230,7 +240,16 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4
     },
-    btnBackText: {
+    btnBack: {
+        position: 'absolute',
+        top: 60,
+        left: 20,
+        zIndex: 10,
+        backgroundColor: "#00000066",
+        padding: 10,
+        borderRadius: 66666,
+    },
+    btnDownloadText: {
         fontSize: 16,
         color: '#fff',
         fontWeight: 'bold',

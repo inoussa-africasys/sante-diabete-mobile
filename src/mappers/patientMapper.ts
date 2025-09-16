@@ -19,8 +19,8 @@ export class PatientMapper {
 
   static toPatient(patientFormData: PatientFormData): Patient {
     const patient = new Patient();
-    patient.last_name = patientFormData.nom;
-    patient.first_name = patientFormData.prenom;
+    patient.last_name = patientFormData.prenom;
+    patient.first_name = patientFormData.nom;
     patient.date_of_birth = patientFormData.dateNaissance?.toISOString() || '';
     patient.genre = patientFormData.genre;
     patient.profession = patientFormData.profession;

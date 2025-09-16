@@ -35,7 +35,6 @@ export default class TraficAssistantService {
 
             const zipUri = await zipDirectory();
             console.log("✅ Fichiers patients zippés :", zipUri);
-
             // Partager
             // await shareViaWhatsApp(zipUri);
 
@@ -58,7 +57,8 @@ export default class TraficAssistantService {
             const base64Zip = await getZipFileAsBase64(zipUri);
             if(!base64Zip) {
                 console.error("❌ Erreur lors de la lecture du fichier ZIP en base64 :", zipUri);
-                return;
+                Logger.log('error', 'Erreur lors de la lecture du fichier ZIP en base64', { error: '❌ Erreur lors de la lecture du fichier ZIP en base64' });
+                throw new Error('❌ Erreur lors de la lecture du fichier ZIP en base64');
             }
             try {
                 const baseUrl = await getBaseUrl();
@@ -74,10 +74,15 @@ export default class TraficAssistantService {
                 if(response.status === 200) {
                     console.log("✅ Fichier ZIP envoyé au backend :", {status : response.status, statusText : response.statusText});
                     Logger.info("✅ Fichier ZIP envoyé au backend :", {status : response.status, statusText : response.statusText});
+                } else {
+                    console.log("❌ Erreur lors de l'envoi du fichier ZIP au backend :", {status : response.status, statusText : response.statusText});
+                    Logger.error("❌ Erreur lors de l'envoi du fichier ZIP au backend :", {status : response.status, statusText : response.statusText});
+                    throw new Error("Erreur lors de l'envoi du fichier ZIP au backend :" + response.status + " " + response.statusText);
                 }
             } catch (error) {
                 Logger.log('error', 'Erreur lors de l\'envoi du fichier ZIP au backend', { error });
-                console.error("❌ Erreur lors de l'envoi du fichier ZIP au backend :", error);
+                console.error("Erreur lors de l'envoi du fichier ZIP au backend :", error);
+                throw new Error("Erreur lors de l'envoi du fichier ZIP au backend :" + error);
             }
         } catch (error) {
             Logger.log('error', 'Erreur lors du partage du fichier ZIP', { error });

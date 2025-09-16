@@ -44,6 +44,7 @@ export const useFiche = (): UseFicheType => {
       return fiche;
     } catch (error) {
       console.error('Erreur réseau :', error);
+      Logger.log('error', 'Error downloading fiche', { error });
       setError(error as string);
       setIsLoading(false);
       return null;

@@ -1,6 +1,9 @@
-import { useState, useCallback } from 'react';
-import { usePatient } from './usePatient';
+import { useQuery } from '@tanstack/react-query';
+import { useNetworkState } from 'expo-network';
+import { useCallback, useState } from 'react';
+import FicheService from '../Services/ficheService';
 import { SyncPatientReturnType } from '../types/patient';
+import { usePatient } from './usePatient';
 
 export type UseSyncPatientsUIOptions = {
   onAfterSuccess?: (stats: SyncPatientReturnType) => Promise<void> | void;
@@ -25,6 +28,21 @@ export const useSyncPatientsUI = (options?: UseSyncPatientsUIOptions): UseSyncPa
   const [isSyncError, setIsSyncError] = useState(false);
   const [syncStats, setSyncStats] = useState<SyncPatientReturnType | null>(null);
   const [showSyncStats, setShowSyncStats] = useState(false);
+
+    const networkState = useNetworkState();
+
+  const { data: fiches, isLoading: isLoadingFiches, error: errorFiches } = useQuery({
+    queryKey: ['fiches'],
+    queryFn: async () => {
+      const fichesService = await FicheService.create();
+      const fichesArrayString = await fichesService.fetchAllFichesOnServerQuery();
+      await fichesService.insertAllFichesOnTheLocalDb(fichesArrayString);
+      return fichesArrayString;
+    },
+    enabled: networkState.isConnected === true,
+    retry: 2,
+
+  });
 
   const handleSync = useCallback(async () => {
     setIsSyncing(true);

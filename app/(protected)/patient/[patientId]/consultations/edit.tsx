@@ -1,14 +1,18 @@
 import DiabetesTypeBadge from '@/src/Components/DiabetesTypeBadge';
 import { AlertModal } from "@/src/Components/Modal";
 import SurveyScreenDom from "@/src/Components/Survey/SurveyScreenDom";
+import { useDiabetes } from '@/src/context/DiabetesContext';
 import { parseSurveyData } from "@/src/functions/helpers";
+import { getUserName } from '@/src/functions/qrcodeFunctions';
 import useConsultation from "@/src/Hooks/useConsultation";
 import { useFiche } from "@/src/Hooks/useFiche";
 import { usePatient } from "@/src/Hooks/usePatient";
+import { ConsultationMapper } from '@/src/mappers/consultationMapper';
 import { Consultation } from "@/src/models/Consultation";
 import Fiche from "@/src/models/Fiche";
 import Patient from "@/src/models/Patient";
-import { ConsultationFormData } from "@/src/types";
+import { ConsultationFormData, DiabeteType } from "@/src/types";
+import { generateUUID, traficConstultationDateFormat } from '@/src/utils/consultation';
 import Logger from '@/src/utils/Logger';
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -33,6 +37,8 @@ export default function EditConsultationScreen() {
   const { getFicheByName } = useFiche();
   const { updateConsultationByIdOnLocalDB } = useConsultation();
   const [startDate, setStartDate] = useState<Date | null>(null);
+
+  const {diabetesType} = useDiabetes();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,25 +72,61 @@ export default function EditConsultationScreen() {
 
 
   const handleSurveyComplete = async (data: any) => {
-    setLoading(true);
-    if (!consultation) {
+    try {
+      setLoading(true);
+      if (!consultation) {
+        setError("La consultation n'a pas été trouvée");
+        return;
+      }
+      
+      // Utiliser les valeurs existantes ou des valeurs par défaut
+      const endDate = new Date();
+      data.date_consultation = traficConstultationDateFormat(endDate);
+      const uuid = consultation.uuid || generateUUID();
+      
+      // Éviter de parser plusieurs fois les mêmes données JSON
+      let parsedData;
+      try {
+        parsedData = JSON.parse(consultation.data);
+      } catch (e) {
+        console.error("Erreur lors du parsing des données de consultation:", e);
+        parsedData = {};
+      }
+      
+      const dataWithMetaData = ConsultationMapper.addMetaData({
+        data,
+        startDate: parsedData.startDate || startDate || new Date(),
+        endDate: parsedData.endDate || endDate,
+        lon: consultation.longitude?.toString() || "",
+        uuid: uuid,
+        instanceID: uuid,
+        formName: fiche?.name || "",
+        traficIdentifiant: patient?.id_patient || "",
+        traficUtilisateur: consultation.createdBy || await getUserName(diabetesType as DiabeteType) || "",
+        form_name: fiche?.name || "",
+        lat: consultation.latitude?.toString() || "",
+        id_patient: patientId
+      });
+      
+      const consultationFormData: ConsultationFormData = { 
+        data: JSON.stringify(dataWithMetaData), 
+        id_fiche: consultation.id_fiche 
+      };
+      
+      const result = await updateConsultationByIdOnLocalDB(consultationId, consultationFormData);
+      
+      if (result) {
+        setShowSuccessModal(true);
+      } else {
+        setError("Une erreur est survenue lors de la mise à jour de la consultation");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de la consultation:", error);
+      Logger.error("Erreur lors de la mise à jour de la consultation:", error as Error);
+      setError("Une erreur inattendue est survenue: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
       setLoading(false);
-      setError("La consultation n'a pas été trouvée");
-      return;
     }
-    const endDate = new Date();
-    data.date_consultation = endDate;
-    data.start = startDate;
-    data.end = endDate;
-    const consultationFormData: ConsultationFormData = { data: data, id_fiche: consultation.id_fiche };
-    const result = await updateConsultationByIdOnLocalDB(consultationId, consultationFormData);
-    if (result) {
-      setLoading(false);
-      setShowSuccessModal(true);
-      return;
-    }
-    setError("Une erreur est survenue lors de la mise à jour de la consultation");
-    setLoading(false);
   };
 
 

@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import uuid from 'react-native-uuid';
 import config from '../Config';
 import { API_HEADER, APP_VERSION, PATH_OF_PATIENTS_DIR_ON_THE_LOCAL } from '../Constants/App';
+import useConfigStore from '../core/zustand/configStore';
 import { getDiabetesType } from '../functions/auth';
 import { getLastSyncDate, setLastSyncDate } from '../functions/syncHelpers';
 import { ConsultationMapper } from '../mappers/consultationMapper';
@@ -14,14 +15,19 @@ import { PatientRepository } from '../Repositories/PatientRepository';
 import { ConsultationSyncError, PatientDeletedSyncError, PatientFormData, PatientSyncDataResponseOfGetAllMedicalDataServer, PatientUpdatedSyncError, SyncOnlyOnTraitementReturnType, SyncPatientReturnType, SyncPatientsAndConsultationsReturnType } from '../types';
 import { generateConsultationName, generateFicheAdministrativeNameForJsonSave } from '../utils/consultation';
 import Logger from '../utils/Logger';
+import { sleep } from '../utils/sleep';
 import { sendTraficAuditEvent } from '../utils/traficAudit';
 import { TraficFolder } from '../utils/TraficFolder';
-import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
+import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_FULL_FAILDED, SYNCHRO_FULL_SUCCESS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
 import Service from "./core/Service";
+import FullSyncService from './fullSyncService';
 
 export default class PatientService extends Service {
   private patientRepository: PatientRepository;
   private consultationRepository: ConsultationRepository;
+  private timer1 = useConfigStore.getState().timer1
+  private timer2 = useConfigStore.getState().timer2
+  private timer3 = useConfigStore.getState().timer3
 
 
   constructor() {
@@ -373,6 +379,7 @@ export default class PatientService extends Service {
           errors.push(...sendCreatedConsultationsResult.errors);
         }
       }
+      await sleep(1000*this.timer1)
 
       // Récupérer tous les patients du serveur
       const getAllPatientResult = await this.getAllPatientOnServer();
@@ -386,6 +393,8 @@ export default class PatientService extends Service {
         }
       }
 
+      await sleep(1000*this.timer2)
+
       // Récupérer tous les patients supprimés du serveur
       const getAllDeletedPatientResult = await this.getAllDeletedPatientOnServer();
       console.log("Patients supprimés synchronisés on the server:", getAllDeletedPatientResult.success);
@@ -397,6 +406,8 @@ export default class PatientService extends Service {
           errors.push(...getAllDeletedPatientResult.errors);
         }
       }
+
+      await sleep(1000 * this.timer3)
 
       // Synchroniser les images si activé
       let syncPicturesResult: SyncOnlyOnTraitementReturnType = {
@@ -418,9 +429,8 @@ export default class PatientService extends Service {
         }
       }
 
-      if (errors.length === 0) {
-        await setLastSyncDate(new Date().toISOString());
-      }
+     
+      await setLastSyncDate(new Date().toISOString());
 
       Logger.info("Patients synchronisés");
       console.log("Patients synchronisés");
@@ -428,7 +438,7 @@ export default class PatientService extends Service {
       // Créer l'objet de retour avec toutes les statistiques
       const result: SyncPatientReturnType = {
         success: errors.length === 0,
-        message: errors.length === 0 ? "Synchronisation effectuée avec succès" : "Synchronisation terminée avec des erreurs",
+        message:  "Synchronisation effectuée avec succès",
         errors: errors.length > 0 ? errors : undefined,
         statistics: {
           syncDeletedPatients: syncDeletedPatientsResult.statistics,
@@ -440,6 +450,18 @@ export default class PatientService extends Service {
           syncPictures: syncPicturesResult.statistics
         }
       };
+
+      if (errors.length === 0) {
+        await sendTraficAuditEvent(SYNCHRO_FULL_SUCCESS, `Synchronisation des patients effectuée avec succès ==> ${JSON.stringify(result)}`);
+      } else{
+        await sendTraficAuditEvent(SYNCHRO_FULL_FAILDED, `Synchronisation des patients echouée ==> ${JSON.stringify({
+          success: false,
+          message: "Erreur lors de la synchronisation des patients",
+          errors: errors,
+          statistics: result.statistics
+        })}`);
+      }
+
 
       return result;
     } catch (error) {
@@ -462,6 +484,15 @@ export default class PatientService extends Service {
       };
     }
   }
+
+
+
+  async fullSyncPatients(): Promise<SyncPatientReturnType> {
+      const fullSyncService = await FullSyncService.create();
+      return await fullSyncService.fullSyncPatients();
+  }
+
+
 
   private async syncDeletedPatients(): Promise<SyncOnlyOnTraitementReturnType> {
     try {
@@ -921,7 +952,7 @@ export default class PatientService extends Service {
    * Sauvegarde tous les patients et leurs consultations en fichiers JSON en tâche de fond
    * @param patients Liste des patients à sauvegarder
    */
-  private async saveAllPatientsAndConsultationsAsJson(patients: PatientSyncDataResponseOfGetAllMedicalDataServer[]): Promise<void> {
+  public async saveAllPatientsAndConsultationsAsJson(patients: PatientSyncDataResponseOfGetAllMedicalDataServer[]): Promise<void> {
     try {
       console.log(`🔄 Début de la sauvegarde de ${patients.length} patients et leurs consultations en JSON...`);
 
@@ -964,22 +995,24 @@ export default class PatientService extends Service {
    * Sauvegarde une consultation en fichier JSON en arrière-plan
    * @param consultation Consultation à sauvegarder
    */
-  private async saveConsultationAsJsonBackground(consultation: Consultation): Promise<void> {
+  public async saveConsultationAsJsonBackground(consultation: Consultation): Promise<void> {
     try {
       const jsonContent = JSON.stringify(consultation.parseDataToJson());
       const isFicheAdmin = await consultation.isFicheAdministrative();
 
       let fileName;
       let folderPath;
+      const consultationDate = new Date(consultation?.date || new Date())
 
       if (isFicheAdmin) {
         // Si c'est une fiche administrative, utiliser un nom spécifique
-        fileName = generateFicheAdministrativeNameForJsonSave(new Date(), consultation.ficheName || '');
+        fileName = generateFicheAdministrativeNameForJsonSave(consultationDate, consultation.ficheName || '');
         // Pour les fiches administratives, on utilise le même dossier que les consultations
         folderPath = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(), consultation.id_patient)}`;
       } else {
         // Si c'est une consultation normale
-        fileName = generateConsultationName(new Date());
+        
+        fileName = generateConsultationName(consultationDate);
         folderPath = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(), consultation.id_patient)}`;
       }
 
