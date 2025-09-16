@@ -20,6 +20,7 @@ import { sendTraficAuditEvent } from '../utils/traficAudit';
 import { TraficFolder } from '../utils/TraficFolder';
 import { SYNCHRO_DELETE_LOCAL_PATIENTS, SYNCHRO_DELETE_LOCAL_PATIENTS_FAILDED, SYNCHRO_FULL_FAILDED, SYNCHRO_FULL_SUCCESS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS, SYNCHRO_UPLOAD_LOCAL_CONSULTATIONS_FAILDED, SYNCHRO_UPLOAD_LOCAL_PATIENTS, SYNCHRO_UPLOAD_LOCAL_PATIENTS_FAILDED } from './../Constants/syncAudit';
 import Service from "./core/Service";
+import FullSyncService from './fullSyncService';
 
 export default class PatientService extends Service {
   private patientRepository: PatientRepository;
@@ -487,148 +488,8 @@ export default class PatientService extends Service {
 
 
   async fullSyncPatients(): Promise<SyncPatientReturnType> {
-    try {
-      const errors: string[] = [];
-
-      // Synchroniser les patients supprimés
-      const syncDeletedPatientsResult = await this.syncDeletedPatients();
-      console.log("FULLSYNCHRO - Patients supprimés synchronisés in local db:", syncDeletedPatientsResult.success);
-      Logger.info("FULLSYNCHRO - Patients supprimés synchronisés in local db:", { success: syncDeletedPatientsResult.success });
-      if (!syncDeletedPatientsResult.success) {
-        Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients supprimés");
-        console.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients supprimés");
-        if (syncDeletedPatientsResult.errors) {
-          errors.push(...syncDeletedPatientsResult.errors);
-        }
-      }
-
-      // Envoyer les patients créés ou mis à jour au serveur
-      const sendCreatedOrUpdatedPatientsResult = await this.sendCreatedOrUpdatedPatientsToServer();
-      console.log("FULLSYNCHRO - Patients mis à jour synchronisés in local db:", sendCreatedOrUpdatedPatientsResult.success);
-      Logger.info("FULLSYNCHRO - Patients mis à jour synchronisés in local db:", { success: sendCreatedOrUpdatedPatientsResult.success });  
-      if (!sendCreatedOrUpdatedPatientsResult.success) {
-        Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients mis à jour");
-        console.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients mis à jour");
-        if (sendCreatedOrUpdatedPatientsResult.errors) {
-          errors.push(...sendCreatedOrUpdatedPatientsResult.errors);
-        }
-      }
-
-      // Envoyer les consultations créées au serveur
-      const sendCreatedConsultationsResult = await this.sendCreatedConsultationsToServer();
-      console.log("FULLSYNCHRO - Consultations créées synchronisées in local db:", sendCreatedConsultationsResult.success);
-      Logger.info("FULLSYNCHRO - Consultations créées synchronisées in local db:", { success: sendCreatedConsultationsResult.success });
-      if (!sendCreatedConsultationsResult.success) {
-        Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des consultations créées");
-        console.error("FULLSYNCHRO - Erreur lors de la synchronisation des consultations créées");
-        if (sendCreatedConsultationsResult.errors) {
-          errors.push(...sendCreatedConsultationsResult.errors);
-        }
-      }
-      await sleep(1000*this.timer1)
-
-      // Récupérer tous les patients du serveur
-      const getAllPatientResult = await this.getAllPatientOnServer();
-      console.log("FULLSYNCHRO - Patients synchronisés get Medical Data:", getAllPatientResult.success);
-      Logger.info("FULLSYNCHRO - Patients synchronisés get Medical Data:", { success: getAllPatientResult.success });
-      if (!getAllPatientResult.success) {
-        Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients");
-        console.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients");
-        if (getAllPatientResult.errors) {
-          errors.push(...getAllPatientResult.errors);
-        }
-      }
-
-      await sleep(1000*this.timer2)
-
-      // Récupérer tous les patients supprimés du serveur
-      const getAllDeletedPatientResult = await this.getAllDeletedPatientOnServer();
-      console.log("FULLSYNCHRO - Patients supprimés synchronisés on the server:", getAllDeletedPatientResult.success);
-      Logger.info("FULLSYNCHRO - Patients supprimés synchronisés on the server:", { success: getAllDeletedPatientResult.success });
-      if (!getAllDeletedPatientResult.success) {
-        Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients supprimés");
-        console.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients supprimés");
-        if (getAllDeletedPatientResult.errors) {
-          errors.push(...getAllDeletedPatientResult.errors);
-        }
-      }
-
-      await sleep(1000 * this.timer3)
-
-      // Synchroniser les images si activé
-      let syncPicturesResult: SyncOnlyOnTraitementReturnType = {
-        success: true,
-        message: "Synchronisation des images ignorée (désactivée)",
-        statistics: { total: 0, success: 0, failed: 0 }
-      };
-
-      if (config.isPictureSyncEnabled) {
-        /* syncPicturesResult = await this.syncPictures(); */
-        console.log("FULLSYNCHRO - Images synchronisées on the server:", syncPicturesResult.success);
-        Logger.info("FULLSYNCHRO - Images synchronisées on the server:", { success: syncPicturesResult.success });
-        if (!syncPicturesResult.success) {
-          Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des images");
-          console.error("FULLSYNCHRO - Erreur lors de la synchronisation des images");
-          if (syncPicturesResult.errors) {
-            errors.push(...syncPicturesResult.errors);
-          }
-        }
-      }
-
-     
-      await setLastSyncDate(new Date().toISOString());
-
-      Logger.info("FULLSYNCHRO - Patients synchronisés");
-      console.log("FULLSYNCHRO - Patients synchronisés");
-
-      // Créer l'objet de retour avec toutes les statistiques
-      const result: SyncPatientReturnType = {
-        success: errors.length === 0,
-        message:  "Synchronisation effectuée avec succès",
-        errors: errors.length > 0 ? errors : undefined,
-        statistics: {
-          syncDeletedPatients: syncDeletedPatientsResult.statistics,
-          sendCreatedOrUpdatedPatientsToServer: sendCreatedOrUpdatedPatientsResult.statistics,
-          sendCreatedConsultationsToServer: sendCreatedConsultationsResult.statistics,
-          getAllPatientOnServer: getAllPatientResult.statistics,
-          getAllDeletedPatientOnServer: getAllDeletedPatientResult.statistics,
-          getAllConsultationsOnServer: getAllPatientResult.consultationsStatistics,
-          syncPictures: syncPicturesResult.statistics
-        }
-      };
-
-      if (errors.length === 0) {
-        await sendTraficAuditEvent(SYNCHRO_FULL_SUCCESS, `FULLSYNCHRO - Synchronisation des patients effectuée avec succès ==> ${JSON.stringify(result)}`);
-      } else{
-        await sendTraficAuditEvent(SYNCHRO_FULL_FAILDED, `FULLSYNCHRO - Synchronisation des patients echouée ==> ${JSON.stringify({
-          success: false,
-          message: "Erreur lors de la synchronisation des patients",
-          errors: errors,
-          statistics: result.statistics
-        })}`);
-      }
-
-
-      return result;
-    } catch (error) {
-      console.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients :", error);
-      Logger.error("FULLSYNCHRO - Erreur lors de la synchronisation des patients", { error });
-
-      return {
-        success: false,
-        message: "Erreur lors de la synchronisation des patients",
-        errors: [error instanceof Error ? error.message : JSON.stringify(error)],
-        statistics: {
-          syncDeletedPatients: { total: 0, success: 0, failed: 0 },
-          sendCreatedOrUpdatedPatientsToServer: { total: 0, success: 0, failed: 0 },
-          sendCreatedConsultationsToServer: { total: 0, success: 0, failed: 0 },
-          getAllPatientOnServer: { total: 0, success: 0, failed: 0 },
-          getAllDeletedPatientOnServer: { total: 0, success: 0, failed: 0 },
-          getAllConsultationsOnServer: { total: 0, success: 0, failed: 0 },
-          syncPictures: { total: 0, success: 0, failed: 0 }
-        }
-      };
-    }
+      const fullSyncService = await FullSyncService.create();
+      return await fullSyncService.fullSyncPatients();
   }
 
 
@@ -1091,7 +952,7 @@ export default class PatientService extends Service {
    * Sauvegarde tous les patients et leurs consultations en fichiers JSON en tâche de fond
    * @param patients Liste des patients à sauvegarder
    */
-  private async saveAllPatientsAndConsultationsAsJson(patients: PatientSyncDataResponseOfGetAllMedicalDataServer[]): Promise<void> {
+  public async saveAllPatientsAndConsultationsAsJson(patients: PatientSyncDataResponseOfGetAllMedicalDataServer[]): Promise<void> {
     try {
       console.log(`🔄 Début de la sauvegarde de ${patients.length} patients et leurs consultations en JSON...`);
 
@@ -1134,22 +995,24 @@ export default class PatientService extends Service {
    * Sauvegarde une consultation en fichier JSON en arrière-plan
    * @param consultation Consultation à sauvegarder
    */
-  private async saveConsultationAsJsonBackground(consultation: Consultation): Promise<void> {
+  public async saveConsultationAsJsonBackground(consultation: Consultation): Promise<void> {
     try {
       const jsonContent = JSON.stringify(consultation.parseDataToJson());
       const isFicheAdmin = await consultation.isFicheAdministrative();
 
       let fileName;
       let folderPath;
+      const consultationDate = new Date(consultation?.date || new Date())
 
       if (isFicheAdmin) {
         // Si c'est une fiche administrative, utiliser un nom spécifique
-        fileName = generateFicheAdministrativeNameForJsonSave(new Date(), consultation.ficheName || '');
+        fileName = generateFicheAdministrativeNameForJsonSave(consultationDate, consultation.ficheName || '');
         // Pour les fiches administratives, on utilise le même dossier que les consultations
         folderPath = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(), consultation.id_patient)}`;
       } else {
         // Si c'est une consultation normale
-        fileName = generateConsultationName(new Date());
+        
+        fileName = generateConsultationName(consultationDate);
         folderPath = `${FileSystem.documentDirectory}${TraficFolder.getConsultationsFolderPath(this.getTypeDiabete(), consultation.id_patient)}`;
       }
 

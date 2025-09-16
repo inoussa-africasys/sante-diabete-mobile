@@ -282,6 +282,15 @@ const AdministrationPage = () => {
           />
 
           <MenuItem
+            icon={<MaterialCommunityIcons name="web-sync" size={24} color={APP_GREEN} />}
+            title="Full Synchronisation"
+            onPress={() => configStore.toggle('fullSync')}
+            hasToggle={true}
+            isActive={configStore.getValue('fullSync')}
+            rightText={configStore.getValue('fullSync') ? 'Activé' : 'Désactivé'}
+          />
+
+          <MenuItem
             icon={<MaterialCommunityIcons name="bug" size={24} color="#673AB7" />}
             title="Mode debug"
             onPress={() => configStore.toggle('debugMode')}

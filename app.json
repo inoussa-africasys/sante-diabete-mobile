@@ -2,7 +2,7 @@
   "expo": {
     "name": "Santé Diabète Mobile",
     "slug": "sante-diabet-mobile",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "orientation": "default",
     "icon": "./assets/images/sd_logo.png",
     "scheme": "santediabetmobile",
