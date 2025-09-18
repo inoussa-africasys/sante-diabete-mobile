@@ -3,7 +3,20 @@ import { TraficFolder } from '../utils/TraficFolder';
 
 export async function getZipFileAsBase64(uri: string) : Promise<string | null> {
     try {
-      const base64Zip = await FileSystem.readAsStringAsync(uri, {
+      // Ensure the URI has the correct scheme (file://)
+      let fileUri = uri;
+      if (!uri.startsWith('file://')) {
+        fileUri = `file://${uri}`;
+      }
+      
+      // Check if file exists before reading
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      if (!fileInfo.exists) {
+        console.error(`Le fichier n'existe pas: ${fileUri}`);
+        return null;
+      }
+      
+      const base64Zip = await FileSystem.readAsStringAsync(fileUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
       return base64Zip;
