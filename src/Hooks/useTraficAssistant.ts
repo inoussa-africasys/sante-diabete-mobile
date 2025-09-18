@@ -1,7 +1,9 @@
 import { useState } from "react";
 import TraficAssistantService from "../Services/traficAssistantService";
+import { zipDirectoryNativeRNZA } from "../utils/exportZip.v2";
 import Logger from "../utils/Logger";
 import useDeviceInfo from "./useDeviceInfo";
+
 interface UseTraficAssistantType {
     isLoading: boolean;
     error: string | null;
@@ -20,8 +22,8 @@ export default function useTraficAssistant(): UseTraficAssistantType {
     const handleSendData = async (): Promise<string> => {
         setIsLoading(true);
         try {
-            const zipUri = await TraficAssistantService.zipPatientDirectory();
-            //const zipUri = await zipDirectoryNativeRNZA();
+            //const zipUri = await TraficAssistantService.zipPatientDirectory();
+            const zipUri = await zipDirectoryNativeRNZA();
             if (!zipUri) {
                 Logger.log('error', '❌ Erreur lors de la compression des fichiers patients', { error: '❌ Erreur lors de la compression des fichiers patients' });
                 throw new Error('❌ Erreur lors de la compression des fichiers patients');

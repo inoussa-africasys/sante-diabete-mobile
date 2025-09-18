@@ -54,11 +54,16 @@ export default class TraficAssistantService {
     static sendZipFileToTheBackend = async ({ brand, modelName, osVersion, zipUri }: SendZipFileToTheBackendType) => {
         try {
             const { subject, message } = await this.formatTraficAssistantMailMessage({ brand, modelName, osVersion });
+            
+            // Vérifier si le chemin du fichier existe
+            console.log("📁 Tentative de lecture du fichier ZIP :", zipUri);
+            Logger.log('info', 'Tentative de lecture du fichier ZIP', { zipUri });
+            
             const base64Zip = await getZipFileAsBase64(zipUri);
             if(!base64Zip) {
                 console.error("❌ Erreur lors de la lecture du fichier ZIP en base64 :", zipUri);
-                Logger.log('error', 'Erreur lors de la lecture du fichier ZIP en base64', { error: '❌ Erreur lors de la lecture du fichier ZIP en base64' });
-                throw new Error('❌ Erreur lors de la lecture du fichier ZIP en base64');
+                Logger.log('error', 'Erreur lors de la lecture du fichier ZIP en base64', { error: '❌ Erreur lors de la lecture du fichier ZIP en base64', zipUri });
+                throw new Error(`❌ Erreur lors de la lecture du fichier ZIP en base64: ${zipUri}`);
             }
             try {
                 const baseUrl = await getBaseUrl();
