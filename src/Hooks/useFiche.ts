@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import FicheService from '../Services/ficheService';
 import Fiche from '../models/Fiche';
+import { FormDefinition } from '../types';
 import Logger from '../utils/Logger';
 
 
 type UseFicheType = {
   getFicheList: () => Promise<string[]>;
+  getFicheListVersion2: () => Promise<FormDefinition[]>;
   isLoading: boolean;
   error: string | null;
   downloadFiche: (ficheName: string) => Promise<Fiche | null>;
@@ -16,6 +18,24 @@ type UseFicheType = {
 export const useFiche = (): UseFicheType => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+
+  const  fetchAllFichesOnServerQueryVersion2 = async (): Promise<FormDefinition[]> => {
+    try {
+      setIsLoading(true);
+      const fichesService = await FicheService.create();
+      const fichesArrayString = await fichesService.fetchAllFichesOnServerQueryVersion2();
+      await fichesService.insertAllFichesOnTheLocalDbVersion2(fichesArrayString);
+      return fichesArrayString;
+    } catch (error) {
+      console.error('Erreur réseau :', error);
+      setError(error as string);
+      Logger.log('error', 'Error downloading fiche', { error });
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
 
   const getFicheList = async (): Promise<string[]> => {
@@ -108,6 +128,7 @@ export const useFiche = (): UseFicheType => {
     downloadFiche,
     getAllFicheDownloaded,
     getFicheById,
-    getFicheByName
+    getFicheByName,
+    getFicheListVersion2
   };
 };

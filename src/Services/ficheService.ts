@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import { API_HEADER } from "../Constants/App";
 import { FicheRepository } from "../Repositories/FicheRepository";
 import Fiche from "../models/Fiche";
+import { FormDefinition } from "../types";
 import Logger from "../utils/Logger";
 import { TraficFolder } from '../utils/TraficFolder';
 import { getFicheAdministrativeName } from "../utils/ficheAdmin";
@@ -38,11 +39,45 @@ export default class FicheService extends Service {
             const data: string[] = await response.json();
             return data;
         } catch (error) {
+            Logger.log('error', 'Error downloading fiche', { error });
             console.error('Erreur réseau :', error);
             throw error;
         }
 
     }
+
+    async fetchAllFichesOnServerQueryVersion2(): Promise<FormDefinition[]> {
+        if (!this.getTypeDiabete()) {
+            throw new Error('No type diabete found');
+        }
+
+        try {
+            const response = await fetch(this.getFullUrl('/api/json/mobile/forms'), {
+                method: 'GET',
+                headers: API_HEADER
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            const data: FormDefinition[] = await response.json();
+            return data;
+        } catch (error) {
+            Logger.log('error', 'Error downloading fiche', { error });
+            console.error('Erreur réseau :', error);
+            throw error;
+        }
+
+    }
+
+
+    
+    async insertAllFichesOnTheLocalDbVersion2(fichesDefinitions: FormDefinition[]): Promise<void> {
+        await this.ficheRepository.insertIfNotExistsByName(this.getTypeDiabete()!, fichesDefinitions);
+
+    }
+
 
 
     async insertAllFichesOnTheLocalDb(fiches: string[]): Promise<void> {
